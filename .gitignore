@@ -37,3 +37,4 @@ lastConfig.py
 *.scon*
 *.log
 *.pyc
+build

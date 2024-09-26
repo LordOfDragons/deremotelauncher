@@ -1,0 +1,5 @@
+{
+    "C_Cpp.default.includePath": [
+        "../../../denetwork/cpp/library/build/denetwork-1.0/include"
+    ]
+}

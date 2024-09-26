@@ -1,0 +1,170 @@
+import os, sys, shlex
+from ternary_variable import TernaryVariable
+
+Import('globalEnv')
+
+versionString = globalEnv['version']
+
+env = globalEnv.Clone()
+
+applyEnvVars = []
+applyEnvVars.append('CFLAGS')
+applyEnvVars.append('CPPFLAGS')
+applyEnvVars.append('CXXFLAGS')
+applyEnvVars.append('LDFLAGS')
+
+# Haiku: The PATH found by SCons are wrong in many ways causing binaries to be not found.
+#        Replace them with sane values. This is not a 'good' solution but should work.
+if env['TARGET_PLATFORM'] == 'beos':
+	import os
+	env['ENV']['PATH'] = os.environ['PATH']
+
+# set global construction variables
+for x in applyEnvVars:
+	if x in os.environ:
+		env.MergeFlags({x: shlex.split(os.environ[x])})
+
+if 'CPPFLAGS' in applyEnvVars and 'CPPFLAGS' in os.environ:
+	env.Append(MODULE_CPPFLAGS = shlex.split(os.environ['CPPFLAGS']))
+
+if 'LDFLAGS' in applyEnvVars and 'LDFLAGS' in os.environ:
+	env.Append(MODULE_LINKFLAGS = shlex.split(os.environ['LDFLAGS']))
+
+if env['with_debug']:
+	env.Append(CPPFLAGS = ['-g', '-fno-omit-frame-pointer'])
+
+env.Append(CPPFLAGS = ['-Wall'])
+if env['with_warnerrors']:
+	env.Append(CPPFLAGS = ['-Werror'])
+
+# determine sanitize flags to use
+env.Replace(SANITIZE_FLAGS = [])
+
+if env['with_debug'] and env['with_sanitize']:
+	env.Append(SANITIZE_FLAGS = [
+		'-fsanitize=address',
+		'-fsanitize-address-use-after-scope',
+		'-fsanitize=pointer-compare',
+		'-fsanitize=pointer-subtract'])
+	env.Append(SANITIZE_FLAGS = [
+		'-fsanitize=leak'])
+	env.Append(SANITIZE_FLAGS = [
+		'-fsanitize=undefined',
+		'-fsanitize=shift',
+		'-fsanitize=shift-exponent',
+		'-fsanitize=shift-base',
+		'-fsanitize=integer-divide-by-zero',
+		'-fsanitize=unreachable',
+		'-fsanitize=vla-bound',
+		'-fsanitize=null',
+		'-fsanitize=return',
+		'-fsanitize=signed-integer-overflow',
+		'-fsanitize=bounds',
+		'-fsanitize=bounds-strict',
+		'-fsanitize=alignment',
+		'-fsanitize=object-size',
+		'-fsanitize=float-divide-by-zero',
+		'-fsanitize=float-cast-overflow',
+		'-fsanitize=nonnull-attribute',
+		'-fsanitize=returns-nonnull-attribute',
+		'-fsanitize=bool',
+		'-fsanitize=enum',
+		'-fsanitize=vptr',
+		'-fsanitize=pointer-overflow',
+		'-fsanitize=builtin'])
+
+# define the targets array and reports dictionary to be filled
+parent_targets = {}
+
+configGroup = 'DERemoteLaunchShared'
+env.configReport.add('Treat warnings as errors (dev-builds)', 'with_warnerrors', configGroup)
+env.configReport.add('Build with debug symbols for GDB usage', 'with_debug', configGroup)
+env.configReport.add('Enable run-time optimizations', 'with_optimizations', configGroup)
+env.configReport.add('Enable sanitizer', 'with_sanitize', configGroup)
+
+# build scripts
+from config_file_writer import writeConfigFile
+from glob_files import globFiles
+
+if env['TARGET_PLATFORM'] == 'beos':
+	env.Append(LIBS = ['root', 'be'])
+elif env['TARGET_PLATFORM'] == 'windows':
+	env.Append(LIBS = ['kernel32'])
+
+env.Append(LIBS = ['denetwork'])
+
+if 'denetwork_includes' in env and env['denetwork_includes']:
+	env.Append(CPPPATH = [env['denetwork_includes']])
+
+if 'denetwork_libraries' in env and env['denetwork_libraries']:
+	env.Append(LIBPATH = [env['denetwork_libraries']])
+
+configFileDefines = {}
+configFileDefines['OS_UNIX'] = env['TARGET_PLATFORM'] in ['linux', 'android']
+configFileDefines['OS_W32'] = env['TARGET_PLATFORM'] == 'windows'
+configFileDefines['OS_BEOS'] = env['TARGET_PLATFORM'] == 'beos'
+configFileDefines['OS_MACOS'] = env['TARGET_PLATFORM'] == 'macos'
+configFileDefines['WITH_OPTIMIZATIONS'] = env['with_optimizations']
+
+env.Configure().Finish()
+
+writeConfigFile(env.File('src/config.h').srcnode().abspath, configFileDefines)
+
+env.Append(CPPFLAGS = env['SANITIZE_FLAGS'])
+env.Append(LINKFLAGS = env['SANITIZE_FLAGS'])
+
+# library
+platformName = 'unix'
+
+if env['TARGET_PLATFORM'] == 'beos':
+	platformName = 'beos'
+
+envLibrary = env.Clone()
+
+targetLibrary = globalEnv.targetManager.TargetLibrary('DERemoteLauncher Shared Library')
+globalEnv.targetManager.add('deremotelaunchershared', targetLibrary)
+
+sources = []
+headers = []
+globFiles(envLibrary, 'src', '*.cpp', sources)
+globFiles(envLibrary, 'src', '*.h', headers)
+
+objects = [envLibrary.StaticObject(s) for s in sources]
+
+library = envLibrary.StaticLibrary(target='deremotelauncher', source=objects)
+
+targetLibrary.build.extend(library)
+targetLibrary.aliasBuild(envLibrary, 'deremotelaunchershared_build')
+
+targetLibrary.installCutDirs(envLibrary,
+	'deremotelauncher-{}/include/deremotelauncher'.format(versionString),
+	headers, 1)
+
+targetLibrary.install.extend(envLibrary.Install(
+	'deremotelauncher-{}/lib'.format(versionString), library))
+
+targetLibrary.aliasInstall(envLibrary, 'deremotelaunchershared')
+
+targetLibrary.archiveCutDirs(envLibrary,
+	'deremotelaunchershared-{}-x64-{}/include/deremotelauncher'.format(
+		platformName, versionString), headers, 1)
+
+targetLibrary.archiveLibrary(envLibrary,
+	'deremotelaunchershared-{}-x64-{}/lib'.format(
+		platformName, versionString), library)
+
+targetLibrary.addParametersBuildCPP(envLibrary, library,
+	'deremotelauncher-{}/include'.format(versionString), linkStatic=True)
+
+# archive
+targetArchive = globalEnv.targetManager.TargetArchive('DERemoteLauncher Shared Library Archive')
+globalEnv.targetManager.add('deremotelaunchershared_archive', targetArchive)
+
+archiveFiles = {}
+archiveFiles['deremotelaunchershared-{}-x64-{}/LICENSE'.format(platformName,  versionString)] = envLibrary.File('#LICENSE')
+archiveFiles['deremotelaunchershared-{}-x64-{}/README.md'.format(platformName, versionString)] = envLibrary.File('#README.md')
+
+targetArchive.archiveFiles(envLibrary, 'deremotelaunchershared-{}-x64-{}'.format(platformName, versionString),
+	{**targetLibrary.archiveFiles, **archiveFiles},
+	format=globalEnv.targetManager.TargetArchive.formatZip)
+targetArchive.aliasArchive(envLibrary, 'deremotelaunchershared_archive')

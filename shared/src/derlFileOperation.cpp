@@ -22,55 +22,40 @@
  * SOFTWARE.
  */
 
+#include <algorithm>
 #include <stdexcept>
 
-#include "derlFileLayout.h"
+#include "derlFileOperation.h"
 
 
-// Class derlFileLayout
-/////////////////////////
+// Class derlFileOperation
+////////////////////////////
 
-derlFileLayout::derlFileLayout(){
+derlFileOperation::derlFileOperation(const std::string &path) :
+pPath(path),
+pStatus(Status::pending),
+pFileSize(0L){
 }
 
-derlFileLayout::~derlFileLayout(){
+derlFileOperation::~derlFileOperation(){
 }
+
 
 // Management
 ///////////////
 
-int derlFileLayout::GetFileCount() const{
-	return pFiles.size();
+void derlFileOperation::SetStatus(Status status){
+	pStatus = status;
 }
 
-derlFileLayout::MapFiles::const_iterator derlFileLayout::GetFilesBegin() const{
-	return pFiles.cbegin();
+void derlFileOperation::SetFileSize(uint64_t fileSize){
+	pFileSize = fileSize;
 }
 
-derlFileLayout::MapFiles::const_iterator derlFileLayout::GetFilesEnd() const{
-	return pFiles.cend();
+void derlFileOperation::SetReader(const derlFileReader::Ref &reader){
+	pReader = reader;
 }
 
-derlFile::Ref derlFileLayout::GetFileAt( const std::string &path ) const{
-	return pFiles.at( path );
+void derlFileOperation::SetWriter(const derlFileWriter::Ref &writer){
+	pWriter = writer;
 }
-
-void derlFileLayout::AddFile( const derlFile::Ref &file ){
-	pFiles.at( file->GetPath() ) = file;
-}
-
-void derlFileLayout::RemoveFile( const std::string &path ){
-	MapFiles::iterator iter( pFiles.find( path ) );
-	if( iter == pFiles.end() ){
-		throw std::runtime_error( "file absent" );
-	}
-	pFiles.erase( iter );
-}
-
-void derlFileLayout::RemoveAllFiles(){
-	pFiles.clear();
-}
-
-
-// Private Functions
-//////////////////////

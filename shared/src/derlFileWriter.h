@@ -22,31 +22,64 @@
  * SOFTWARE.
  */
 
-#include "derlLauncher.h"
+#ifndef _DERLFILEWRITER_H_
+#define _DERLFILEWRITER_H_
+
+#include <memory>
+#include <string>
 
 
-// Class derlLauncher
-///////////////////////
+/**
+ * \brief File writer interface.
+ */
+class derlFileWriter{
+public:
+	/** \brief Reference type. */
+	typedef std::shared_ptr<derlFileWriter> Ref;
+	
+	/** \brief Seek mode. */
+	enum class SeekMode{
+		set,
+		begin,
+		end
+	};
+	
+	
+private:
+	const std::string pPath;
+	
+	
+public:
+	/** \name Constructors and Destructors */
+	/*@{*/
+	/**
+	 * \brief Create file writer.
+	 */
+	derlFileWriter(const std::string &path);
+	
+	/** \brief Clean up file writer. */
+	virtual ~derlFileWriter() = 0;
+	/*@}*/
+	
+	
+	
+	/** \name Management */
+	/*@{*/
+	/** \brief Path. */
+	inline const std::string &GetPath() const{ return pPath; }
+	
+	/** \brief File size in bytes. */
+	virtual uint64_t GetSize() = 0;
+	
+	/** \brief Write position in bytes. */
+	virtual uint64_t GetPosition() = 0;
+	
+	/** \brief Set write position in bytes. */
+	virtual void SetPosition(uint64_t position, SeekMode mode) = 0;
+	
+	/** \brief Write bytes throwing exception if failed. */
+	virtual void Write(const void *buffer, uint64_t size) = 0;
+	/*@}*/
+};
 
-derlLauncher::derlLauncher(){
-}
-
-derlLauncher::~derlLauncher(){
-}
-
-
-// Management
-///////////////
-
-void derlLauncher::SetLocalFileLayout( const derlFileLayout::Ref &layout ){
-	pFileLayoutLocal = layout;
-}
-
-void derlLauncher::SetRemoteFileLayout( const derlFileLayout::Ref &layout ){
-	pFileLayoutRemote = layout;
-}
-
-
-
-// Private Functions
-//////////////////////
+#endif

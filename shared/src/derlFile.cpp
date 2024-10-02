@@ -31,10 +31,11 @@
 // Class derlFile
 ///////////////////
 
-derlFile::derlFile( const std::string &path ) :
-pPath( path ),
-pSize( 0 ),
-pHasBlocks( false ){
+derlFile::derlFile(const std::string &path) :
+pPath(path),
+pSize(0),
+pHasBlocks(false),
+pBlockSize(0){
 }
 
 derlFile::~derlFile(){
@@ -44,15 +45,15 @@ derlFile::~derlFile(){
 // Management
 ///////////////
 
-void derlFile::SetSize( uint64_t size ){
+void derlFile::SetSize(uint64_t size){
 	pSize = size;
 }
 
-void derlFile::SetHash( const std::string &hash ){
+void derlFile::SetHash(const std::string &hash){
 	pHash = hash;
 }
 
-void derlFile::SetHasBlocks( bool hasBlocks ){
+void derlFile::SetHasBlocks(bool hasBlocks){
 	pHasBlocks = hasBlocks;
 }
 
@@ -60,16 +61,16 @@ int derlFile::GetBlockCount() const{
 	return pBlocks.size();
 }
 
-derlFileBlock::Ref derlFile::GetBlockAt( int index ) const{
-	return pBlocks.at( index );
+derlFileBlock::Ref derlFile::GetBlockAt(int index) const{
+	return pBlocks.at(index);
 }
 
-derlFileBlock::Ref derlFile::BlockMatching( uint64_t offset, uint64_t size ) const{
+derlFileBlock::Ref derlFile::BlockMatching(uint64_t offset, uint64_t size) const{
 	ListBlocks::const_iterator iter;
 	
-	for( iter=pBlocks.cbegin(); iter!=pBlocks.cend(); iter++ ){
+	for(iter=pBlocks.cbegin(); iter!=pBlocks.cend(); iter++){
 		const derlFileBlock::Ref &block = *iter;
-		if( block->GetOffset() == offset && block->GetSize() == size ){
+		if(block->GetOffset() == offset && block->GetSize() == size){
 			return block;
 		}
 	}
@@ -77,20 +78,24 @@ derlFileBlock::Ref derlFile::BlockMatching( uint64_t offset, uint64_t size ) con
 	return nullptr;
 }
 
-void derlFile::AddBlock( const derlFileBlock::Ref &block ){
-	pBlocks.push_back( block );
+void derlFile::AddBlock(const derlFileBlock::Ref &block){
+	pBlocks.push_back(block);
 }
 
-void derlFile::RemoveBlock( const derlFileBlock::Ref &block ){
-	ListBlocks::iterator iter( std::find( pBlocks.begin(), pBlocks.end(), block ) );
-	if( iter == pBlocks.end() ){
-		throw std::runtime_error( "block absent" );
+void derlFile::RemoveBlock(const derlFileBlock::Ref &block){
+	ListBlocks::iterator iter(std::find(pBlocks.begin(), pBlocks.end(), block));
+	if(iter == pBlocks.end()){
+		throw std::runtime_error("block absent");
 	}
-	pBlocks.erase( iter );
+	pBlocks.erase(iter);
 }
 
 void derlFile::RemoveAllBlocks(){
 	pBlocks.clear();
+}
+
+void derlFile::SetBlockSize(uint32_t size){
+	pBlockSize = size;
 }
 
 

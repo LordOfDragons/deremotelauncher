@@ -50,10 +50,67 @@ namespace derlProtocol{
 	};
 	
 	/**
-	* \brief Link codes.
-	*/
+	 * \brief Delete file result.
+	 */
+	enum class DeleteFileResult{
+		success = 0,
+		failure = 1
+	};
+	
+	/**
+	 * \brief Write file result.
+	 */
+	enum class WriteFileResult{
+		success = 0,
+		failure = 1
+	};
+	
+	/**
+	 * \brief Write data result.
+	 */
+	enum class WriteDataResult{
+		success = 0,
+		failure = 1
+	};
+	
+	/**
+	 * \brief Finish write file result.
+	 */
+	enum class FinishWriteFileResult{
+		success = 0,
+		failure = 1
+	};
+	
+	/**
+	 * \brief Stop application mode.
+	 */
+	enum class StopApplicationMode{
+		requestClose = 0,
+		killProcess = 1
+	};
+	
+	/**
+	 * \brief Log level.
+	 */
+	enum class LogLevel{
+		info = 0,
+		warning = 1,
+		error = 2
+	};
+	
+	/**
+	 * \brief Link codes.
+	 */
 	enum class LinkCodes{
 		runState = 1
+	};
+	
+	/**
+	 * \brief Run state status.
+	 */
+	enum class RunStateStatus{
+		stopped = 0,
+		running = 1
 	};
 }
 

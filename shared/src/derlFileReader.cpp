@@ -22,55 +22,12 @@
  * SOFTWARE.
  */
 
-#include <stdexcept>
-
-#include "derlFileLayout.h"
+#include "derlFileReader.h"
 
 
-// Class derlFileLayout
+// Class derlFileReader
 /////////////////////////
 
-derlFileLayout::derlFileLayout(){
+derlFileReader::derlFileReader(const std::string &path) :
+pPath(path){
 }
-
-derlFileLayout::~derlFileLayout(){
-}
-
-// Management
-///////////////
-
-int derlFileLayout::GetFileCount() const{
-	return pFiles.size();
-}
-
-derlFileLayout::MapFiles::const_iterator derlFileLayout::GetFilesBegin() const{
-	return pFiles.cbegin();
-}
-
-derlFileLayout::MapFiles::const_iterator derlFileLayout::GetFilesEnd() const{
-	return pFiles.cend();
-}
-
-derlFile::Ref derlFileLayout::GetFileAt( const std::string &path ) const{
-	return pFiles.at( path );
-}
-
-void derlFileLayout::AddFile( const derlFile::Ref &file ){
-	pFiles.at( file->GetPath() ) = file;
-}
-
-void derlFileLayout::RemoveFile( const std::string &path ){
-	MapFiles::iterator iter( pFiles.find( path ) );
-	if( iter == pFiles.end() ){
-		throw std::runtime_error( "file absent" );
-	}
-	pFiles.erase( iter );
-}
-
-void derlFileLayout::RemoveAllFiles(){
-	pFiles.clear();
-}
-
-
-// Private Functions
-//////////////////////

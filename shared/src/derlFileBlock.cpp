@@ -28,9 +28,9 @@
 // Class derlFileBlock
 ////////////////////////
 
-derlFileBlock::derlFileBlock( uint64_t offset, uint64_t size ) :
-pOffset( offset ),
-pSize( size ){
+derlFileBlock::derlFileBlock(uint64_t offset, uint64_t size) :
+pOffset(offset),
+pSize(size){
 }
 
 derlFileBlock::~derlFileBlock(){
@@ -40,7 +40,7 @@ derlFileBlock::~derlFileBlock(){
 // Management
 ///////////////
 
-void derlFileBlock::SetHash( const std::string &hash ){
+void derlFileBlock::SetHash(const std::string &hash){
 	pHash = hash;
 }
 

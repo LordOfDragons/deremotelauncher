@@ -22,63 +22,64 @@
  * SOFTWARE.
  */
 
-#ifndef _DERLLAUNCHER_H_
-#define _DERLLAUNCHER_H_
+#ifndef _DERLFILEREADER_H_
+#define _DERLFILEREADER_H_
 
 #include <memory>
+#include <string>
 
-#include "derlFileLayout.h"
-
-#include <denetwork/denConnection.h>
 
 /**
- * \brief Drag[en]gine base remote launcher class.
- * 
- * Implements the DERemoteLauncher Network Protocol and does the heavy lifting.
- * User has to provide and implement a listener to react to the necessary events.
+ * \brief File reader interface.
  */
-class derlLauncher{
+class derlFileReader{
 public:
 	/** \brief Reference type. */
-	typedef std::shared_ptr<derlLauncher> Ref;
+	typedef std::shared_ptr<derlFileReader> Ref;
+	
+	/** \brief Seek mode. */
+	enum class SeekMode{
+		set,
+		begin,
+		end
+	};
 	
 	
 private:
-	//deConnection::Ref pConnection;
-	//deServer::Ref pServer;
-	//deNetworkState::Ref pNetworkState;
-	
-	derlFileLayout::Ref pFileLayoutLocal, pFileLayoutRemote;
+	const std::string pPath;
 	
 	
 public:
 	/** \name Constructors and Destructors */
 	/*@{*/
 	/**
-	 * \brief Create remote launcher.
+	 * \brief Create file reader.
 	 */
-	derlLauncher();
+	derlFileReader(const std::string &path);
 	
-	/** \brief Clean up remote launcher support. */
-	~derlLauncher();
+	/** \brief Clean up file reader. */
+	virtual ~derlFileReader() = 0;
 	/*@}*/
 	
 	
 	
 	/** \name Management */
 	/*@{*/
-	/** \brief Local file layout or nullptr. */
-	inline const derlFileLayout::Ref &GetLocalFileLayout() const{ return pFileLayoutLocal; }
-	void SetLocalFileLayout( const derlFileLayout::Ref &layout );
+	/** \brief Path. */
+	inline const std::string &GetPath() const{ return pPath; }
 	
-	/** \brief Remote file layout or nullptr. */
-	inline const derlFileLayout::Ref &GetRemoteFileLayout() const{ return pFileLayoutRemote; }
-	void SetRemoteFileLayout( const derlFileLayout::Ref &layout );
+	/** \brief File size in bytes. */
+	virtual uint64_t GetSize() = 0;
+	
+	/** \brief Read position in bytes. */
+	virtual uint64_t GetPosition() = 0;
+	
+	/** \brief Set read position in bytes. */
+	virtual void SetPosition(uint64_t position, SeekMode mode) = 0;
+	
+	/** \brief Read bytes throwing exception if failed. */
+	virtual void Read(void *buffer, uint64_t size) = 0;
 	/*@}*/
-	
-	
-	
-private:
 };
 
 #endif

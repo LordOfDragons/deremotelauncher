@@ -52,10 +52,10 @@ public:
 	/**
 	 * \brief Create file block.
 	 */
-	derlFileBlock( uint64_t offset, uint64_t size );
+	derlFileBlock(uint64_t offset, uint64_t size);
 	
 	/** \brief Clean up remote launcher support. */
-	~derlFileBlock();
+	~derlFileBlock() noexcept;
 	/*@}*/
 	
 	
@@ -70,7 +70,7 @@ public:
 	
 	/** \brief Hash (SHA-256). */
 	inline const std::string &GetHash() const{ return pHash; }
-	void SetHash( const std::string &hash );
+	void SetHash(const std::string &hash);
 	/*@}*/
 	
 	

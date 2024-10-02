@@ -56,7 +56,7 @@ public:
 	derlFileLayout();
 	
 	/** \brief Clean up remote launcher support. */
-	~derlFileLayout();
+	~derlFileLayout() noexcept;
 	/*@}*/
 	
 	
@@ -66,14 +66,18 @@ public:
 	/** \brief Count of files. */
 	int GetFileCount() const;
 	
+	/** \brief File iterators. */
+	MapFiles::const_iterator GetFilesBegin() const;
+	MapFiles::const_iterator GetFilesEnd() const;
+	
 	/** \brief File with path or nullptr. */
-	derlFile::Ref GetFileAt( const std::string &path ) const;
+	derlFile::Ref GetFileAt(const std::string &path) const;
 	
 	/** \brief Add file. */
-	void AddFile( const derlFile::Ref &file );
+	void AddFile(const derlFile::Ref &file);
 	
 	/** \brief Remove file. */
-	void RemoveFile( const std::string &path );
+	void RemoveFile(const std::string &path);
 	
 	/** \brief Remove all files. */
 	void RemoveAllFiles();

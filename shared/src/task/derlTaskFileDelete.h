@@ -22,40 +22,65 @@
  * SOFTWARE.
  */
 
-#include <algorithm>
-#include <stdexcept>
+#ifndef _DERLTASKFILEDELETE_H_
+#define _DERLTASKFILEDELETE_H_
 
-#include "derlFileOperation.h"
-
-
-// Class derlFileOperation
-////////////////////////////
-
-derlFileOperation::derlFileOperation(const std::string &path) :
-pPath(path),
-pStatus(Status::pending),
-pFileSize(0L){
-}
-
-derlFileOperation::~derlFileOperation(){
-}
+#include <memory>
+#include <string>
+#include <vector>
+#include <unordered_map>
 
 
-// Management
-///////////////
+/**
+ * \brief File delete task.
+ */
+class derlTaskFileDelete{
+public:
+	/** \brief Reference type. */
+	typedef std::shared_ptr<derlTaskFileDelete> Ref;
+	
+	/** \brief Reference list. */
+	typedef std::vector<Ref> List;
+	
+	/** \brief Reference map keyed by path. */
+	typedef std::unordered_map<std::string, Ref> Map;
+	
+	/** \brief Status. */
+	enum class Status{
+		pending,
+		success,
+		failure
+	};
+	
+	
+private:
+	const std::string pPath;
+	Status pStatus;
+	
+	
+public:
+	/** \name Constructors and Destructors */
+	/*@{*/
+	/**
+	 * \brief Create file operation.
+	 */
+	derlTaskFileDelete(const std::string &path);
+	
+	/** \brief Clean up file operation. */
+	~derlTaskFileDelete() noexcept;
+	/*@}*/
+	
+	
+	
+	/** \name Management */
+	/*@{*/
+	/** \brief Path. */
+	inline const std::string &GetPath() const{ return pPath; }
+	
+	/** \brief Status. */
+	inline Status GetStatus() const{ return pStatus; }
+	void SetStatus(Status status);
+	/*@}*/
+};
 
-void derlFileOperation::SetStatus(Status status){
-	pStatus = status;
-}
-
-void derlFileOperation::SetFileSize(uint64_t fileSize){
-	pFileSize = fileSize;
-}
-
-void derlFileOperation::SetReader(const derlFileReader::Ref &reader){
-	pReader = reader;
-}
-
-void derlFileOperation::SetWriter(const derlFileWriter::Ref &writer){
-	pWriter = writer;
-}
+#endif

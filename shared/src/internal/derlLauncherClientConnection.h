@@ -28,8 +28,12 @@
 #include <memory>
 
 #include <denetwork/denConnection.h>
+#include <denetwork/state/denState.h>
+#include <denetwork/value/denValueInteger.h>
 
-#include "../derlFileOperation.h"
+#include "../task/derlTaskFileWrite.h"
+#include "../task/derlTaskFileDelete.h"
+#include "../task/derlTaskFileBlockHashes.h"
 
 
 class derlLauncherClient;
@@ -45,11 +49,24 @@ class denMessageReader;
  * For internal use.
  */
 class derlLauncherClientConnection : public denConnection{
+public:
+	/** \brief Run state status. */
+	enum class RunStatus{
+		stopped = 0,
+		running = 1
+	};
+	
+	
+	
 private:
 	derlLauncherClient &pClient;
 	bool pConnectionAccepted;
 	uint32_t pEnabledFeatures;
 	
+	const denState::Ref pStateRun;
+	const denValueInt::Ref pValueRunStatus;
+	
+	bool pPendingRequestLayout;
 	
 	
 public:
@@ -68,6 +85,12 @@ public:
 	
 	/** \name Management */
 	/*@{*/
+	/** \brief Set run status. */
+	void SetRunStatus(RunStatus status);
+	
+	
+	/** \brief Set logger or nullptr to clear. */
+	void SetLogger(const denLogger::Ref &logger);
 	
 	/** \brief Connection established. */
 	void ConnectionEstablished() override;
@@ -108,10 +131,15 @@ public:
 	 * \returns State or nullptr to reject.
 	 */
 	denState::Ref CreateState(const denMessage::Ref &message, bool readOnly) override;
+	
+	/** \brief Process finished pending operations. */
+	void FinishPendingOperations();
 	/*@}*/
 	
 	
 private:
+	void pFinishFileBlockHashes(derlTaskFileBlockHashes &task);
+	
 	void pProcessRequestLayout();
 	void pProcessRequestFileBlockHashes(denMessageReader &reader);
 	void pProcessRequestDeleteFiles(denMessageReader &reader);
@@ -124,9 +152,9 @@ private:
 	void pSendResponseFileLayout(const derlFileLayout &layout);
 	void pSendResponseFileBlockHashes(const std::string &path, uint32_t blockSize);
 	void pSendResponseFileBlockHashes(const derlFile &file);
-	void pSendResponseDeleteFiles(const derlFileOperation::Map &files);
-	void pSendResponseWriteFiles(const derlFileOperation::Map &files);
-	void pSendResponseFinishWriteFiles(const derlFileOperation::List &files);
+	void pSendResponseDeleteFiles(const derlTaskFileDelete::List &tasks);
+	void pSendResponseWriteFiles(const std::string &path, const derlTaskFileWriteBlock::List &blocks);
+	void pSendResponseFinishWriteFiles(const derlTaskFileWrite::List &task);
 };
 
 #endif

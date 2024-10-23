@@ -22,31 +22,24 @@
  * SOFTWARE.
  */
 
-#ifndef _DERLFILEOPERATION_H_
-#define _DERLFILEOPERATION_H_
+#ifndef _DERLTASKFILEWRITEBLOCK_H_
+#define _DERLTASKFILEWRITEBLOCK_H_
 
 #include <memory>
-#include <string>
 #include <vector>
-#include <unordered_map>
-
-#include "derlFileReader.h"
-#include "derlFileWriter.h"
+#include <string>
 
 
 /**
- * \brief File operation.
+ * \brief File write task block.
  */
-class derlFileOperation{
+class derlTaskFileWriteBlock{
 public:
 	/** \brief Reference type. */
-	typedef std::shared_ptr<derlFileOperation> Ref;
+	typedef std::shared_ptr<derlTaskFileWriteBlock> Ref;
 	
 	/** \brief Reference list. */
 	typedef std::vector<Ref> List;
-	
-	/** \brief Reference map keyed by path. */
-	typedef std::unordered_map<std::string, Ref> Map;
 	
 	/** \brief Status. */
 	enum class Status{
@@ -57,52 +50,41 @@ public:
 	
 	
 private:
-	const std::string pPath;
 	Status pStatus;
-	uint64_t pFileSize;
-	derlFileReader::Ref pReader;
-	derlFileWriter::Ref pWriter;
+	uint64_t pOffset, pSize;
+	std::string pData;
 	
 	
 public:
 	/** \name Constructors and Destructors */
 	/*@{*/
-	/**
-	 * \brief Create file operation.
-	 */
-	derlFileOperation(const std::string &path);
+	/** \brief Create block. */
+	derlTaskFileWriteBlock(uint64_t offset, uint64_t size, const std::string &data);
 	
-	/** \brief Clean up file operation. */
-	~derlFileOperation() noexcept;
+	/** \brief Clean up block. */
+	~derlTaskFileWriteBlock() noexcept;
 	/*@}*/
 	
 	
 	
 	/** \name Management */
 	/*@{*/
-	/** \brief Path. */
-	inline const std::string &GetPath() const{ return pPath; }
-	
 	/** \brief Status. */
 	inline Status GetStatus() const{ return pStatus; }
 	void SetStatus(Status status);
 	
-	/** \brief File size. */
-	inline uint64_t GetFileSize() const{ return pFileSize; }
-	void SetFileSize(uint64_t fileSize);
+	/** \brief Offset. */
+	inline uint64_t GetOffset() const{ return pOffset; }
 	
-	/** \brief File reader or nullptr. */
-	inline const derlFileReader::Ref &GetReader() const{ return pReader; }
-	void SetReader(const derlFileReader::Ref &reader);
+	/** \brief Size. */
+	inline uint64_t GetSize() const{ return pSize; }
 	
-	/** \brief File writer or nullptr. */
-	inline const derlFileWriter::Ref &GetWriter() const{ return pWriter; }
-	void SetWriter(const derlFileWriter::Ref &writer);
+	/** \brief Data. */
+	inline const std::string &GetData() const{ return pData; }
+	
+	/** \brief Drop data after writing is finished to free memory. */
+	void DropData();
 	/*@}*/
-	
-	
-	
-private:
 };
 
 #endif

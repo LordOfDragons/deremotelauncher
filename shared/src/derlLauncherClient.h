@@ -29,7 +29,9 @@
 #include <vector>
 
 #include "derlFileLayout.h"
-#include "derlFileOperation.h"
+#include "task/derlTaskFileWrite.h"
+#include "task/derlTaskFileDelete.h"
+#include "task/derlTaskFileBlockHashes.h"
 
 #include <denetwork/denConnection.h>
 
@@ -57,7 +59,9 @@ private:
 	std::string pName;
 	
 	derlFileLayout::Ref pFileLayout;
-	derlFileOperation::Map pFileOpsDeleteFiles, pFileOpsWriteFiles;
+	derlTaskFileWrite::Map pTasksWriteFile;
+	derlTaskFileDelete::Map pTaskDeleteFiles;
+	derlTaskFileBlockHashes::Map pTasksFileBlockHashes;
 	
 	
 public:
@@ -90,13 +94,17 @@ public:
 	inline const derlFileLayout::Ref &GetFileLayout() const{ return pFileLayout; }
 	void SetFileLayout( const derlFileLayout::Ref &layout );
 	
-	/** \brief Delete files file operations. */
-	inline const derlFileOperation::Map &GetFileOpsDeleteFiles() const{ return pFileOpsDeleteFiles; }
-	inline derlFileOperation::Map &GetFileOpsDeleteFiles(){ return pFileOpsDeleteFiles; }
+	/** \brief Delete file tasks. */
+	inline const derlTaskFileDelete::Map &GetTasksDeleteFile() const{ return pTaskDeleteFiles; }
+	inline derlTaskFileDelete::Map &GetTasksDeleteFile(){ return pTaskDeleteFiles; }
 	
-	/** \brief Write files file operations. */
-	inline const derlFileOperation::Map &GetFileOpsWriteFiles() const{ return pFileOpsWriteFiles; }
-	inline derlFileOperation::Map &GetFileOpsWriteFiles(){ return pFileOpsWriteFiles; }
+	/** \brief Write file tasks. */
+	inline const derlTaskFileWrite::Map &GetTasksWriteFile() const{ return pTasksWriteFile; }
+	inline derlTaskFileWrite::Map &GetTasksWriteFile(){ return pTasksWriteFile; }
+	
+	/** \brief File block hashes tasks. */
+	inline const derlTaskFileBlockHashes::Map &GetTasksFileBlockHashes() const{ return pTasksFileBlockHashes; }
+	inline derlTaskFileBlockHashes::Map &GetTasksFileBlockHashes(){ return pTasksFileBlockHashes; }
 	
 	
 	
@@ -117,6 +125,22 @@ public:
 	
 	/** \brief Disconnect from remote connection if connected. */
 	void Disconnect();
+	
+	
+	/**
+	 * \brief Update launcher client.
+	 * 
+	 * Call this on frame update or at regular intervals. This call does the following things:
+	 * - processes network events.
+	 * - add pending file operations for subclass to process.
+	 * - finish requests if pending file operations are finished.
+	 * 
+	 * The caller is responsible to properly protect this call against multi-threaded data
+	 * access while processing pending file operations.
+	 * 
+	 * \param[in] elapsed Elapsed time since last update call.
+	 */
+	void Update(float elapsed);
 	/*@}*/
 	
 	
@@ -131,6 +155,16 @@ public:
 	
 	/** \brief Connection closed either by calling Disconnect() or by server. */
 	virtual void OnConnectionClosed();
+	
+	/**
+	 * \brief Update file layout requested.
+	 * 
+	 * Subclass is required to start building new file layout object. Once finished assign
+	 * the file layout using SetFileLayout(). This will finish the request.
+	 * 
+	 * Can be called multiple times if file layout is not present yet.
+	 */
+	virtual void UpdateFileLayout() = 0;
 	/*@}*/
 	
 	

@@ -75,6 +75,12 @@ void derlLauncherClient::Disconnect(){
 }
 
 
+void derlLauncherClient::Update(float elapsed){
+	pConnection->Update(elapsed);
+	pConnection->FinishPendingOperations();
+}
+
+
 // Events
 ///////////
 

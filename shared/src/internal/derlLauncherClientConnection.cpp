@@ -22,6 +22,7 @@
  * SOFTWARE.
  */
 
+#include <algorithm>
 #include <sstream>
 
 #include "derlLauncherClientConnection.h"
@@ -31,6 +32,7 @@
 #include <denetwork/message/denMessage.h>
 #include <denetwork/message/denMessageReader.h>
 #include <denetwork/message/denMessageWriter.h>
+#include <denetwork/value/denValueInteger.h>
 
 
 #define DERL_MAX_UINT_SIZE 0xffffffff
@@ -43,7 +45,15 @@
 derlLauncherClientConnection::derlLauncherClientConnection(derlLauncherClient &client) :
 pClient(client),
 pConnectionAccepted(false),
-pEnabledFeatures(0){
+pEnabledFeatures(0),
+pStateRun(std::make_shared<denState>(false)),
+pValueRunStatus(std::make_shared<denValueInt>(denValueIntegerFormat::uint8)),
+pPendingRequestLayout(false)
+{
+	pStateRun->SetLogger(client.GetLogger());
+	
+	pValueRunStatus->SetValue((uint64_t)derlProtocol::RunStateStatus::stopped);
+	pStateRun->AddValue(pValueRunStatus);
 }
 
 derlLauncherClientConnection::~derlLauncherClientConnection(){
@@ -52,6 +62,25 @@ derlLauncherClientConnection::~derlLauncherClientConnection(){
 
 // Management
 ///////////////
+
+void derlLauncherClientConnection::SetRunStatus(RunStatus status){
+	switch(status){
+	case RunStatus::running:
+		pValueRunStatus->SetValue((uint64_t)derlProtocol::RunStateStatus::running);
+		break;
+		
+	case RunStatus::stopped:
+	default:
+		pValueRunStatus->SetValue((uint64_t)derlProtocol::RunStateStatus::running);
+	}
+}
+
+void derlLauncherClientConnection::SetLogger(const denLogger::Ref &logger){
+	denConnection::SetLogger(logger);
+	pStateRun->SetLogger(logger);
+}
+
+
 
 void derlLauncherClientConnection::ConnectionEstablished(){
 	const denMessage::Ref message(denMessage::Pool().Get());
@@ -150,33 +179,158 @@ denState::Ref derlLauncherClientConnection::CreateState(const denMessage::Ref &m
 	
 	switch(code){
 	case derlProtocol::LinkCodes::runState:
-		
-		return nullptr;
+		return pStateRun;
 		
 	default:
 		return nullptr; // ignore all other messages
 	}
 }
 
+void derlLauncherClientConnection::FinishPendingOperations(){
+	if(pPendingRequestLayout && pClient.GetFileLayout()){
+		pPendingRequestLayout = false;
+		pSendResponseFileLayout(*pClient.GetFileLayout());
+	}
+	
+	{
+	derlTaskFileBlockHashes::Map &tasks = pClient.GetTasksFileBlockHashes();
+	if(!tasks.empty()){
+		typedef std::vector<std::string> ListPath;
+		ListPath finished;
+		derlTaskFileBlockHashes::Map::const_iterator iter;
+		for(iter = tasks.cbegin(); iter != tasks.cend(); iter++){
+			if(iter->second->GetStatus() != derlTaskFileBlockHashes::Status::pending){
+				finished.push_back(iter->second->GetPath());
+				pFinishFileBlockHashes(*iter->second);
+			}
+		}
+		
+		ListPath::const_iterator iterRemove;
+		for(iterRemove = finished.cbegin(); iterRemove != finished.cend(); iterRemove++){
+			const derlTaskFileBlockHashes::Map::iterator iterErase = tasks.find(*iterRemove);
+			if(iterErase != tasks.end()){
+				tasks.erase(iterErase);
+			}
+		}
+	}
+	}
+	
+	{
+	derlTaskFileWrite::Map &tasks = pClient.GetTasksWriteFile();
+	if(!tasks.empty()){
+		derlTaskFileWrite::Map::const_iterator citer;
+		for(citer = tasks.cbegin(); citer != tasks.cend(); citer++){
+			if(citer->second->GetStatus() != derlTaskFileWrite::Status::pending){
+				continue;
+			}
+			
+			derlTaskFileWriteBlock::List &blocks = citer->second->GetBlocks();
+			derlTaskFileWriteBlock::List::const_iterator citerBlock;
+			derlTaskFileWriteBlock::List finished;
+			for(citerBlock = blocks.cbegin(); citerBlock != blocks.cend(); citerBlock++){
+				if((*citerBlock)->GetStatus() != derlTaskFileWriteBlock::Status::pending){
+					finished.push_back(*citerBlock);
+				}
+			}
+			
+			if(!finished.empty()){
+				derlTaskFileWriteBlock::List::const_iterator iter;
+				for(iter = finished.cbegin(); iter != finished.cend(); iter++){
+					derlTaskFileWriteBlock::List::iterator iterErase(
+						std::find(blocks.begin(), blocks.end(), *iter));
+					if(iterErase != blocks.end()){
+						blocks.erase(iterErase);
+					}
+				}
+				
+				pSendResponseWriteFiles(citer->first, finished);
+			}
+		}
+	}
+	}
+	
+	{
+	derlTaskFileDelete::Map &tasks = pClient.GetTasksDeleteFile();
+	if(!tasks.empty()){
+		derlTaskFileDelete::Map::const_iterator iter;
+		derlTaskFileDelete::List finished;
+		for(iter = tasks.cbegin(); iter != tasks.cend(); iter++){
+			if(iter->second->GetStatus() != derlTaskFileDelete::Status::pending){
+				finished.push_back(iter->second);
+			}
+		}
+		
+		if(!finished.empty()){
+			derlTaskFileDelete::List::const_iterator iterFinished;
+			for(iterFinished = finished.cbegin(); iterFinished != finished.cend(); iterFinished++){
+				derlTaskFileDelete::Map::iterator iterErase(tasks.find((*iterFinished)->GetPath()));
+				if(iterErase != tasks.end()){
+					tasks.erase(iterErase);
+				}
+			}
+			
+			pSendResponseDeleteFiles(finished);
+		}
+	}
+	}
+}
+
 // Private Functions
 //////////////////////
 
-void derlLauncherClientConnection::pProcessRequestLayout(){
-	if(!pClient.GetFileLayout()){
-		// TODO request update
+void derlLauncherClientConnection::pFinishFileBlockHashes(derlTaskFileBlockHashes &task){
+	if(task.GetStatus() != derlTaskFileBlockHashes::Status::success){
+		pSendResponseFileBlockHashes(task.GetPath());
 		return;
 	}
 	
-	pSendResponseFileLayout(*pClient.GetFileLayout());
+	if(!pClient.GetFileLayout()){
+		std::stringstream log;
+		log << "Block hashes for file requested but file layout is not present: "
+			<< task.GetPath() << ". Answering with empty file.";
+		GetLogger()->Log(denLogger::LogSeverity::warning, log.str());
+		pSendResponseFileBlockHashes(task.GetPath());
+		return;
+	}
+	
+	const derlFile::Ref file(pClient.GetFileLayout()->GetFileAt(task.GetPath()));
+	if(!file){
+		std::stringstream log;
+		log << "Block hashes for non-existing file requested: "
+			<< task.GetPath() << ". Answering with empty file.";
+		GetLogger()->Log(denLogger::LogSeverity::warning, log.str());
+		pSendResponseFileBlockHashes(task.GetPath());
+		return;
+	}
+	
+	pSendResponseFileBlockHashes(*file);
+}
+
+void derlLauncherClientConnection::pProcessRequestLayout(){
+	if(pClient.GetFileLayout()){
+		pPendingRequestLayout = false;
+		pSendResponseFileLayout(*pClient.GetFileLayout());
+		
+	}else{
+		pPendingRequestLayout = true;
+		pClient.UpdateFileLayout();
+		return;
+	}
 }
 
 void derlLauncherClientConnection::pProcessRequestFileBlockHashes(denMessageReader &reader){
+	const std::string path(reader.ReadString16());
+	const uint32_t blockSize = reader.ReadUInt();
+	
 	if(!pClient.GetFileLayout()){
-		// TODO request update
+		std::stringstream log;
+		log << "Block hashes for file requested but file layout is not present: "
+			<< path << ". Answering with empty file.";
+		GetLogger()->Log(denLogger::LogSeverity::warning, log.str());
+		pSendResponseFileBlockHashes(path);
 		return;
 	}
 	
-	const std::string path(reader.ReadString16());
 	const derlFile::Ref file(pClient.GetFileLayout()->GetFileAt(path));
 	if(!file){
 		std::stringstream log;
@@ -187,11 +341,12 @@ void derlLauncherClientConnection::pProcessRequestFileBlockHashes(denMessageRead
 		return;
 	}
 	
-	const uint32_t blockSize = reader.ReadUInt();
 	if(!file->GetHasBlocks() || file->GetBlockSize() != blockSize){
 		file->RemoveAllBlocks();
 		file->SetBlockSize(blockSize);
-		// TODO request blocks
+		
+		pClient.GetTasksFileBlockHashes()[path] =
+			std::make_shared<derlTaskFileBlockHashes>(path, blockSize);
 		return;
 	}
 	
@@ -199,71 +354,78 @@ void derlLauncherClientConnection::pProcessRequestFileBlockHashes(denMessageRead
 }
 
 void derlLauncherClientConnection::pProcessRequestDeleteFiles(denMessageReader &reader){
-	derlFileOperation::Map &deleteFiles = pClient.GetFileOpsDeleteFiles();
+	derlTaskFileDelete::Map &tasks = pClient.GetTasksDeleteFile();
 	const int count = reader.ReadUInt();
 	int i;
 	
 	for(i=0; i<count; i++){
 		const std::string path(reader.ReadString16());
-		deleteFiles[path] = std::make_shared<derlFileOperation>(path);
+		tasks[path] = std::make_shared<derlTaskFileDelete>(path);
 	}
 }
 
 void derlLauncherClientConnection::pProcessRequestWriteFiles(denMessageReader &reader){
-	derlFileOperation::Map &writeFiles = pClient.GetFileOpsWriteFiles();
+	derlTaskFileWrite::Map &tasks = pClient.GetTasksWriteFile();
 	const int count = reader.ReadUInt();
 	int i;
 	
 	for(i=0; i<count; i++){
-		const derlFileOperation::Ref fileop(
-			std::make_shared<derlFileOperation>(reader.ReadString16()));
-		fileop->SetFileSize(reader.ReadULong());
-		writeFiles[fileop->GetPath()] = fileop;
+		const std::string path(reader.ReadString16());
+		const derlTaskFileWrite::Ref task(std::make_shared<derlTaskFileWrite>(path));
+		task->SetFileSize(reader.ReadULong());
+		tasks[path] = task;
 	}
 }
 
 void derlLauncherClientConnection::pProcessSendFileData(denMessageReader &reader){
 	const std::string path(reader.ReadString16());
 	
-	const derlFileOperation::Map::const_iterator iter(pClient.GetFileOpsWriteFiles().find(path));
-	if(iter == pClient.GetFileOpsWriteFiles().cend()){
+	const derlTaskFileWrite::Map::const_iterator iter(pClient.GetTasksWriteFile().find(path));
+	if(iter == pClient.GetTasksWriteFile().cend()){
 		return; // ignore
 	}
 	
-	const derlFileOperation::Ref fileop(iter->second);
 	const uint64_t offset = reader.ReadULong();
 	const uint64_t size = (uint64_t)(reader.GetLength() - reader.GetPosition());
 	
-	(void)offset; (void)size;
-	// reader.Read(buffer, size)
+	std::string data;
+	data.assign(size, 0);
+	reader.Read((void*)data.c_str(), size);
+	
+	iter->second->GetBlocks().push_back(std::make_shared<derlTaskFileWriteBlock>(offset, size, data));
 }
 
 void derlLauncherClientConnection::pProcessRequestFinishWriteFiles(denMessageReader &reader){
-	derlFileOperation::Map &writeFiles = pClient.GetFileOpsWriteFiles();
-	derlFileOperation::List finishedFiles;
+	derlTaskFileWrite::Map &tasks = pClient.GetTasksWriteFile();
+	derlTaskFileWrite::List finished;
 	const int count = reader.ReadUInt();
 	int i;
 	
 	for(i=0; i<count; i++){
 		const std::string path(reader.ReadString16());
-		const derlFileOperation::Map::iterator iter(writeFiles.find(path));
+		const derlTaskFileWrite::Map::iterator iter(tasks.find(path));
 		
-		if(iter != writeFiles.end()){
-			const derlFileOperation::Ref fileop(iter->second);
-			if(fileop->GetStatus() == derlFileOperation::Status::pending){
-				fileop->SetStatus(derlFileOperation::Status::success);
+		if(iter != tasks.end()){
+			const derlTaskFileWrite::Ref &task = iter->second;
+			if(task->GetStatus() == derlTaskFileWrite::Status::pending){
+				if(task->GetBlocks().empty()){
+					task->SetStatus(derlTaskFileWrite::Status::success);
+					
+				}else{
+					task->SetStatus(derlTaskFileWrite::Status::failure);
+				}
 			}
-			finishedFiles.push_back(fileop);
-			writeFiles.erase(iter);
+			finished.push_back(task);
+			tasks.erase(iter);
 			
 		}else{
-			const derlFileOperation::Ref fileop(std::make_shared<derlFileOperation>(path));
-			fileop->SetStatus(derlFileOperation::Status::failure);
-			finishedFiles.push_back(fileop);
+			const derlTaskFileWrite::Ref task(std::make_shared<derlTaskFileWrite>(path));
+			task->SetStatus(derlTaskFileWrite::Status::failure);
+			finished.push_back(task);
 		}
 	}
 	
-	pSendResponseFinishWriteFiles(finishedFiles);
+	pSendResponseFinishWriteFiles(finished);
 }
 
 void derlLauncherClientConnection::pProcessStartApplication(denMessageReader &reader){
@@ -300,7 +462,8 @@ void derlLauncherClientConnection::pSendResponseFileLayout(const derlFileLayout 
 	SendReliableMessage(message);
 }
 
-void derlLauncherClientConnection::pSendResponseFileBlockHashes(const std::string &path, uint32_t blockSize){
+void derlLauncherClientConnection::pSendResponseFileBlockHashes(
+const std::string &path, uint32_t blockSize){
 	const denMessage::Ref message(denMessage::Pool().Get());
 	{
 		denMessageWriter writer(message->Item());
@@ -334,8 +497,8 @@ void derlLauncherClientConnection::pSendResponseFileBlockHashes(const derlFile &
 	SendReliableMessage(message);
 }
 
-void derlLauncherClientConnection::pSendResponseDeleteFiles(const derlFileOperation::Map &files){
-	if(files.size() > DERL_MAX_UINT_SIZE){
+void derlLauncherClientConnection::pSendResponseDeleteFiles(const derlTaskFileDelete::List &tasks){
+	if(tasks.size() > DERL_MAX_UINT_SIZE){
 		throw std::runtime_error("Too many files");
 	}
 	
@@ -343,19 +506,19 @@ void derlLauncherClientConnection::pSendResponseDeleteFiles(const derlFileOperat
 	{
 		denMessageWriter writer(message->Item());
 		writer.WriteByte((uint8_t)derlProtocol::MessageCodes::responseDeleteFiles);
-		writer.WriteUInt((uint32_t)files.size());
+		writer.WriteUInt((uint32_t)tasks.size());
 		
-		derlFileOperation::Map::const_iterator iter;
-		for(iter=files.cbegin(); iter!=files.cend(); iter++){
-			const derlFileOperation &fileop = *iter->second.get();
-			writer.WriteString16(fileop.GetPath());
+		derlTaskFileDelete::List::const_iterator iter;
+		for(iter=tasks.cbegin(); iter!=tasks.cend(); iter++){
+			const derlTaskFileDelete &task = **iter;
+			writer.WriteString16(task.GetPath());
 			
-			switch(fileop.GetStatus()){
-			case derlFileOperation::Status::success:
+			switch(task.GetStatus()){
+			case derlTaskFileDelete::Status::success:
 				writer.WriteByte((uint8_t)derlProtocol::DeleteFileResult::success);
 				break;
 				
-			case derlFileOperation::Status::failure:
+			case derlTaskFileDelete::Status::failure:
 			default:
 				writer.WriteByte((uint8_t)derlProtocol::DeleteFileResult::failure);
 			}
@@ -364,29 +527,30 @@ void derlLauncherClientConnection::pSendResponseDeleteFiles(const derlFileOperat
 	SendReliableMessage(message);
 }
 
-void derlLauncherClientConnection::pSendResponseWriteFiles(const derlFileOperation::Map &files){
-	if(files.size() > DERL_MAX_UINT_SIZE){
-		throw std::runtime_error("Too many files");
+void derlLauncherClientConnection::pSendResponseWriteFiles(const std::string &path,
+const derlTaskFileWriteBlock::List &blocks){
+	if(blocks.size() > DERL_MAX_UINT_SIZE){
+		throw std::runtime_error("Too many blocks");
 	}
 	
 	const denMessage::Ref message(denMessage::Pool().Get());
 	{
 		denMessageWriter writer(message->Item());
 		writer.WriteByte((uint8_t)derlProtocol::MessageCodes::responseWriteFiles);
-		writer.WriteUInt((uint32_t)files.size());
+		writer.WriteUInt((uint32_t)blocks.size());
 		
-		derlFileOperation::Map::const_iterator iter;
-		for(iter=files.cbegin(); iter!=files.cend(); iter++){
-			const derlFileOperation &fileop = *iter->second.get();
-			writer.WriteString16(fileop.GetPath());
+		derlTaskFileWriteBlock::List::const_iterator iter;
+		for(iter = blocks.cbegin(); iter != blocks.cend(); iter++){
+			const derlTaskFileWriteBlock &block = **iter;
+			writer.WriteString16(path);
 			
-			switch(fileop.GetStatus()){
-			case derlFileOperation::Status::success:
-			case derlFileOperation::Status::pending:
+			switch(block.GetStatus()){
+			case derlTaskFileWriteBlock::Status::success:
 				writer.WriteByte((uint8_t)derlProtocol::WriteFileResult::success);
 				break;
 				
-			case derlFileOperation::Status::failure:
+			case derlTaskFileWriteBlock::Status::pending:
+			case derlTaskFileWriteBlock::Status::failure:
 			default:
 				writer.WriteByte((uint8_t)derlProtocol::WriteFileResult::failure);
 			}
@@ -395,8 +559,8 @@ void derlLauncherClientConnection::pSendResponseWriteFiles(const derlFileOperati
 	SendReliableMessage(message);
 }
 
-void derlLauncherClientConnection::pSendResponseFinishWriteFiles(const derlFileOperation::List &files){
-	if(files.size() > DERL_MAX_UINT_SIZE){
+void derlLauncherClientConnection::pSendResponseFinishWriteFiles(const derlTaskFileWrite::List &tasks){
+	if(tasks.size() > DERL_MAX_UINT_SIZE){
 		throw std::runtime_error("Too many files");
 	}
 	
@@ -404,20 +568,20 @@ void derlLauncherClientConnection::pSendResponseFinishWriteFiles(const derlFileO
 	{
 		denMessageWriter writer(message->Item());
 		writer.WriteByte((uint8_t)derlProtocol::MessageCodes::responseFinishWriteFiles);
-		writer.WriteUInt((uint32_t)files.size());
+		writer.WriteUInt((uint32_t)tasks.size());
 		
-		derlFileOperation::List::const_iterator iter;
-		for(iter=files.cbegin(); iter!=files.cend(); iter++){
-			const derlFileOperation &fileop = **iter;
-			writer.WriteString16(fileop.GetPath());
+		derlTaskFileWrite::List::const_iterator iter;
+		for(iter=tasks.cbegin(); iter!=tasks.cend(); iter++){
+			const derlTaskFileWrite &task = **iter;
+			writer.WriteString16(task.GetPath());
 			
-			switch(fileop.GetStatus()){
-			case derlFileOperation::Status::success:
+			switch(task.GetStatus()){
+			case derlTaskFileWrite::Status::success:
 				writer.WriteByte((uint8_t)derlProtocol::FinishWriteFileResult::success);
 				break;
 				
-			case derlFileOperation::Status::pending:
-			case derlFileOperation::Status::failure:
+			case derlTaskFileWrite::Status::pending:
+			case derlTaskFileWrite::Status::failure:
 			default:
 				writer.WriteByte((uint8_t)derlProtocol::FinishWriteFileResult::failure);
 			}

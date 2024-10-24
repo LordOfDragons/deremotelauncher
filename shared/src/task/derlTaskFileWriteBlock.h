@@ -44,6 +44,7 @@ public:
 	/** \brief Status. */
 	enum class Status{
 		pending,
+		processing,
 		success,
 		failure
 	};

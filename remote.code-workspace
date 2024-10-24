@@ -60,7 +60,13 @@
 			"format": "cpp",
 			"iomanip": "cpp",
 			"span": "cpp",
-			"variant": "cpp"
+			"variant": "cpp",
+			"codecvt": "cpp",
+			"condition_variable": "cpp",
+			"mutex": "cpp",
+			"semaphore": "cpp",
+			"stop_token": "cpp",
+			"thread": "cpp"
 		}
 	}
 }

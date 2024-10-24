@@ -22,6 +22,8 @@
  * SOFTWARE.
  */
 
+#include <stdexcept>
+
 #include "derlLauncherClient.h"
 #include "internal/derlLauncherClientConnection.h"
 
@@ -35,6 +37,7 @@ pName("Client"){
 }
 
 derlLauncherClient::~derlLauncherClient(){
+	StopTaskProcessors();
 }
 
 
@@ -45,6 +48,13 @@ void derlLauncherClient::SetName(const std::string &name){
 	pName = name;
 }
 
+void derlLauncherClient::SetPathDataDir(const std::filesystem::path &path){
+	if(pConnection->GetConnectionState() != denConnection::ConnectionState::disconnected){
+		throw std::invalid_argument("is not disconnected");
+	}
+	
+	pPathDataDir = path;
+}
 
 void derlLauncherClient::SetFileLayout(const derlFileLayout::Ref &layout){
 	pFileLayout = layout;
@@ -66,14 +76,46 @@ void derlLauncherClient::SetLogger(const denLogger::Ref &logger){
 	pConnection->SetLogger(logger);
 }
 
+
+
+void derlLauncherClient::StartTaskProcessors(){
+	if(!pTaskProcessor){
+		pTaskProcessor = std::make_shared<derlTaskProcessor>(*this);
+	}
+	
+	if(!pThreadTaskProcessor){
+		auto 
+		pThreadTaskProcessor = std::make_unique<std::thread>([](derlTaskProcessor &processor){
+			processor.Run();
+		}, std::ref(*pTaskProcessor));
+	}
+}
+
+void derlLauncherClient::StopTaskProcessors(){
+	if(pTaskProcessor){
+		pTaskProcessor->Exit();
+	}
+	
+	if(pThreadTaskProcessor){
+		pThreadTaskProcessor->join();
+		pThreadTaskProcessor = nullptr;
+	}
+	pTaskProcessor = nullptr;
+}
+
+
+
 void derlLauncherClient::ConnectTo(const std::string &address){
+	if(pPathDataDir.empty()){
+		throw std::invalid_argument("data directory path is empty");
+	}
+	
 	pConnection->ConnectTo(address);
 }
 
 void derlLauncherClient::Disconnect(){
 	pConnection->Disconnect();
 }
-
 
 void derlLauncherClient::Update(float elapsed){
 	pConnection->Update(elapsed);

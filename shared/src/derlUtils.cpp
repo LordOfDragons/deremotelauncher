@@ -22,29 +22,17 @@
  * SOFTWARE.
  */
 
-#include "derlTaskFileWrite.h"
+#include "derlUtils.h"
+#include "hashing/sha256.h"
 
 
-// Class derlTaskFileWrite
-////////////////////////////
-
-derlTaskFileWrite::derlTaskFileWrite(const std::string &path) :
-pPath(path),
-pStatus(Status::pending),
-pFileSize(0L){
-}
-
-derlTaskFileWrite::~derlTaskFileWrite(){
-}
-
+// Class derlUtils
+////////////////////
 
 // Management
 ///////////////
 
-void derlTaskFileWrite::SetStatus(Status status){
-	pStatus = status;
-}
-
-void derlTaskFileWrite::SetFileSize(uint64_t fileSize){
-	pFileSize = fileSize;
+std::string derlUtils::Sha256(const std::string &data){
+	SHA256 sha256;
+	return sha256(data);
 }

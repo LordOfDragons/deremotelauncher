@@ -66,7 +66,7 @@ derlFileBlock::Ref derlFile::GetBlockAt(int index) const{
 }
 
 derlFileBlock::Ref derlFile::BlockMatching(uint64_t offset, uint64_t size) const{
-	ListBlocks::const_iterator iter;
+	derlFileBlock::List::const_iterator iter;
 	
 	for(iter=pBlocks.cbegin(); iter!=pBlocks.cend(); iter++){
 		const derlFileBlock::Ref &block = *iter;
@@ -83,7 +83,7 @@ void derlFile::AddBlock(const derlFileBlock::Ref &block){
 }
 
 void derlFile::RemoveBlock(const derlFileBlock::Ref &block){
-	ListBlocks::iterator iter(std::find(pBlocks.begin(), pBlocks.end(), block));
+	derlFileBlock::List::iterator iter(std::find(pBlocks.begin(), pBlocks.end(), block));
 	if(iter == pBlocks.end()){
 		throw std::runtime_error("block absent");
 	}
@@ -92,6 +92,10 @@ void derlFile::RemoveBlock(const derlFileBlock::Ref &block){
 
 void derlFile::RemoveAllBlocks(){
 	pBlocks.clear();
+}
+
+void derlFile::SetBlocks(const derlFileBlock::List &blocks){
+	pBlocks = blocks;
 }
 
 void derlFile::SetBlockSize(uint32_t size){

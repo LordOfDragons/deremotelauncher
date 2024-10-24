@@ -31,7 +31,6 @@
 #include <unordered_map>
 
 #include "derlTaskFileWriteBlock.h"
-#include "../derlFileWriter.h"
 
 
 /**
@@ -60,7 +59,6 @@ private:
 	const std::string pPath;
 	Status pStatus;
 	uint64_t pFileSize;
-	derlFileWriter::Ref pWriter;
 	derlTaskFileWriteBlock::List pBlocks;
 	
 	
@@ -88,10 +86,6 @@ public:
 	/** \brief File size. */
 	inline uint64_t GetFileSize() const{ return pFileSize; }
 	void SetFileSize(uint64_t fileSize);
-	
-	/** \brief File writer or nullptr. */
-	inline const derlFileWriter::Ref &GetWriter() const{ return pWriter; }
-	void SetWriter(const derlFileWriter::Ref &writer);
 	
 	/** \brief Blocks. */
 	inline const derlTaskFileWriteBlock::List &GetBlocks() const{ return pBlocks; }

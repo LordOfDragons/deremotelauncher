@@ -43,11 +43,11 @@ int derlFileLayout::GetFileCount() const{
 	return pFiles.size();
 }
 
-derlFileLayout::MapFiles::const_iterator derlFileLayout::GetFilesBegin() const{
+derlFile::Map::const_iterator derlFileLayout::GetFilesBegin() const{
 	return pFiles.cbegin();
 }
 
-derlFileLayout::MapFiles::const_iterator derlFileLayout::GetFilesEnd() const{
+derlFile::Map::const_iterator derlFileLayout::GetFilesEnd() const{
 	return pFiles.cend();
 }
 
@@ -60,7 +60,7 @@ void derlFileLayout::AddFile( const derlFile::Ref &file ){
 }
 
 void derlFileLayout::RemoveFile( const std::string &path ){
-	MapFiles::iterator iter( pFiles.find( path ) );
+	derlFile::Map::iterator iter( pFiles.find( path ) );
 	if( iter == pFiles.end() ){
 		throw std::runtime_error( "file absent" );
 	}

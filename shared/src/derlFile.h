@@ -29,6 +29,7 @@
 #include <vector>
 #include <string>
 #include <memory>
+#include <unordered_map>
 
 #include "derlFileBlock.h"
 
@@ -41,8 +42,11 @@ public:
 	/** \brief Reference type. */
 	typedef std::shared_ptr<derlFile> Ref;
 	
-	/** \brief Block list type. */
-	typedef std::vector<derlFileBlock::Ref> ListBlocks;
+	/** \brief List type. */
+	typedef std::vector<Ref> List;
+	
+	/** \brief Map type. */
+	typedef std::unordered_map<std::string,Ref> Map;
 	
 	
 private:
@@ -50,7 +54,7 @@ private:
 	uint64_t pSize;
 	std::string pHash;
 	
-	ListBlocks pBlocks;
+	derlFileBlock::List pBlocks;
 	bool pHasBlocks;
 	uint32_t pBlockSize;
 	
@@ -104,6 +108,9 @@ public:
 	
 	/** \brief Remove all blocks. */
 	void RemoveAllBlocks();
+	
+	/** \brief Set blocks. */
+	void SetBlocks(const derlFileBlock::List &blocks);
 	
 	/** Size of blocks in bytes. */
 	inline uint32_t GetBlockSize() const{ return pBlockSize; }

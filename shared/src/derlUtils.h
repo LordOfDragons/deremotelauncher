@@ -22,29 +22,25 @@
  * SOFTWARE.
  */
 
-#include "derlTaskFileWrite.h"
+#ifndef _DERLUTILS_H_
+#define _DERLUTILS_H_
+
+#include <string>
 
 
-// Class derlTaskFileWrite
-////////////////////////////
+/** \brief Utils. */
+class derlUtils{
+private:
+	derlUtils() = default;
+	
+	
+	
+public:
+	/** \name Management */
+	/*@{*/
+	/** \brief Calculate SHA-256 of data. */
+	static std::string Sha256(const std::string &data);
+	/*@}*/
+};
 
-derlTaskFileWrite::derlTaskFileWrite(const std::string &path) :
-pPath(path),
-pStatus(Status::pending),
-pFileSize(0L){
-}
-
-derlTaskFileWrite::~derlTaskFileWrite(){
-}
-
-
-// Management
-///////////////
-
-void derlTaskFileWrite::SetStatus(Status status){
-	pStatus = status;
-}
-
-void derlTaskFileWrite::SetFileSize(uint64_t fileSize){
-	pFileSize = fileSize;
-}
+#endif

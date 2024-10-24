@@ -28,6 +28,7 @@
 #include <stdint.h>
 #include <string>
 #include <memory>
+#include <vector>
 
 
 /**
@@ -37,6 +38,9 @@ class derlFileBlock{
 public:
 	/** \brief Reference type. */
 	typedef std::shared_ptr<derlFileBlock> Ref;
+	
+	/** \brief List type. */
+	typedef std::vector<Ref> List;
 	
 	
 private:

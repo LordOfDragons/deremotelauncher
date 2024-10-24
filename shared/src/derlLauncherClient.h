@@ -27,8 +27,12 @@
 
 #include <memory>
 #include <vector>
+#include <mutex>
+#include <thread>
+#include <filesystem>
 
 #include "derlFileLayout.h"
+#include "derlTaskProcessor.h"
 #include "task/derlTaskFileWrite.h"
 #include "task/derlTaskFileDelete.h"
 #include "task/derlTaskFileBlockHashes.h"
@@ -57,11 +61,16 @@ private:
 	std::unique_ptr<derlLauncherClientConnection> pConnection;
 	
 	std::string pName;
+	std::filesystem::path pPathDataDir;
 	
 	derlFileLayout::Ref pFileLayout;
 	derlTaskFileWrite::Map pTasksWriteFile;
 	derlTaskFileDelete::Map pTaskDeleteFiles;
 	derlTaskFileBlockHashes::Map pTasksFileBlockHashes;
+	std::mutex pMutex;
+	
+	derlTaskProcessor::Ref pTaskProcessor;
+	std::unique_ptr<std::thread> pThreadTaskProcessor;
 	
 	
 public:
@@ -90,6 +99,15 @@ public:
 	 */
 	void SetName( const std::string &name );
 	
+	/** \brief Path to data directory. */
+	inline const std::filesystem::path &GetPathDataDir() const{ return pPathDataDir; }
+	
+	/**
+	 * \brief Set path to data directory.
+	 * \throws std::invalid_argument Connected to server.
+	 */
+	void SetPathDataDir(const std::filesystem::path &path);
+	
 	/** \brief File layout or nullptr. */
 	inline const derlFileLayout::Ref &GetFileLayout() const{ return pFileLayout; }
 	void SetFileLayout( const derlFileLayout::Ref &layout );
@@ -106,6 +124,9 @@ public:
 	inline const derlTaskFileBlockHashes::Map &GetTasksFileBlockHashes() const{ return pTasksFileBlockHashes; }
 	inline derlTaskFileBlockHashes::Map &GetTasksFileBlockHashes(){ return pTasksFileBlockHashes; }
 	
+	/** \brief Mutex. */
+	inline std::mutex &GetMutex(){ return pMutex; }
+	
 	
 	
 	/** \brief Connection state. */
@@ -120,7 +141,39 @@ public:
 	/** \brief Set logger or nullptr to clear. */
 	void SetLogger(const denLogger::Ref &logger);
 	
-	/** \brief Connect to connection object on host at address. */
+	
+	
+	/**
+	 * \brief Start task processors.
+	 * 
+	 * Default implementation starts running a single derlTaskProcessor instance in a thread.
+	 * Overwrite method to start any number of task processors instead.
+	 * 
+	 * This method has to be safe being called multiple times.
+	 * 
+	 * \note User has to call this method after creating the launcher client before connecting.
+	 */
+	virtual void StartTaskProcessors();
+	
+	/**
+	 * \brief Stop task processors.
+	 * 
+	 * Default implementation stops running the single derlTaskProcessor instance if running.
+	 * Overwrite method to stop all task processors started by StartTaskProcessors().
+	 * 
+	 * This method has to be safe being called multiple times.
+	 * 
+	 * \note Method is called by class destructor. User can also call it earlier.
+	 */
+	virtual void StopTaskProcessors();
+	
+	
+	
+	/**
+	 * \brief Connect to connection object on host at address.
+	 * \throws std::invalid_argument Data directory path is empty.
+	 * \warning StartTaskProcessors() has to be called once before connecting.
+	 */
 	void ConnectTo(const std::string &address);
 	
 	/** \brief Disconnect from remote connection if connected. */
@@ -130,13 +183,12 @@ public:
 	/**
 	 * \brief Update launcher client.
 	 * 
-	 * Call this on frame update or at regular intervals. This call does the following things:
+	 * Call this on frame update or at regular intervals. This call does the following:
 	 * - processes network events.
-	 * - add pending file operations for subclass to process.
+	 * - add pending file operations to be processed by a task processor.
 	 * - finish requests if pending file operations are finished.
 	 * 
-	 * The caller is responsible to properly protect this call against multi-threaded data
-	 * access while processing pending file operations.
+	 * The caller is responsible to operate task processors himself if not using the default one.
 	 * 
 	 * \param[in] elapsed Elapsed time since last update call.
 	 */

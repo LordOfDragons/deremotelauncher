@@ -25,7 +25,6 @@
 #ifndef _DERLFILELAYOUT_H_
 #define _DERLFILELAYOUT_H_
 
-#include <unordered_map>
 #include <memory>
 
 #include "derlFile.h"
@@ -39,12 +38,9 @@ public:
 	/** \brief Reference type. */
 	typedef std::shared_ptr<derlFileLayout> Ref;
 	
-	/** \brief File list map. */
-	typedef std::unordered_map<std::string, derlFile::Ref> MapFiles;
-	
 	
 private:
-	MapFiles pFiles;
+	derlFile::Map pFiles;
 	
 	
 public:
@@ -67,8 +63,8 @@ public:
 	int GetFileCount() const;
 	
 	/** \brief File iterators. */
-	MapFiles::const_iterator GetFilesBegin() const;
-	MapFiles::const_iterator GetFilesEnd() const;
+	derlFile::Map::const_iterator GetFilesBegin() const;
+	derlFile::Map::const_iterator GetFilesEnd() const;
 	
 	/** \brief File with path or nullptr. */
 	derlFile::Ref GetFileAt(const std::string &path) const;

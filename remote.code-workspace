@@ -6,6 +6,12 @@
 	],
 	"settings": {
 		"files.associations": {
+			"*.json.liquid": "json",
+			"*.yaml.liquid": "yaml",
+			"*.md.liquid": "markdown",
+			"*.js.liquid": "liquid-javascript",
+			"*.css.liquid": "liquid-css",
+			"*.scss.liquid": "liquid-scss",
 			"array": "cpp",
 			"atomic": "cpp",
 			"bit": "cpp",
@@ -66,7 +72,28 @@
 			"mutex": "cpp",
 			"semaphore": "cpp",
 			"stop_token": "cpp",
-			"thread": "cpp"
+			"thread": "cpp",
+			"csignal": "cpp",
+			"cstring": "cpp",
+			"any": "cpp",
+			"hash_map": "cpp",
+			"strstream": "cpp",
+			"bitset": "cpp",
+			"cfenv": "cpp",
+			"cinttypes": "cpp",
+			"complex": "cpp",
+			"coroutine": "cpp",
+			"forward_list": "cpp",
+			"map": "cpp",
+			"set": "cpp",
+			"unordered_set": "cpp",
+			"source_location": "cpp",
+			"future": "cpp",
+			"iostream": "cpp",
+			"shared_mutex": "cpp",
+			"stdfloat": "cpp",
+			"typeindex": "cpp",
+			"valarray": "cpp"
 		}
 	}
 }

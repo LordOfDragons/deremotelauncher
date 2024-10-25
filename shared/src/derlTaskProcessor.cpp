@@ -218,6 +218,7 @@ void derlTaskProcessor::ProcessFileBlockHashes(derlTaskFileBlockHashes &task){
 		}
 		
 		if(file){
+			file->SetBlockSize(task.GetBlockSize());
 			file->SetBlocks(blocks);
 			
 		}else{
@@ -372,7 +373,7 @@ void derlTaskProcessor::CalcFileHash(derlFile &file){
 			for(i=0L; i<blockCount; i++){
 				const uint64_t blockOffset = pFileHashReadSize * i;
 				const uint64_t blockSize = std::min(pFileHashReadSize, fileSize - blockOffset);
-				blockData.assign(0, blockSize);
+				blockData.assign(blockSize, 0);
 				ReadFile((void*)blockData.c_str(), blockOffset, blockSize);
 				hash.add(blockData.c_str(), blockSize);
 			}
@@ -410,7 +411,7 @@ const std::string &path, uint64_t blockSize){
 				const uint64_t nextSize = std::min(blockSize, fileSize - nextOffset);
 				
 				std::string blockData;
-				blockData.assign(0, nextSize);
+				blockData.assign(nextSize, 0);
 				ReadFile((void*)blockData.c_str(), nextOffset, nextSize);
 				
 				const derlFileBlock::Ref block(std::make_shared<derlFileBlock>(nextOffset, nextSize));

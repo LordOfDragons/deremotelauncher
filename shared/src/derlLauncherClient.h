@@ -173,6 +173,13 @@ public:
 	 */
 	virtual void StopTaskProcessors();
 	
+	/**
+	 * \brief Task processor or nullptr.
+	 * 
+	 * Valid if StartTaskProcessors() has been called and subclass did not overwrite it.
+	 */
+	inline const derlTaskProcessor::Ref &GetTaskProcessor() const{ return pTaskProcessor; }
+	
 	
 	
 	/**

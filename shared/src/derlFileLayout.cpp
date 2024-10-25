@@ -51,26 +51,31 @@ derlFile::Map::const_iterator derlFileLayout::GetFilesEnd() const{
 	return pFiles.cend();
 }
 
-derlFile::Ref derlFileLayout::GetFileAt( const std::string &path ) const{
-	return pFiles.at( path );
+derlFile::Ref derlFileLayout::GetFileAt(const std::string &path) const{
+	return pFiles.at(path);
 }
 
-void derlFileLayout::AddFile( const derlFile::Ref &file ){
-	pFiles.at( file->GetPath() ) = file;
-}
-
-void derlFileLayout::RemoveFile( const std::string &path ){
-	derlFile::Map::iterator iter( pFiles.find( path ) );
-	if( iter == pFiles.end() ){
-		throw std::runtime_error( "file absent" );
+derlFileLayout::ListPath derlFileLayout::GetAllPath() const{
+	derlFile::Map::const_iterator iter;
+	ListPath list;
+	for(iter = pFiles.cbegin(); iter != pFiles.cend(); iter++){
+		list.push_back(iter->first);
 	}
-	pFiles.erase( iter );
+	return list;
+}
+
+void derlFileLayout::AddFile(const derlFile::Ref &file){
+	pFiles[file->GetPath()] = file;
+}
+
+void derlFileLayout::RemoveFile(const std::string &path){
+	derlFile::Map::iterator iter(pFiles.find(path));
+	if(iter == pFiles.end()){
+		throw std::runtime_error("file absent");
+	}
+	pFiles.erase(iter);
 }
 
 void derlFileLayout::RemoveAllFiles(){
 	pFiles.clear();
 }
-
-
-// Private Functions
-//////////////////////

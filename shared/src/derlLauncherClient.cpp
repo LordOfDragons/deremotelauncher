@@ -92,7 +92,6 @@ void derlLauncherClient::StartTaskProcessors(){
 	}
 	
 	if(!pThreadTaskProcessor){
-		auto 
 		pThreadTaskProcessor = std::make_unique<std::thread>([](derlTaskProcessor &processor){
 			processor.Run();
 		}, std::ref(*pTaskProcessor));

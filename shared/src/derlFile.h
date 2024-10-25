@@ -112,6 +112,10 @@ public:
 	/** \brief Set blocks. */
 	void SetBlocks(const derlFileBlock::List &blocks);
 	
+	/** \brief Block iterators. */
+	derlFileBlock::List::const_iterator GetBlocksBegin() const;
+	derlFileBlock::List::const_iterator GetBlocksEnd() const;
+	
 	/** Size of blocks in bytes. */
 	inline uint32_t GetBlockSize() const{ return pBlockSize; }
 	

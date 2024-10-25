@@ -38,6 +38,9 @@ public:
 	/** \brief Reference type. */
 	typedef std::shared_ptr<derlFileLayout> Ref;
 	
+	/** \brief Path list. */
+	typedef std::vector<std::string> ListPath;
+	
 	
 private:
 	derlFile::Map pFiles;
@@ -65,6 +68,9 @@ public:
 	/** \brief File iterators. */
 	derlFile::Map::const_iterator GetFilesBegin() const;
 	derlFile::Map::const_iterator GetFilesEnd() const;
+	
+	/** \brief All path as list. */
+	ListPath GetAllPath() const;
 	
 	/** \brief File with path or nullptr. */
 	derlFile::Ref GetFileAt(const std::string &path) const;

@@ -98,6 +98,14 @@ void derlFile::SetBlocks(const derlFileBlock::List &blocks){
 	pBlocks = blocks;
 }
 
+derlFileBlock::List::const_iterator derlFile::GetBlocksBegin() const{
+	return pBlocks.cbegin();
+}
+
+derlFileBlock::List::const_iterator derlFile::GetBlocksEnd() const{
+	return pBlocks.cend();
+}
+
 void derlFile::SetBlockSize(uint32_t size){
 	pBlockSize = size;
 }

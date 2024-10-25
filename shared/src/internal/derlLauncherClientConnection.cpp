@@ -36,7 +36,7 @@
 
 
 #define DERL_MAX_UINT_SIZE 0xffffffff
-#define DERL_MAX_UINT ((int)DERL_MAX_UINT_SIZE)
+#define DERL_MAX_INT ((int)0x7fffffff)
 
 
 // Class derlLauncherClientConnection
@@ -50,8 +50,6 @@ pStateRun(std::make_shared<denState>(false)),
 pValueRunStatus(std::make_shared<denValueInt>(denValueIntegerFormat::uint8)),
 pPendingRequestLayout(false)
 {
-	pStateRun->SetLogger(client.GetLogger());
-	
 	pValueRunStatus->SetValue((uint64_t)derlProtocol::RunStateStatus::stopped);
 	pStateRun->AddValue(pValueRunStatus);
 }
@@ -219,7 +217,9 @@ void derlLauncherClientConnection::FinishPendingOperations(){
 	
 	if(pPendingRequestLayout && pClient.GetFileLayout()){
 		pPendingRequestLayout = false;
-		pSendResponseFileLayout(*pClient.GetFileLayout());
+		if(GetConnected()){
+			pSendResponseFileLayout(*pClient.GetFileLayout());
+		}
 	}
 	
 	{
@@ -233,7 +233,9 @@ void derlLauncherClientConnection::FinishPendingOperations(){
 			case derlTaskFileBlockHashes::Status::success:
 			case derlTaskFileBlockHashes::Status::failure:
 				finished.push_back(iter->second->GetPath());
-				pFinishFileBlockHashes(*iter->second);
+				if(GetConnected()){
+					pFinishFileBlockHashes(*iter->second);
+				}
 				break;
 				
 			default:
@@ -285,7 +287,9 @@ void derlLauncherClientConnection::FinishPendingOperations(){
 					}
 				}
 				
-				pSendResponseWriteFiles(citer->first, finished);
+				if(GetConnected()){
+					pSendResponseWriteFiles(citer->first, finished);
+				}
 			}
 		}
 	}
@@ -317,7 +321,9 @@ void derlLauncherClientConnection::FinishPendingOperations(){
 				}
 			}
 			
-			pSendResponseDeleteFiles(finished);
+			if(GetConnected()){
+				pSendResponseDeleteFiles(finished);
+			}
 		}
 	}
 	}
@@ -495,7 +501,7 @@ void derlLauncherClientConnection::pProcessStopApplication(denMessageReader &rea
 }
 
 void derlLauncherClientConnection::pSendResponseFileLayout(const derlFileLayout &layout){
-	if(layout.GetFileCount() > DERL_MAX_UINT){
+	if(layout.GetFileCount() > DERL_MAX_INT){
 		throw std::runtime_error("Too many files in layout");
 	}
 	
@@ -531,7 +537,7 @@ const std::string &path, uint32_t blockSize){
 
 void derlLauncherClientConnection::pSendResponseFileBlockHashes(const derlFile &file){
 	const int count = file.GetBlockCount();
-	if(count > DERL_MAX_UINT){
+	if(count > DERL_MAX_INT){
 		throw std::runtime_error("Too many blocks in file");
 	}
 	

@@ -22,64 +22,27 @@
  * SOFTWARE.
  */
 
-#ifndef _DERLTASKFILEDELETE_H_
-#define _DERLTASKFILEDELETE_H_
-
-#include <memory>
-#include <string>
-#include <vector>
-#include <unordered_map>
+#include "derlTaskFileLayout.h"
 
 
-/**
- * \brief File delete task.
- */
-class derlTaskFileDelete{
-public:
-	/** \brief Reference type. */
-	typedef std::shared_ptr<derlTaskFileDelete> Ref;
-	
-	/** \brief Reference list. */
-	typedef std::vector<Ref> List;
-	
-	/** \brief Reference map keyed by path. */
-	typedef std::unordered_map<std::string, Ref> Map;
-	
-	/** \brief Status. */
-	enum class Status{
-		pending,
-		processing,
-		success,
-		failure
-	};
-	
-	
-private:
-	const std::string pPath;
-	Status pStatus;
-	
-	
-public:
-	/** \name Constructors and Destructors */
-	/*@{*/
-	/** \brief Create task. */
-	derlTaskFileDelete(const std::string &path);
-	
-	/** \brief Clean up task. */
-	~derlTaskFileDelete() noexcept;
-	/*@}*/
-	
-	
-	
-	/** \name Management */
-	/*@{*/
-	/** \brief Path. */
-	inline const std::string &GetPath() const{ return pPath; }
-	
-	/** \brief Status. */
-	inline Status GetStatus() const{ return pStatus; }
-	void SetStatus(Status status);
-	/*@}*/
-};
+// Class derlTaskFileLayout
+/////////////////////////////
 
-#endif
+derlTaskFileLayout::derlTaskFileLayout() :
+pStatus(Status::pending){
+}
+
+derlTaskFileLayout::~derlTaskFileLayout(){
+}
+
+
+// Management
+///////////////
+
+void derlTaskFileLayout::SetStatus(Status status){
+	pStatus = status;
+}
+
+void derlTaskFileLayout::SetLayout(const derlFileLayout::Ref &layout){
+	pLayout = layout;
+}

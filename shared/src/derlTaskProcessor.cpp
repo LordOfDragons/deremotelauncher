@@ -71,6 +71,7 @@ void derlTaskProcessor::Run(){
 bool derlTaskProcessor::RunTask(){
 	derlTaskFileBlockHashes::Ref taskFileBlockHashes;
 	derlTaskFileWriteBlock::Ref taskWriteFileBlock;
+	derlTaskFileLayout::Ref taskFileLayout;
 	derlTaskFileDelete::Ref taskDeleteFile;
 	derlTaskFileWrite::Ref taskWriteFile;
 	
@@ -78,18 +79,18 @@ bool derlTaskProcessor::RunTask(){
 	std::lock_guard guard(pClient.GetMutex());
 	pBaseDir = pClient.GetPathDataDir();
 	
-	// TODO check request file layout update
-	
-	if(pClient.GetFileLayout()){
-		FindNextTaskFileBlockHashes(taskFileBlockHashes)
-		|| FindNextTaskDelete(taskDeleteFile)
-		|| FindNextTaskWriteFileBlock(taskWriteFile, taskWriteFileBlock);
-	}
+	FindNextTaskFileLayout(taskFileLayout)
+	|| !pClient.GetFileLayout()
+	|| FindNextTaskFileBlockHashes(taskFileBlockHashes)
+	|| FindNextTaskDelete(taskDeleteFile)
+	|| FindNextTaskWriteFileBlock(taskWriteFile, taskWriteFileBlock);
 	}
 	
-	// CalcFileLayout()
-	
-	if(taskFileBlockHashes){
+	if(taskFileLayout){
+		ProcessFileLayout(*taskFileLayout);
+		return true;
+		
+	}else if(taskFileBlockHashes){
 		ProcessFileBlockHashes(*taskFileBlockHashes);
 		return true;
 		
@@ -110,6 +111,15 @@ bool derlTaskProcessor::RunTask(){
 
 // Protected Functions
 ////////////////////////
+
+bool derlTaskProcessor::FindNextTaskFileLayout(derlTaskFileLayout::Ref &task) const{
+	const derlTaskFileLayout::Ref checkTask(pClient.GetTaskFileLayout());
+	if(checkTask && checkTask->GetStatus() == derlTaskFileLayout::Status::pending){
+		task = checkTask;
+		return true;
+	}
+	return false;
+}
 
 bool derlTaskProcessor::FindNextTaskFileBlockHashes(derlTaskFileBlockHashes::Ref &task) const{
 	const derlTaskFileBlockHashes::Map &tasks = pClient.GetTasksFileBlockHashes();
@@ -172,6 +182,12 @@ derlTaskFileWrite::Ref &task, derlTaskFileWriteBlock::Ref &block) const{
 
 
 void derlTaskProcessor::ProcessFileBlockHashes(derlTaskFileBlockHashes &task){
+	if(pEnableDebugLog){
+		std::stringstream ss;
+		ss << "Calculate block hashes size " << task.GetBlockSize() << " for " << task.GetPath();
+		LogDebug("ProcessFileBlockHashes", ss.str());
+	}
+	
 	derlTaskFileBlockHashes::Status status;
 	derlFileBlock::List blocks;
 	
@@ -180,11 +196,15 @@ void derlTaskProcessor::ProcessFileBlockHashes(derlTaskFileBlockHashes &task){
 		status = derlTaskFileBlockHashes::Status::success;
 		
 	}catch(const std::exception &e){
-		LogException("ProcessFileBlockHashes", e, "Failed");
+		std::stringstream ss;
+		ss << "Failed size " << task.GetBlockSize() << " for " << task.GetPath();
+		LogException("ProcessFileBlockHashes", e, ss.str());
 		status = derlTaskFileBlockHashes::Status::failure;
 		
 	}catch(...){
-		Log(denLogger::LogSeverity::error, "ProcessFileBlockHashes", "Failed");
+		std::stringstream ss;
+		ss << "Failed size " << task.GetBlockSize() << " for " << task.GetPath();
+		Log(denLogger::LogSeverity::error, "ProcessFileBlockHashes", ss.str());
 		status = derlTaskFileBlockHashes::Status::failure;
 	}
 	
@@ -210,7 +230,42 @@ void derlTaskProcessor::ProcessFileBlockHashes(derlTaskFileBlockHashes &task){
 	task.SetStatus(status);
 }
 
+void derlTaskProcessor::ProcessFileLayout(derlTaskFileLayout &task){
+	if(pEnableDebugLog){
+		LogDebug("ProcessFileLayout", "Build file layout");
+	}
+	
+	derlTaskFileLayout::Status status;
+	derlFileLayout::Ref layout;
+	
+	try{
+		layout = std::make_shared<derlFileLayout>();
+		CalcFileLayout(*layout, "");
+		status = derlTaskFileLayout::Status::success;
+		
+	}catch(const std::exception &e){
+		LogException("ProcessFileLayout", e, "Failed");
+		status = derlTaskFileLayout::Status::failure;
+		
+	}catch(...){
+		Log(denLogger::LogSeverity::error, "ProcessFileLayout", "Failed");
+		status = derlTaskFileLayout::Status::failure;
+	}
+	
+	std::lock_guard guard(pClient.GetMutex());
+	task.SetStatus(status);
+	if(status == derlTaskFileLayout::Status::success){
+		task.SetLayout(layout);
+	}
+}
+
 void derlTaskProcessor::ProcessDeleteFile(derlTaskFileDelete &task){
+	if(pEnableDebugLog){
+		std::stringstream ss;
+		ss << "Delete file " << task.GetPath();
+		LogDebug("ProcessDeleteFile", ss.str());
+	}
+	
 	derlTaskFileDelete::Status status;
 	
 	try{
@@ -218,11 +273,15 @@ void derlTaskProcessor::ProcessDeleteFile(derlTaskFileDelete &task){
 		status = derlTaskFileDelete::Status::success;
 		
 	}catch(const std::exception &e){
-		LogException("ProcessDeleteFile", e, "Failed");
+		std::stringstream ss;
+		ss << "Failed " << task.GetPath();
+		LogException("ProcessDeleteFile", e, ss.str());
 		status = derlTaskFileDelete::Status::failure;
 		
 	}catch(...){
-		Log(denLogger::LogSeverity::error, "ProcessDeleteFile", "Failed");
+		std::stringstream ss;
+		ss << "Failed " << task.GetPath();
+		Log(denLogger::LogSeverity::error, "ProcessDeleteFile", ss.str());
 		status = derlTaskFileDelete::Status::failure;
 	}
 	
@@ -231,6 +290,12 @@ void derlTaskProcessor::ProcessDeleteFile(derlTaskFileDelete &task){
 }
 
 void derlTaskProcessor::ProcessWriteFileBlock(derlTaskFileWrite &task, derlTaskFileWriteBlock &block){
+	if(pEnableDebugLog){
+		std::stringstream ss;
+		ss << "Write block size " << block.GetSize() << " at " << block.GetOffset() << " to " << task.GetPath();
+		LogDebug("ProcessWriteFileBlock", ss.str());
+	}
+	
 	derlTaskFileWriteBlock::Status status;
 	
 	try{
@@ -240,11 +305,15 @@ void derlTaskProcessor::ProcessWriteFileBlock(derlTaskFileWrite &task, derlTaskF
 		status = derlTaskFileWriteBlock::Status::success;
 		
 	}catch(const std::exception &e){
-		LogException("ProcessWriteFileBlock", e, "Failed");
+		std::stringstream ss;
+		ss << "Failed size " << block.GetSize() << " at " << block.GetOffset() << " to " << task.GetPath();
+		LogException("ProcessWriteFileBlock", e, ss.str());
 		status = derlTaskFileWriteBlock::Status::failure;
 		
 	}catch(...){
-		Log(denLogger::LogSeverity::error, "ProcessWriteFileBlock", "Failed");
+		std::stringstream ss;
+		ss << "Failed size " << block.GetSize() << " at " << block.GetOffset() << " to " << task.GetPath();
+		Log(denLogger::LogSeverity::error, "ProcessWriteFileBlock", ss.str());
 		CloseFile();
 		status = derlTaskFileWriteBlock::Status::failure;
 	}
@@ -254,12 +323,6 @@ void derlTaskProcessor::ProcessWriteFileBlock(derlTaskFileWrite &task, derlTaskF
 }
 
 
-
-derlFileLayout::Ref derlTaskProcessor::CalcFileLayout(){
-	const derlFileLayout::Ref layout(std::make_shared<derlFileLayout>());
-	CalcFileLayout(*layout, "");
-	return layout;
-}
 
 void derlTaskProcessor::CalcFileLayout(derlFileLayout &layout, const std::string &pathDir){
 	ListDirEntries entries;

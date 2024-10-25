@@ -59,10 +59,10 @@ private:
 public:
 	/** \name Constructors and Destructors */
 	/*@{*/
-	/** \brief Create block. */
+	/** \brief Create task. */
 	derlTaskFileWriteBlock(uint64_t offset, uint64_t size, const std::string &data);
 	
-	/** \brief Clean up block. */
+	/** \brief Clean up task. */
 	~derlTaskFileWriteBlock() noexcept;
 	/*@}*/
 	

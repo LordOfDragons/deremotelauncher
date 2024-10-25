@@ -36,7 +36,7 @@
 #include "task/derlTaskFileWrite.h"
 #include "task/derlTaskFileDelete.h"
 #include "task/derlTaskFileBlockHashes.h"
-
+#include "task/derlTaskFileLayout.h"
 #include <denetwork/denConnection.h>
 
 
@@ -64,6 +64,8 @@ private:
 	std::filesystem::path pPathDataDir;
 	
 	derlFileLayout::Ref pFileLayout;
+	
+	derlTaskFileLayout::Ref pTaskFileLayout;
 	derlTaskFileWrite::Map pTasksWriteFile;
 	derlTaskFileDelete::Map pTaskDeleteFiles;
 	derlTaskFileBlockHashes::Map pTasksFileBlockHashes;
@@ -111,6 +113,10 @@ public:
 	/** \brief File layout or nullptr. */
 	inline const derlFileLayout::Ref &GetFileLayout() const{ return pFileLayout; }
 	void SetFileLayout( const derlFileLayout::Ref &layout );
+	
+	/** \brief File layout task. */
+	inline const derlTaskFileLayout::Ref &GetTaskFileLayout() const{ return pTaskFileLayout; }
+	void SetTaskFileLayout(const derlTaskFileLayout::Ref &task);
 	
 	/** \brief Delete file tasks. */
 	inline const derlTaskFileDelete::Map &GetTasksDeleteFile() const{ return pTaskDeleteFiles; }
@@ -207,16 +213,6 @@ public:
 	
 	/** \brief Connection closed either by calling Disconnect() or by server. */
 	virtual void OnConnectionClosed();
-	
-	/**
-	 * \brief Update file layout requested.
-	 * 
-	 * Subclass is required to start building new file layout object. Once finished assign
-	 * the file layout using SetFileLayout(). This will finish the request.
-	 * 
-	 * Can be called multiple times if file layout is not present yet.
-	 */
-	virtual void UpdateFileLayout() = 0;
 	/*@}*/
 	
 	

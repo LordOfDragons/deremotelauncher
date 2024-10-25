@@ -35,6 +35,7 @@
 #include "task/derlTaskFileDelete.h"
 #include "task/derlTaskFileWrite.h"
 #include "task/derlTaskFileWriteBlock.h"
+#include "task/derlTaskFileLayout.h"
 
 #include <denetwork/denLogger.h>
 
@@ -112,6 +113,12 @@ public:
 	
 	
 	/**
+	 * \brief Find next file layout task.
+	 * \returns true if task is found otherwise false.
+	 */
+	bool FindNextTaskFileLayout(derlTaskFileLayout::Ref &task) const;
+	
+	/**
 	 * \brief Find next file block hashes task.
 	 * \returns true if task is found otherwise false.
 	 */
@@ -131,6 +138,9 @@ public:
 	
 	
 	
+	/** \brief Process task file layout. */
+	virtual void ProcessFileLayout(derlTaskFileLayout &task);
+	
 	/** \brief Process task file block hashes. */
 	virtual void ProcessFileBlockHashes(derlTaskFileBlockHashes &task);
 	
@@ -141,11 +151,6 @@ public:
 	virtual void ProcessWriteFileBlock(derlTaskFileWrite &task, derlTaskFileWriteBlock &block);
 	
 	
-	
-	/**
-	 * \brief Calculate file layout.
-	 */
-	derlFileLayout::Ref CalcFileLayout();
 	
 	/**
 	 * \brief Calculate file layout.

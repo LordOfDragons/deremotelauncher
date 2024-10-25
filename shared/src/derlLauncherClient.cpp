@@ -60,6 +60,10 @@ void derlLauncherClient::SetFileLayout(const derlFileLayout::Ref &layout){
 	pFileLayout = layout;
 }
 
+void derlLauncherClient::SetTaskFileLayout(const derlTaskFileLayout::Ref &task){
+	pTaskFileLayout = task;
+}
+
 denConnection::ConnectionState derlLauncherClient::GetConnectionState() const{
 	return pConnection->GetConnectionState();
 }

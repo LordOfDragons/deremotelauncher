@@ -189,6 +189,34 @@ denState::Ref derlLauncherClientConnection::CreateState(const denMessage::Ref &m
 void derlLauncherClientConnection::FinishPendingOperations(){
 	const std::lock_guard guard(pClient.GetMutex());
 	
+	{
+	const derlTaskFileLayout::Ref &task = pClient.GetTaskFileLayout();
+	if(task){
+		switch(task->GetStatus()){
+		case derlTaskFileLayout::Status::success:
+			pClient.SetFileLayout(task->GetLayout());
+			pClient.SetTaskFileLayout(nullptr);
+			break;
+			
+		case derlTaskFileLayout::Status::failure:
+			pClient.SetFileLayout(nullptr);
+			pClient.SetTaskFileLayout(nullptr);
+			
+			if(pPendingRequestLayout){
+				pClient.SetTaskFileLayout(std::make_shared<derlTaskFileLayout>());
+			}
+			break;
+			
+		default:
+			break;
+		}
+	}
+	}
+	
+	if(!pClient.GetFileLayout()){
+		return;
+	}
+	
 	if(pPendingRequestLayout && pClient.GetFileLayout()){
 		pPendingRequestLayout = false;
 		pSendResponseFileLayout(*pClient.GetFileLayout());
@@ -333,8 +361,9 @@ void derlLauncherClientConnection::pProcessRequestLayout(){
 		
 	}else{
 		pPendingRequestLayout = true;
-		pClient.UpdateFileLayout();
-		return;
+		if(!pClient.GetTaskFileLayout()){
+			pClient.SetTaskFileLayout(std::make_shared<derlTaskFileLayout>());
+		}
 	}
 }
 

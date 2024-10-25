@@ -22,28 +22,22 @@
  * SOFTWARE.
  */
 
-#ifndef _DERLTASKFILEBLOCKHASHES_H_
-#define _DERLTASKFILEBLOCKHASHES_H_
+#ifndef _DERLTASKFILELAYOUT_H_
+#define _DERLTASKFILELAYOUT_H_
 
 #include <memory>
 #include <string>
-#include <vector>
-#include <unordered_map>
+
+#include "../derlFileLayout.h"
 
 
 /**
- * \brief File operation.
+ * \brief File layout task.
  */
-class derlTaskFileBlockHashes{
+class derlTaskFileLayout{
 public:
 	/** \brief Reference type. */
-	typedef std::shared_ptr<derlTaskFileBlockHashes> Ref;
-	
-	/** \brief Reference list. */
-	typedef std::vector<Ref> List;
-	
-	/** \brief Reference map keyed by path. */
-	typedef std::unordered_map<std::string, Ref> Map;
+	typedef std::shared_ptr<derlTaskFileLayout> Ref;
 	
 	/** \brief Status. */
 	enum class Status{
@@ -55,34 +49,31 @@ public:
 	
 	
 private:
-	const std::string pPath;
 	Status pStatus;
-	uint64_t pBlockSize;
+	derlFileLayout::Ref pLayout;
 	
 	
 public:
 	/** \name Constructors and Destructors */
 	/*@{*/
 	/** \brief Create task. */
-	derlTaskFileBlockHashes(const std::string &path, uint64_t blockSize);
+	derlTaskFileLayout();
 	
 	/** \brief Clean up task. */
-	~derlTaskFileBlockHashes() noexcept;
+	~derlTaskFileLayout() noexcept;
 	/*@}*/
 	
 	
 	
 	/** \name Management */
 	/*@{*/
-	/** \brief Path. */
-	inline const std::string &GetPath() const{ return pPath; }
-	
 	/** \brief Status. */
 	inline Status GetStatus() const{ return pStatus; }
 	void SetStatus(Status status);
 	
-	/** \brief Block size. */
-	inline uint64_t GetBlockSize() const{ return pBlockSize; }
+	/** \brief Layout. */
+	inline const derlFileLayout::Ref &GetLayout() const{ return pLayout; }
+	void SetLayout(const derlFileLayout::Ref &layout);
 	/*@}*/
 };
 

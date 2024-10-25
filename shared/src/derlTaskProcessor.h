@@ -36,6 +36,8 @@
 #include "task/derlTaskFileWrite.h"
 #include "task/derlTaskFileWriteBlock.h"
 
+#include <denetwork/denLogger.h>
+
 class derlLauncherClient;
 
 
@@ -49,13 +51,11 @@ public:
 	typedef std::vector<Ref> List;
 	
 	/** \brief Directory entry. */
-	class DirectoryEntry{
-	public:
+	struct DirectoryEntry{
+		std::string filename;
 		std::string path;
 		uint64_t fileSize;
 		bool isDirectory;
-		
-		DirectoryEntry() = default;
 	};
 	
 	/** \brief List directory entries. */
@@ -69,6 +69,9 @@ private:
 	std::filesystem::path pBaseDir, pFilePath;
 	std::fstream pFileStream;
 	uint64_t pFileHashReadSize;
+	std::string pLogClassName;
+	denLogger::Ref pLogger;
+	bool pEnableDebugLog;
 	
 	
 public:
@@ -124,7 +127,7 @@ public:
 	 * \brief Find next write file block task.
 	 * \returns true if task is found otherwise false.
 	 */
-	bool FindNextTaskFileBlock(derlTaskFileWrite::Ref &task, derlTaskFileWriteBlock::Ref &block) const;
+	bool FindNextTaskWriteFileBlock(derlTaskFileWrite::Ref &task, derlTaskFileWriteBlock::Ref &block) const;
 	
 	
 	
@@ -208,6 +211,37 @@ public:
 	 * Default implementation closes open std::filestream. Has no effect if file is not open.
 	 */
 	virtual void CloseFile();
+	
+	
+	
+	/** \brief Logging class name. */
+	inline const std::string &GetLogClassName() const{ return pLogClassName; }
+	
+	/** \brief Set logging class name. */
+	void SetLogClassName(const std::string &name);
+	
+	/** \brief Logger or nullptr. */
+	inline const denLogger::Ref &GetLogger() const{ return pLogger; }
+	
+	/** \brief Set logger. */
+	void SetLogger(const denLogger::Ref &logger);
+	
+	/** \brief Debug logging is enabled. */
+	inline bool GetEnableDebugLog() const{ return pEnableDebugLog; }
+	
+	/** \brief Set if debug logging is enabled. */
+	void SetEnableDebugLog(bool enable);
+	
+	/** \brief Log exception. */
+	void LogException(const std::string &functionName, const std::exception &exception,
+		const std::string &message);
+	
+	/** \brief Log message. */
+	virtual void Log(denLogger::LogSeverity severity, const std::string &functionName,
+		const std::string &message);
+	
+	/** \brief Debug log message only printed if debugging is enabled. */
+	void LogDebug(const std::string &functionName, const std::string &message);
 };
 
 #endif

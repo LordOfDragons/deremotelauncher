@@ -74,6 +74,9 @@ const denLogger::Ref &derlLauncherClient::GetLogger() const{
 
 void derlLauncherClient::SetLogger(const denLogger::Ref &logger){
 	pConnection->SetLogger(logger);
+	if(pTaskProcessor){
+		pTaskProcessor->SetLogger(logger);
+	}
 }
 
 
@@ -81,6 +84,7 @@ void derlLauncherClient::SetLogger(const denLogger::Ref &logger){
 void derlLauncherClient::StartTaskProcessors(){
 	if(!pTaskProcessor){
 		pTaskProcessor = std::make_shared<derlTaskProcessor>(*this);
+		pTaskProcessor->SetLogger(GetLogger());
 	}
 	
 	if(!pThreadTaskProcessor){

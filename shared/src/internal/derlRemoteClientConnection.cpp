@@ -30,6 +30,7 @@
 #include "../derlProtocol.h"
 #include "../derlServer.h"
 
+#include <denetwork/denServer.h>
 #include <denetwork/message/denMessage.h>
 #include <denetwork/message/denMessageReader.h>
 #include <denetwork/message/denMessageWriter.h>
@@ -56,9 +57,6 @@ pValueRunStatus(std::make_shared<denValueInt>(denValueIntegerFormat::uint8))
 }
 
 derlRemoteClientConnection::~derlRemoteClientConnection(){
-	if(pClient){
-		pClient->DropConnection();
-	}
 }
 
 
@@ -90,8 +88,6 @@ void derlRemoteClientConnection::ConnectionClosed(){
 		return;
 	}
 	
-	pClient->DropConnection();
-	
 	const derlRemoteClient::Ref client(pClient);
 	pClient = nullptr;
 	
@@ -109,6 +105,13 @@ void derlRemoteClientConnection::MessageReceived(const denMessage::Ref &message)
 	const derlProtocol::MessageCodes code = (derlProtocol::MessageCodes)reader.ReadByte();
 	
 	if(!pClient){
+		if(!GetParentServer()){
+			GetLogger()->Log(denLogger::LogSeverity::error,
+				"Server link missing (internal error), disconnecting.");
+			Disconnect();
+			return;
+		}
+		
 		if(code != derlProtocol::MessageCodes::connectRequest){
 			GetLogger()->Log(denLogger::LogSeverity::error,
 				"Client send request other than ConnectRequest, disconnecting.");
@@ -144,11 +147,21 @@ void derlRemoteClientConnection::MessageReceived(const denMessage::Ref &message)
 		}
 		LinkState(message, pStateRun, false);
 		
-		const derlRemoteClient::Ref client(pServer.CreateClient(this));
-		pServer.GetClients().push_back(client);
-		pClient = client.get();
+		const denServer::Connections &connections = GetParentServer()->GetConnections();
+		denServer::Connections::const_iterator iter;
+		for(iter=connections.cbegin(); iter!=connections.cend(); iter++){
+			if(iter->get() == this){
+				const derlRemoteClient::Ref client(pServer.CreateClient(*iter));
+				pServer.GetClients().push_back(client);
+				pClient = client.get();
+				pClient->OnConnectionEstablished();
+				return;
+			}
+		}
 		
-		pClient->OnConnectionEstablished();
+		GetLogger()->Log(denLogger::LogSeverity::error,
+			"Connection not found (internal error), disconnecting.");
+		Disconnect();
 		return;
 	}
 	

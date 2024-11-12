@@ -60,7 +60,7 @@ private:
 	friend class derlRemoteClientConnection;
 	
 	derlServer &pServer;
-	derlRemoteClientConnection *pConnection;
+	const denConnection::Ref pConnection;
 	denLogger::Ref pLogger;
 	
 	derlFileLayout::Ref pFileLayout;
@@ -78,7 +78,7 @@ public:
 	/**
 	 * \brief Create remote launcher.
 	 */
-	derlRemoteClient(derlServer &server, derlRemoteClientConnection *connection);
+	derlRemoteClient(derlServer &server, const denConnection::Ref &connection);
 	
 	/** \brief Clean up remote launcher support. */
 	virtual ~derlRemoteClient() noexcept;
@@ -91,9 +91,6 @@ public:
 	/** \brief Server the client is connected to. */
 	inline derlServer &GetServer(){ return pServer; }
 	inline const derlServer &GetServer() const{ return pServer; }
-	
-	/** \brief Drop connection. */
-	void DropConnection();
 	
 	/** \brief Name identifying the client. */
 	const std::string &GetName() const;

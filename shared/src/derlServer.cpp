@@ -69,7 +69,9 @@ void derlServer::SetLogger(const denLogger::Ref &logger){
 	}
 }
 
-
+derlRemoteClient::Ref derlServer::CreateClient(const denConnection::Ref &connection){
+	return std::make_shared<derlRemoteClient>(*this, connection);
+}
 
 void derlServer::StartTaskProcessors(){
 	if(!pTaskProcessor){

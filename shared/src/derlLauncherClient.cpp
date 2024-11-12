@@ -87,12 +87,12 @@ void derlLauncherClient::SetLogger(const denLogger::Ref &logger){
 
 void derlLauncherClient::StartTaskProcessors(){
 	if(!pTaskProcessor){
-		pTaskProcessor = std::make_shared<derlTaskProcessor>(*this);
+		pTaskProcessor = std::make_shared<derlTaskProcessorLauncherClient>(*this);
 		pTaskProcessor->SetLogger(GetLogger());
 	}
 	
 	if(!pThreadTaskProcessor){
-		pThreadTaskProcessor = std::make_unique<std::thread>([](derlTaskProcessor &processor){
+		pThreadTaskProcessor = std::make_unique<std::thread>([](derlTaskProcessorLauncherClient &processor){
 			processor.Run();
 		}, std::ref(*pTaskProcessor));
 	}

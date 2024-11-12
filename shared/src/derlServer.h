@@ -22,8 +22,8 @@
  * SOFTWARE.
  */
 
-#ifndef _DERLLAUNCHERCLIENT_H_
-#define _DERLLAUNCHERCLIENT_H_
+#ifndef _DERLSERVER_H_
+#define _DERLSERVER_H_
 
 #include <memory>
 #include <vector>
@@ -32,75 +32,58 @@
 #include <filesystem>
 
 #include "derlFileLayout.h"
-#include "processor/derlTaskProcessorLauncherClient.h"
-#include "task/derlTaskFileWrite.h"
-#include "task/derlTaskFileDelete.h"
-#include "task/derlTaskFileBlockHashes.h"
+#include "derlRemoteClient.h"
+#include "processor/derlTaskProcessorServer.h"
 #include "task/derlTaskFileLayout.h"
 #include <denetwork/denConnection.h>
 
-
-class derlLauncherClientConnection;
+class derlServerServer;
 
 
 /**
- * \brief Drag[en]gine remote launcher client.
+ * \brief Drag[en]gine server.
  * 
- * Implements DERemoteLauncher Network Protocol and does the heavy lifting of being a client.
+ * Implements DERemoteLauncher Network Protocol and does the heavy lifting of being a server.
  * Subclass and overwrite the respective functions to react to the events.
  */
-class derlLauncherClient{
+class derlServer{
 public:
 	/** \brief Reference type. */
-	typedef std::shared_ptr<derlLauncherClient> Ref;
+	typedef std::shared_ptr<derlServer> Ref;
 	
 	
 private:
-	friend class derlLauncherClientConnection;
+	std::unique_ptr<derlServerServer> pServer;
 	
-	std::unique_ptr<derlLauncherClientConnection> pConnection;
-	
-	std::string pName;
 	std::filesystem::path pPathDataDir;
 	
 	derlFileLayout::Ref pFileLayout;
 	
 	derlTaskFileLayout::Ref pTaskFileLayout;
-	derlTaskFileWrite::Map pTasksWriteFile;
-	derlTaskFileDelete::Map pTaskDeleteFiles;
-	derlTaskFileBlockHashes::Map pTasksFileBlockHashes;
 	std::mutex pMutex;
 	
-	derlTaskProcessorLauncherClient::Ref pTaskProcessor;
+	derlTaskProcessorServer::Ref pTaskProcessor;
 	std::unique_ptr<std::thread> pThreadTaskProcessor;
+	
+	derlRemoteClient::List pClients;
 	
 	
 public:
 	/** \name Constructors and Destructors */
 	/*@{*/
 	/**
-	 * \brief Create remote launcher.
+	 * \brief Create server.
 	 */
-	derlLauncherClient();
+	derlServer();
 	
-	/** \brief Clean up remote launcher support. */
-	virtual ~derlLauncherClient() noexcept;
+	/** \brief Clean up server. */
+	virtual ~derlServer() noexcept;
 	/*@}*/
 	
 	
 	
 	/** \name Management */
 	/*@{*/
-	/** \brief Name identifying the client. */
-	inline const std::string &GetName() const{ return pName; }
-	
-	/**
-	 * \brief Name identifying the client.
-	 * 
-	 * Name change takes effect the next time a connection is established.
-	 */
-	void SetName( const std::string &name );
-	
 	/** \brief Path to data directory. */
 	inline const std::filesystem::path &GetPathDataDir() const{ return pPathDataDir; }
 	
@@ -118,34 +101,23 @@ public:
 	inline const derlTaskFileLayout::Ref &GetTaskFileLayout() const{ return pTaskFileLayout; }
 	void SetTaskFileLayout(const derlTaskFileLayout::Ref &task);
 	
-	/** \brief Delete file tasks. */
-	inline const derlTaskFileDelete::Map &GetTasksDeleteFile() const{ return pTaskDeleteFiles; }
-	inline derlTaskFileDelete::Map &GetTasksDeleteFile(){ return pTaskDeleteFiles; }
-	
-	/** \brief Write file tasks. */
-	inline const derlTaskFileWrite::Map &GetTasksWriteFile() const{ return pTasksWriteFile; }
-	inline derlTaskFileWrite::Map &GetTasksWriteFile(){ return pTasksWriteFile; }
-	
-	/** \brief File block hashes tasks. */
-	inline const derlTaskFileBlockHashes::Map &GetTasksFileBlockHashes() const{ return pTasksFileBlockHashes; }
-	inline derlTaskFileBlockHashes::Map &GetTasksFileBlockHashes(){ return pTasksFileBlockHashes; }
-	
 	/** \brief Mutex. */
 	inline std::mutex &GetMutex(){ return pMutex; }
-	
-	
-	
-	/** \brief Connection state. */
-	denConnection::ConnectionState GetConnectionState() const;
-	
-	/** \brief Connection to a remote host is established. */
-	bool GetConnected() const;
 	
 	/** \brief Logger or null. */
 	const denLogger::Ref &GetLogger() const;
 	
 	/** \brief Set logger or nullptr to clear. */
 	void SetLogger(const denLogger::Ref &logger);
+	
+	
+	
+	/** \brief Remote clients. */
+	inline derlRemoteClient::List &GetClients(){ return pClients; }
+	inline const derlRemoteClient::List &GetClients() const{ return pClients; }
+	
+	/** \brief Create client for connection. */
+	virtual derlRemoteClient::Ref CreateClient(derlRemoteClientConnection *connection);
 	
 	
 	
@@ -178,19 +150,23 @@ public:
 	 * 
 	 * Valid if StartTaskProcessors() has been called and subclass did not overwrite it.
 	 */
-	inline const derlTaskProcessorLauncherClient::Ref &GetTaskProcessor() const{ return pTaskProcessor; }
+	inline const derlTaskProcessorServer::Ref &GetTaskProcessor() const{ return pTaskProcessor; }
 	
 	
 	
 	/**
-	 * \brief Connect to connection object on host at address.
+	 * \brief Start listening on address for incoming connections.
 	 * \throws std::invalid_argument Data directory path is empty.
-	 * \warning StartTaskProcessors() has to be called once before connecting.
+	 * \param[in] address Address is in the format "hostnameOrIP" or "hostnameOrIP:port".
+	 *                    You can use a resolvable hostname or an IPv4. If the port is not
+	 *                    specified the default port 3413 is used. You can use any port
+	 *                    you you like.
 	 */
-	void ConnectTo(const std::string &address);
+	void ListenOn(const std::string &address);
 	
-	/** \brief Disconnect from remote connection if connected. */
-	void Disconnect();
+	/** \brief Stop listening. */
+	void StopListening();
+	
 	
 	
 	/**
@@ -212,19 +188,7 @@ public:
 	
 	/** \name Events */
 	/*@{*/
-	/** \brief Connection established. */
-	virtual void OnConnectionEstablished();
-	
-	/** \brief Connection failed. */
-	virtual void OnConnectionFailed(denConnection::ConnectionFailedReason reason);
-	
-	/** \brief Connection closed either by calling Disconnect() or by server. */
-	virtual void OnConnectionClosed();
 	/*@}*/
-	
-	
-	
-private:
 };
 
 #endif

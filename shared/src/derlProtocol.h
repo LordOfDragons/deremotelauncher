@@ -27,6 +27,12 @@
 
 namespace derlProtocol{
 	/**
+	 * \brief Connect request signatures.
+	 */
+	static const char * const signatureClient = "DERemLaunchCnt-0";
+	static const char * const signatureServer = "DERemLaunchSrv-0";
+	
+	/**
 	 * \brief Message codes
 	 */
 	enum class MessageCodes{

@@ -22,35 +22,22 @@
  * SOFTWARE.
  */
 
-#ifndef _DERLTASKPROCESSOR_H_
-#define _DERLTASKPROCESSOR_H_
+#ifndef _DERLBASETASKPROCESSOR_H_
+#define _DERLBASETASKPROCESSOR_H_
 
 #include <chrono>
 #include <fstream>
 #include <filesystem>
 
-#include "derlFile.h"
-#include "derlFileLayout.h"
-#include "task/derlTaskFileBlockHashes.h"
-#include "task/derlTaskFileDelete.h"
-#include "task/derlTaskFileWrite.h"
-#include "task/derlTaskFileWriteBlock.h"
-#include "task/derlTaskFileLayout.h"
+#include "../derlFile.h"
+#include "../derlFileLayout.h"
 
 #include <denetwork/denLogger.h>
 
-class derlLauncherClient;
 
-
-/** \brief Process tasks. */
-class derlTaskProcessor{
+/** \brief Base class for task processors. */
+class derlBaseTaskProcessor{
 public:
-	/** \brief Reference type. */
-	typedef std::shared_ptr<derlTaskProcessor> Ref;
-	
-	/** \brief List type. */
-	typedef std::vector<Ref> List;
-	
 	/** \brief Directory entry. */
 	struct DirectoryEntry{
 		std::string filename;
@@ -63,8 +50,7 @@ public:
 	typedef std::vector<DirectoryEntry> ListDirEntries;
 	
 	
-private:
-	derlLauncherClient &pClient;
+protected:
 	bool pExit;
 	std::chrono::milliseconds pNoTaskDelay;
 	std::filesystem::path pBaseDir, pFilePath;
@@ -78,20 +64,17 @@ private:
 public:
 	/** \name Constructors and Destructors */
 	/*@{*/
-	/** \brief Create processor. */
-	derlTaskProcessor(derlLauncherClient &client);
+	/** \brief Create base task processor. */
+	derlBaseTaskProcessor();
 	
-	/** \brief Clean up processor. */
-	virtual ~derlTaskProcessor() noexcept;
+	/** \brief Clean up base task processor. */
+	virtual ~derlBaseTaskProcessor() noexcept = default;
 	/*@}*/
 	
 	
 	
 	/** \name Management */
 	/*@{*/
-	/** \brief Client. */
-	inline derlLauncherClient &GetClient() const{ return pClient; }
-	
 	/** \brief Base directory. */
 	inline const std::filesystem::path &GetBaseDirectory() const{ return pBaseDir; }
 	
@@ -108,47 +91,7 @@ public:
 	 * \brief Process one task if possible.
 	 * \returns true if task is run or false otherwise.
 	 */
-	bool RunTask();
-	
-	
-	
-	/**
-	 * \brief Find next file layout task.
-	 * \returns true if task is found otherwise false.
-	 */
-	bool FindNextTaskFileLayout(derlTaskFileLayout::Ref &task) const;
-	
-	/**
-	 * \brief Find next file block hashes task.
-	 * \returns true if task is found otherwise false.
-	 */
-	bool FindNextTaskFileBlockHashes(derlTaskFileBlockHashes::Ref &task) const;
-	
-	/**
-	 * \brief Find next delete file task.
-	 * \returns true if task is found otherwise false.
-	 */
-	bool FindNextTaskDelete(derlTaskFileDelete::Ref &task) const;
-	
-	/**
-	 * \brief Find next write file block task.
-	 * \returns true if task is found otherwise false.
-	 */
-	bool FindNextTaskWriteFileBlock(derlTaskFileWrite::Ref &task, derlTaskFileWriteBlock::Ref &block) const;
-	
-	
-	
-	/** \brief Process task file layout. */
-	virtual void ProcessFileLayout(derlTaskFileLayout &task);
-	
-	/** \brief Process task file block hashes. */
-	virtual void ProcessFileBlockHashes(derlTaskFileBlockHashes &task);
-	
-	/** \brief Process task delete file. */
-	virtual void ProcessDeleteFile(derlTaskFileDelete &task);
-	
-	/** \brief Process task write file block. */
-	virtual void ProcessWriteFileBlock(derlTaskFileWrite &task, derlTaskFileWriteBlock &block);
+	virtual bool RunTask() = 0;
 	
 	
 	
@@ -175,13 +118,6 @@ public:
 	void CalcFileBlockHashes(derlFileBlock::List &blocks, const std::string &path, uint64_t blockSize);
 	
 	/**
-	 * \brief Delete file.
-	 * 
-	 * Default implementation deletes file using standard library functionality.
-	 */
-	virtual void DeleteFile(const derlTaskFileDelete &task);
-	
-	/**
 	 * \brief Open file for reading or writing.
 	 * 
 	 * Default implementation opens an std::filestream for reading/writing binary data.
@@ -202,13 +138,6 @@ public:
 	 * Default implementation reads from open std::filestream.
 	 */
 	virtual void ReadFile(void *data, uint64_t offset, uint64_t size);
-	
-	/**
-	 * \brief Write data to open file.
-	 * 
-	 * Default implementation writes to open std::filestream.
-	 */
-	virtual void WriteFile(const void *data, uint64_t offset, uint64_t size);
 	
 	/**
 	 * \brief Close open file.

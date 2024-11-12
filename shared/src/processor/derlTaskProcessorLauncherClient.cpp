@@ -24,51 +24,29 @@
 
 #include <stdexcept>
 #include <mutex>
-#include <thread>
-#include <chrono>
-#include <cstring>
 
-#include "derlTaskProcessor.h"
-#include "derlLauncherClient.h"
-#include "derlFile.h"
-#include "derlFileBlock.h"
-#include "derlFileLayout.h"
-#include "hashing/sha256.h"
+#include "derlTaskProcessorLauncherClient.h"
+#include "../derlLauncherClient.h"
+#include "../derlFile.h"
+#include "../derlFileBlock.h"
+#include "../derlFileLayout.h"
 
 
-// Class derlTaskProcessor
+// Class derlTaskProcessorLauncherClient
 ////////////////////////////
 
-derlTaskProcessor::derlTaskProcessor(derlLauncherClient &client) :
-pClient(client),
-pNoTaskDelay(500),
-pFileHashReadSize(1024L * 8L),
-pLogClassName("derlTaskProcessor"){
+derlTaskProcessorLauncherClient::derlTaskProcessorLauncherClient(derlLauncherClient &client) :
+pClient(client){
+	pLogClassName = "derlTaskProcessorLauncherClient";
 }
 
-derlTaskProcessor::~derlTaskProcessor(){
+derlTaskProcessorLauncherClient::~derlTaskProcessorLauncherClient(){
 }
 
 // Management
 ///////////////
 
-void derlTaskProcessor::SetBaseDirectory(const std::filesystem::path &path){
-	pBaseDir = path;
-}
-
-void derlTaskProcessor::Exit(){
-	pExit = true;
-}
-
-void derlTaskProcessor::Run(){
-	while(!pExit){
-		if(!RunTask()){
-			std::this_thread::sleep_for(pNoTaskDelay);
-		}
-	}
-}
-
-bool derlTaskProcessor::RunTask(){
+bool derlTaskProcessorLauncherClient::RunTask(){
 	derlTaskFileBlockHashes::Ref taskFileBlockHashes;
 	derlTaskFileWriteBlock::Ref taskWriteFileBlock;
 	derlTaskFileLayout::Ref taskFileLayout;
@@ -112,7 +90,7 @@ bool derlTaskProcessor::RunTask(){
 // Protected Functions
 ////////////////////////
 
-bool derlTaskProcessor::FindNextTaskFileLayout(derlTaskFileLayout::Ref &task) const{
+bool derlTaskProcessorLauncherClient::FindNextTaskFileLayout(derlTaskFileLayout::Ref &task) const{
 	const derlTaskFileLayout::Ref checkTask(pClient.GetTaskFileLayout());
 	if(checkTask && checkTask->GetStatus() == derlTaskFileLayout::Status::pending){
 		task = checkTask;
@@ -121,7 +99,7 @@ bool derlTaskProcessor::FindNextTaskFileLayout(derlTaskFileLayout::Ref &task) co
 	return false;
 }
 
-bool derlTaskProcessor::FindNextTaskFileBlockHashes(derlTaskFileBlockHashes::Ref &task) const{
+bool derlTaskProcessorLauncherClient::FindNextTaskFileBlockHashes(derlTaskFileBlockHashes::Ref &task) const{
 	const derlTaskFileBlockHashes::Map &tasks = pClient.GetTasksFileBlockHashes();
 	derlTaskFileBlockHashes::Map::const_iterator iter;
 	for(iter = tasks.cbegin(); iter != tasks.cend(); iter++){
@@ -137,7 +115,7 @@ bool derlTaskProcessor::FindNextTaskFileBlockHashes(derlTaskFileBlockHashes::Ref
 	return false;
 }
 
-bool derlTaskProcessor::FindNextTaskDelete(derlTaskFileDelete::Ref &task) const{
+bool derlTaskProcessorLauncherClient::FindNextTaskDelete(derlTaskFileDelete::Ref &task) const{
 	const derlTaskFileDelete::Map &tasks = pClient.GetTasksDeleteFile();
 	derlTaskFileDelete::Map::const_iterator iter;
 	for(iter = tasks.cbegin(); iter != tasks.cend(); iter++){
@@ -153,7 +131,7 @@ bool derlTaskProcessor::FindNextTaskDelete(derlTaskFileDelete::Ref &task) const{
 	return false;
 }
 
-bool derlTaskProcessor::FindNextTaskWriteFileBlock(
+bool derlTaskProcessorLauncherClient::FindNextTaskWriteFileBlock(
 derlTaskFileWrite::Ref &task, derlTaskFileWriteBlock::Ref &block) const{
 	const derlTaskFileWrite::Map &tasks = pClient.GetTasksWriteFile();
 	derlTaskFileWrite::Map::const_iterator iter;
@@ -181,7 +159,7 @@ derlTaskFileWrite::Ref &task, derlTaskFileWriteBlock::Ref &block) const{
 
 
 
-void derlTaskProcessor::ProcessFileBlockHashes(derlTaskFileBlockHashes &task){
+void derlTaskProcessorLauncherClient::ProcessFileBlockHashes(derlTaskFileBlockHashes &task){
 	if(pEnableDebugLog){
 		std::stringstream ss;
 		ss << "Calculate block hashes size " << task.GetBlockSize() << " for " << task.GetPath();
@@ -231,7 +209,7 @@ void derlTaskProcessor::ProcessFileBlockHashes(derlTaskFileBlockHashes &task){
 	task.SetStatus(status);
 }
 
-void derlTaskProcessor::ProcessFileLayout(derlTaskFileLayout &task){
+void derlTaskProcessorLauncherClient::ProcessFileLayout(derlTaskFileLayout &task){
 	if(pEnableDebugLog){
 		LogDebug("ProcessFileLayout", "Build file layout");
 	}
@@ -260,7 +238,7 @@ void derlTaskProcessor::ProcessFileLayout(derlTaskFileLayout &task){
 	}
 }
 
-void derlTaskProcessor::ProcessDeleteFile(derlTaskFileDelete &task){
+void derlTaskProcessorLauncherClient::ProcessDeleteFile(derlTaskFileDelete &task){
 	if(pEnableDebugLog){
 		std::stringstream ss;
 		ss << "Delete file " << task.GetPath();
@@ -290,7 +268,7 @@ void derlTaskProcessor::ProcessDeleteFile(derlTaskFileDelete &task){
 	task.SetStatus(status);
 }
 
-void derlTaskProcessor::ProcessWriteFileBlock(derlTaskFileWrite &task, derlTaskFileWriteBlock &block){
+void derlTaskProcessorLauncherClient::ProcessWriteFileBlock(derlTaskFileWrite &task, derlTaskFileWriteBlock &block){
 	if(pEnableDebugLog){
 		std::stringstream ss;
 		ss << "Write block size " << block.GetSize() << " at " << block.GetOffset() << " to " << task.GetPath();
@@ -325,116 +303,7 @@ void derlTaskProcessor::ProcessWriteFileBlock(derlTaskFileWrite &task, derlTaskF
 
 
 
-void derlTaskProcessor::CalcFileLayout(derlFileLayout &layout, const std::string &pathDir){
-	ListDirEntries entries;
-	ListDirectoryFiles(entries, pathDir);
-	
-	ListDirEntries::const_iterator iter;
-	for(iter = entries.cbegin(); iter != entries.cend(); iter++){
-		if(iter->isDirectory){
-			CalcFileLayout(layout, iter->path);
-			
-		}else{
-			const derlFile::Ref file(std::make_shared<derlFile>(iter->path));
-			file->SetSize(iter->fileSize);
-			CalcFileHash(*file);
-			layout.AddFile(file);
-		}
-	}
-}
-
-void derlTaskProcessor::ListDirectoryFiles(ListDirEntries &entries, const std::string &pathDir){
-	const std::filesystem::path fspathDir(pathDir);
-	
-	std::filesystem::directory_iterator iter{pBaseDir / pathDir};
-	for (const std::filesystem::directory_entry &entry : iter){
-		const std::string filename(entry.path().filename());
-		
-		if(entry.is_directory()){
-			entries.push_back({filename, fspathDir / filename, 0, true});
-			
-		}else if(entry.is_regular_file()){
-			entries.push_back({filename, fspathDir / filename, entry.file_size(), false});
-		}
-	}
-}
-
-void derlTaskProcessor::CalcFileHash(derlFile &file){
-	const uint64_t fileSize = file.GetSize();
-	SHA256 hash;
-	
-	if(fileSize > 0L){
-		const uint64_t blockCount = ((fileSize - 1L) / pFileHashReadSize) + 1L;
-		std::string blockData;
-		uint64_t i;
-		
-		try{
-			OpenFile(file.GetPath(), false);
-			for(i=0L; i<blockCount; i++){
-				const uint64_t blockOffset = pFileHashReadSize * i;
-				const uint64_t blockSize = std::min(pFileHashReadSize, fileSize - blockOffset);
-				blockData.assign(blockSize, 0);
-				ReadFile((void*)blockData.c_str(), blockOffset, blockSize);
-				hash.add(blockData.c_str(), blockSize);
-			}
-			CloseFile();
-			
-		}catch(const std::exception &e){
-			LogException("CalcFileHash", e, file.GetPath());
-			CloseFile();
-			throw;
-			
-		}catch(...){
-			Log(denLogger::LogSeverity::error, "CalcFileHash", file.GetPath());
-			CloseFile();
-			throw;
-		}
-	}
-	
-	file.SetHash(hash.getHash());
-}
-
-void derlTaskProcessor::CalcFileBlockHashes(derlFileBlock::List &blocks,
-const std::string &path, uint64_t blockSize){
-	blocks.clear();
-	
-	try{
-		OpenFile(path, false);
-		
-		const uint64_t fileSize = GetFileSize();
-		if(fileSize > 0L){
-			const uint64_t blockCount = ((fileSize - 1L) / blockSize) + 1L;
-			uint64_t i;
-			
-			for(i=0L; i<blockCount; i++){
-				const uint64_t nextOffset = blockSize * i;
-				const uint64_t nextSize = std::min(blockSize, fileSize - nextOffset);
-				
-				std::string blockData;
-				blockData.assign(nextSize, 0);
-				ReadFile((void*)blockData.c_str(), nextOffset, nextSize);
-				
-				const derlFileBlock::Ref block(std::make_shared<derlFileBlock>(nextOffset, nextSize));
-				block->SetHash(SHA256()(blockData));
-				blocks.push_back(block);
-			}
-		}
-		
-		CloseFile();
-		
-	}catch(const std::exception &e){
-		LogException("CalcFileBlockHashes", e, path);
-		CloseFile();
-		throw;
-		
-	}catch(...){
-		Log(denLogger::LogSeverity::error, "CalcFileBlockHashes", path);
-		CloseFile();
-		throw;
-	}
-}
-
-void derlTaskProcessor::DeleteFile(const derlTaskFileDelete &task){
+void derlTaskProcessorLauncherClient::DeleteFile(const derlTaskFileDelete &task){
 	try{
 		if(!std::filesystem::remove(pBaseDir / task.GetPath())){
 			//throw std::runtime_error("File does not exist");
@@ -451,73 +320,7 @@ void derlTaskProcessor::DeleteFile(const derlTaskFileDelete &task){
 	}
 }
 
-void derlTaskProcessor::OpenFile(const std::string &path, bool write){
-	CloseFile();
-	pFilePath = pBaseDir / path;
-	
-	try{
-		pFileStream.open(pFilePath, pFileStream.binary | (write ? pFileStream.out : pFileStream.in));
-		if(pFileStream.fail()){
-			throw std::runtime_error(std::strerror(errno));
-		}
-		
-	}catch(const std::exception &e){
-		LogException("OpenFile", e, path);
-		throw;
-		
-	}catch(...){
-		Log(denLogger::LogSeverity::error, "OpenFile", path);
-		throw;
-	}
-}
-
-uint64_t derlTaskProcessor::GetFileSize(){
-	try{
-		pFileStream.seekg(0, pFileStream.end);
-		const uint64_t size = pFileStream.tellg();
-		
-		if(pFileStream.fail()){
-			pFileStream.clear();
-			throw std::runtime_error("Failed getting file size");
-		}
-		
-		return size;
-		
-	}catch(const std::exception &e){
-		LogException("GetFileSize", e, pFilePath);
-		throw;
-		
-	}catch(...){
-		Log(denLogger::LogSeverity::error, "GetFileSize", pFilePath);
-		throw;
-	}
-}
-
-void derlTaskProcessor::ReadFile(void *data, uint64_t offset, uint64_t size){
-	try{
-		pFileStream.seekg(offset, pFileStream.beg);
-		if(pFileStream.fail()){
-			pFileStream.clear();
-			throw std::runtime_error("Failed seeking to offset");
-		}
-		
-		pFileStream.read((char*)data, size);
-		if(pFileStream.fail()){
-			pFileStream.clear();
-			throw std::runtime_error("Failed reading from file");
-		}
-		
-	}catch(const std::exception &e){
-		LogException("ReadFile", e, pFilePath);
-		throw;
-		
-	}catch(...){
-		Log(denLogger::LogSeverity::error, "ReadFile", pFilePath);
-		throw;
-	}
-}
-
-void derlTaskProcessor::WriteFile(const void *data, uint64_t offset, uint64_t size){
+void derlTaskProcessorLauncherClient::WriteFile(const void *data, uint64_t offset, uint64_t size){
 	try{
 		pFileStream.seekp(offset, pFileStream.beg);
 		if(pFileStream.fail()){
@@ -538,50 +341,5 @@ void derlTaskProcessor::WriteFile(const void *data, uint64_t offset, uint64_t si
 	}catch(...){
 		Log(denLogger::LogSeverity::error, "WriteFile", pFilePath);
 		throw;
-	}
-}
-
-void derlTaskProcessor::CloseFile(){
-	pFilePath.clear();
-	
-	pFileStream.close();
-	pFileStream.clear();
-}
-
-
-
-void derlTaskProcessor::SetLogClassName(const std::string &name){
-	pLogClassName = name;
-}
-
-void derlTaskProcessor::SetLogger(const denLogger::Ref &logger){
-	pLogger = logger;
-}
-
-void derlTaskProcessor::SetEnableDebugLog(bool enable){
-	pEnableDebugLog = enable;
-}
-
-void derlTaskProcessor::LogException(const std::string &functionName,
-const std::exception &exception, const std::string &message){
-	std::stringstream ss;
-	ss << message << ": " << exception.what();
-	Log(denLogger::LogSeverity::error, functionName, ss.str());
-}
-
-void derlTaskProcessor::Log(denLogger::LogSeverity severity,
-const std::string &functionName, const std::string &message){
-	if(!pLogger){
-		return;
-	}
-	
-	std::stringstream ss;
-	ss << "[" << pLogClassName << "::" << functionName << "] " << message;
-	pLogger->Log(severity, ss.str());
-}
-
-void derlTaskProcessor::LogDebug(const std::string &functionName, const std::string &message){
-	if(pEnableDebugLog){
-		Log(denLogger::LogSeverity::debug, functionName, message);
 	}
 }

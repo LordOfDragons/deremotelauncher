@@ -69,7 +69,7 @@ void derlLauncherClientConnection::SetRunStatus(RunStatus status){
 		
 	case RunStatus::stopped:
 	default:
-		pValueRunStatus->SetValue((uint64_t)derlProtocol::RunStateStatus::running);
+		pValueRunStatus->SetValue((uint64_t)derlProtocol::RunStateStatus::stopped);
 	}
 }
 
@@ -87,7 +87,7 @@ void derlLauncherClientConnection::ConnectionEstablished(){
 		
 		denMessageWriter writer(message->Item());
 		writer.WriteByte((uint8_t)derlProtocol::MessageCodes::connectRequest);
-		writer.Write("DERemLaunchCnt-0", 16);
+		writer.Write(derlProtocol::signatureClient, 16);
 		writer.WriteUInt(supportedFeatures);
 		writer.WriteString8(pClient.GetName());
 	}
@@ -115,7 +115,7 @@ void derlLauncherClientConnection::MessageReceived(const denMessage::Ref &messag
 		if(code == derlProtocol::MessageCodes::connectAccepted){
 			std::string signature(16, 0);
 			reader.Read((void*)signature.c_str(), 16);
-			if(signature != "DERemLaunchSrv-0"){
+			if(signature != derlProtocol::signatureServer){
 				GetLogger()->Log(denLogger::LogSeverity::error,
 					"Server answered with wrong signature, disconnecting.");
 				Disconnect();

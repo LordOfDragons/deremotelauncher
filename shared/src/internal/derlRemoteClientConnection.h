@@ -46,6 +46,9 @@ class denMessageReader;
  */
 class derlRemoteClientConnection : public denConnection{
 public:
+	/** \brief Shared pointer. */
+	typedef std::shared_ptr<derlRemoteClientConnection> Ref;
+	
 	/** \brief Run state status. */
 	enum class RunStatus{
 		stopped = 0,

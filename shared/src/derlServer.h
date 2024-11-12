@@ -33,6 +33,7 @@
 
 #include "derlFileLayout.h"
 #include "derlRemoteClient.h"
+#include "internal/derlRemoteClientConnection.h"
 #include "processor/derlTaskProcessorServer.h"
 #include "task/derlTaskFileLayout.h"
 #include <denetwork/denConnection.h>
@@ -117,7 +118,7 @@ public:
 	inline const derlRemoteClient::List &GetClients() const{ return pClients; }
 	
 	/** \brief Create client for connection. */
-	virtual derlRemoteClient::Ref CreateClient(const denConnection::Ref &connection);
+	virtual derlRemoteClient::Ref CreateClient(const derlRemoteClientConnection::Ref &connection);
 	
 	
 	

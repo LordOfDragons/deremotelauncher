@@ -31,7 +31,8 @@
 // Class derlRemoteClient
 ///////////////////////////
 
-derlRemoteClient::derlRemoteClient(derlServer &server, const denConnection::Ref &connection) :
+derlRemoteClient::derlRemoteClient(derlServer &server,
+	const derlRemoteClientConnection::Ref &connection) :
 pServer(server),
 pConnection(connection){
 }
@@ -46,7 +47,7 @@ derlRemoteClient::~derlRemoteClient(){
 
 const std::string &derlRemoteClient::GetName() const{
 	if(pConnection){
-		return ((derlRemoteClientConnection&)*pConnection).GetName();
+		return pConnection->GetName();
 		
 	}else{
 		static const std::string name;
@@ -113,9 +114,8 @@ void derlRemoteClient::Disconnect(){
 
 void derlRemoteClient::Update(float elapsed){
 	if(pConnection){
-		derlRemoteClientConnection &connection = ((derlRemoteClientConnection&)*pConnection);
-		connection.Update(elapsed);
-		connection.FinishPendingOperations();
+		pConnection->Update(elapsed);
+		pConnection->FinishPendingOperations();
 	}
 }
 

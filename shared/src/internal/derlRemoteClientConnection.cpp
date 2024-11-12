@@ -151,7 +151,8 @@ void derlRemoteClientConnection::MessageReceived(const denMessage::Ref &message)
 		denServer::Connections::const_iterator iter;
 		for(iter=connections.cbegin(); iter!=connections.cend(); iter++){
 			if(iter->get() == this){
-				const derlRemoteClient::Ref client(pServer.CreateClient(*iter));
+				const derlRemoteClient::Ref client(pServer.CreateClient(
+					std::dynamic_pointer_cast<derlRemoteClientConnection>(*iter)));
 				pServer.GetClients().push_back(client);
 				pClient = client.get();
 				pClient->OnConnectionEstablished();

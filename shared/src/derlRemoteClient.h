@@ -32,12 +32,12 @@
 #include <filesystem>
 
 #include "derlFileLayout.h"
+#include "internal/derlRemoteClientConnection.h"
 #include "processor/derlTaskProcessorRemoteClient.h"
 #include "task/derlTaskSyncClient.h"
 #include <denetwork/denConnection.h>
 
 
-class derlRemoteClientConnection;
 class derlServer;
 
 
@@ -60,7 +60,7 @@ private:
 	friend class derlRemoteClientConnection;
 	
 	derlServer &pServer;
-	const denConnection::Ref pConnection;
+	const derlRemoteClientConnection::Ref pConnection;
 	denLogger::Ref pLogger;
 	
 	derlFileLayout::Ref pFileLayout;
@@ -78,7 +78,7 @@ public:
 	/**
 	 * \brief Create remote launcher.
 	 */
-	derlRemoteClient(derlServer &server, const denConnection::Ref &connection);
+	derlRemoteClient(derlServer &server, const derlRemoteClientConnection::Ref &connection);
 	
 	/** \brief Clean up remote launcher support. */
 	virtual ~derlRemoteClient() noexcept;

@@ -22,23 +22,39 @@
  * SOFTWARE.
  */
 
-#include "derlTaskSyncClient.h"
+#include "derlRunParameters.h"
 
 
-// Class derlTaskSyncClient
-/////////////////////////////
+// Class derlRunParameters
+////////////////////////////
 
-derlTaskSyncClient::derlTaskSyncClient() :
-pStatus(Status::pending){
+derlRunParameters::derlRunParameters(const derlRunParameters &parameters) :
+pGameConfig(parameters.pGameConfig),
+pProfileName(parameters.pProfileName),
+pArguments(parameters.pArguments){
 }
-
-derlTaskSyncClient::~derlTaskSyncClient(){
-}
-
 
 // Management
 ///////////////
 
-void derlTaskSyncClient::SetStatus(Status status){
-	pStatus = status;
+void derlRunParameters::SetGameConfig(const std::string &config){
+	pGameConfig = config;
+}
+
+void derlRunParameters::SetProfileName(const std::string &profile){
+	pProfileName = profile;
+}
+
+void derlRunParameters::SetArguments(const std::string &arguments){
+	pArguments = arguments;
+}
+
+// Operators
+//////////////
+
+derlRunParameters &derlRunParameters::operator=(const derlRunParameters &parameters){
+	pGameConfig = parameters.pGameConfig;
+	pProfileName = parameters.pProfileName;
+	pArguments = parameters.pArguments;
+	return *this;
 }

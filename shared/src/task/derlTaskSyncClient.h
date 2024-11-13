@@ -28,6 +28,9 @@
 #include <memory>
 #include <string>
 
+#include "derlTaskFileWrite.h"
+#include "derlTaskFileDelete.h"
+#include "derlTaskFileBlockHashes.h"
 #include "../derlFileLayout.h"
 
 
@@ -50,7 +53,9 @@ public:
 	
 private:
 	Status pStatus;
-	derlFileLayout::Ref pLayout;
+	derlTaskFileWrite::Map pTasksWriteFile;
+	derlTaskFileDelete::Map pTaskDeleteFiles;
+	derlTaskFileBlockHashes::Map pTasksFileBlockHashes;
 	
 	
 public:
@@ -71,9 +76,17 @@ public:
 	inline Status GetStatus() const{ return pStatus; }
 	void SetStatus(Status status);
 	
-	/** \brief Layout. */
-	inline const derlFileLayout::Ref &GetLayout() const{ return pLayout; }
-	void SetLayout(const derlFileLayout::Ref &layout);
+	/** \brief Delete file tasks. */
+	inline const derlTaskFileDelete::Map &GetTasksDeleteFile() const{ return pTaskDeleteFiles; }
+	inline derlTaskFileDelete::Map &GetTasksDeleteFile(){ return pTaskDeleteFiles; }
+	
+	/** \brief Write file tasks. */
+	inline const derlTaskFileWrite::Map &GetTasksWriteFile() const{ return pTasksWriteFile; }
+	inline derlTaskFileWrite::Map &GetTasksWriteFile(){ return pTasksWriteFile; }
+	
+	/** \brief File block hashes tasks. */
+	inline const derlTaskFileBlockHashes::Map &GetTasksFileBlockHashes() const{ return pTasksFileBlockHashes; }
+	inline derlTaskFileBlockHashes::Map &GetTasksFileBlockHashes(){ return pTasksFileBlockHashes; }
 	/*@}*/
 };
 

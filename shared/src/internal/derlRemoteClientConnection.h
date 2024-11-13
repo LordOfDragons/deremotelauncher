@@ -27,6 +27,13 @@
 
 #include <memory>
 
+#include "../derlRunParameters.h"
+#include "../derlProtocol.h"
+#include "../task/derlTaskFileWrite.h"
+#include "../task/derlTaskFileDelete.h"
+#include "../task/derlTaskFileBlockHashes.h"
+#include "../task/derlTaskSyncClient.h"
+
 #include <denetwork/denConnection.h>
 #include <denetwork/state/denState.h>
 #include <denetwork/value/denValueInteger.h>
@@ -121,6 +128,23 @@ public:
 	
 private:
 	void pProcessRequestLogs(denMessageReader &reader);
+	void pProcessResponseFileLayout(denMessageReader &reader);
+	void pProcessResponseFileBlockHashes(denMessageReader &reader);
+	void pProcessResponseDeleteFiles(denMessageReader &reader);
+	void pProcessResponseWriteFiles(denMessageReader &reader);
+	void pProcessResponseSendFileData(denMessageReader &reader);
+	void pProcessResponseFinishWriteFiles(denMessageReader &reader);
+	
+	void pSendRequestLayout();
+	void pSendRequestFileBlockHashes(const std::string &path, uint32_t blockSize);
+	void pSendRequestDeleteFiles(const derlTaskFileDelete::List &tasks);
+	void pSendRequestWriteFiles(const derlTaskFileWrite::List &tasks);
+	void pSendSendFileData(const derlTaskFileWrite &task, const derlTaskFileWriteBlock &block);
+	void pSendRequestFinishWriteFiles(const derlTaskFileWrite::List &tasks);
+	void pSendStartApplication(const derlRunParameters &parameters);
+	void pSendStopApplication(derlProtocol::StopApplicationMode mode);
+	
+	derlTaskSyncClient::Ref pGetProcessingSyncTask() const;
 };
 
 #endif

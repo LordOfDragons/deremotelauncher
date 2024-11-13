@@ -22,75 +22,64 @@
  * SOFTWARE.
  */
 
-#ifndef _DERLTASKFILEWRITE_H_
-#define _DERLTASKFILEWRITE_H_
+#ifndef _DERLRUNPARAMETERS_H_
+#define _DERLRUNPARAMETERS_H_
 
-#include <memory>
 #include <string>
-#include <vector>
-#include <unordered_map>
-
-#include "derlTaskFileWriteBlock.h"
+#include <memory>
 
 
 /**
- * \brief File write task.
+ * \brief Run parameters.
  */
-class derlTaskFileWrite{
-public:
-	/** \brief Reference type. */
-	typedef std::shared_ptr<derlTaskFileWrite> Ref;
-	
-	/** \brief Reference list. */
-	typedef std::vector<Ref> List;
-	
-	/** \brief Reference map keyed by path. */
-	typedef std::unordered_map<std::string, Ref> Map;
-	
-	/** \brief Status. */
-	enum class Status{
-		pending,
-		processing,
-		success,
-		failure
-	};
-	
-	
+class derlRunParameters{
 private:
-	const std::string pPath;
-	Status pStatus;
-	uint64_t pFileSize;
-	derlTaskFileWriteBlock::List pBlocks;
+	std::string pGameConfig;
+	std::string pProfileName;
+	std::string pArguments;
+	
 	
 	
 public:
 	/** \name Constructors and Destructors */
 	/*@{*/
-	/** \brief Create task. */
-	derlTaskFileWrite(const std::string &path);
+	/**
+	 * \brief Create run parameters.
+	 */
+	derlRunParameters() = default;
 	
-	/** \brief Clean up task. */
-	~derlTaskFileWrite() noexcept;
+	/**
+	 * \brief Create run parameters.
+	 */
+	derlRunParameters(const derlRunParameters &parameters);
+	
+	/** \brief Clean up run parameters. */
+	~derlRunParameters() = default;
 	/*@}*/
 	
 	
 	
 	/** \name Management */
 	/*@{*/
-	/** \brief Path. */
-	inline const std::string &GetPath() const{ return pPath; }
+	/** \brief Game configuration. */
+	inline const std::string &GetGameConfig() const{ return pGameConfig; }
+	void SetGameConfig(const std::string &config);
 	
-	/** \brief Status. */
-	inline Status GetStatus() const{ return pStatus; }
-	void SetStatus(Status status);
+	/** \brief Profile name. */
+	inline const std::string &GetProfileName() const{ return pProfileName; }
+	void SetProfileName(const std::string &profile);
 	
-	/** \brief File size. */
-	inline uint64_t GetFileSize() const{ return pFileSize; }
-	void SetFileSize(uint64_t fileSize);
+	/** \brief Arguments. */
+	inline const std::string &GetArguments() const{ return pArguments; }
+	void SetArguments(const std::string &arguments);
+	/*@}*/
 	
-	/** \brief Blocks. */
-	inline const derlTaskFileWriteBlock::List &GetBlocks() const{ return pBlocks; }
-	inline derlTaskFileWriteBlock::List &GetBlocks(){ return pBlocks; }
+	
+	
+	/** \name Operators */
+	/*@{*/
+	/** \brief Assign. */
+	derlRunParameters &operator=(const derlRunParameters &parameters);
 	/*@}*/
 };
 

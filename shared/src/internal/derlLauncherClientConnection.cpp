@@ -28,6 +28,7 @@
 #include "derlLauncherClientConnection.h"
 #include "../derlLauncherClient.h"
 #include "../derlProtocol.h"
+#include "../derlRunParameters.h"
 
 #include <denetwork/message/denMessage.h>
 #include <denetwork/message/denMessageReader.h>
@@ -489,10 +490,12 @@ void derlLauncherClientConnection::pProcessRequestFinishWriteFiles(denMessageRea
 }
 
 void derlLauncherClientConnection::pProcessStartApplication(denMessageReader &reader){
-	const std::string gameConfig(reader.ReadString16());
-	const std::string profileName(reader.ReadString8());
-	const std::string arguments(reader.ReadString16());
+	derlRunParameters runParams;
+	runParams.SetGameConfig(reader.ReadString16());
+	runParams.SetProfileName(reader.ReadString8());
+	runParams.SetArguments(reader.ReadString16());
 	
+	// TODO
 }
 
 void derlLauncherClientConnection::pProcessStopApplication(denMessageReader &reader){

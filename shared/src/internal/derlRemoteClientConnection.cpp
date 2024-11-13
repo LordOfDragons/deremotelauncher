@@ -197,13 +197,20 @@ void derlRemoteClientConnection::MessageReceived(const denMessage::Ref &message)
 }
 
 void derlRemoteClientConnection::FinishPendingOperations(){
-	/*
 	if(!pClient){
 		return;
 	}
 	
 	const std::lock_guard guard(pClient->GetMutex());
-	*/
+	
+	const derlTaskSyncClient::Ref &taskSync = pClient->GetTaskSyncClient();
+	if(!taskSync || taskSync->GetStatus() != derlTaskSyncClient::Status::processing){
+		return;
+	}
+	
+	// TODO send requests for tasks in "pending" state promoting them to "processing" state
+	
+	// TODO if all tasks are in "success" or "failure" state promote taskSync to "success" or "failure" state
 }
 
 // Private Functions
@@ -262,6 +269,7 @@ void derlRemoteClientConnection::pProcessResponseFileLayout(denMessageReader &re
 	}
 	
 	pClient->SetFileLayout(layout);
+	GetLogger()->Log(denLogger::LogSeverity::info, "File layout received.");
 }
 
 void derlRemoteClientConnection::pProcessResponseFileBlockHashes(denMessageReader &reader){
@@ -330,6 +338,10 @@ void derlRemoteClientConnection::pProcessResponseFileBlockHashes(denMessageReade
 	}
 	
 	taskHashes.SetStatus(derlTaskFileBlockHashes::Status::success);
+	
+	std::stringstream log;
+	log << "Block hashes: " << path;
+	GetLogger()->Log(denLogger::LogSeverity::info, log.str());
 }
 
 void derlRemoteClientConnection::pProcessResponseDeleteFiles(denMessageReader &reader){
@@ -365,8 +377,16 @@ void derlRemoteClientConnection::pProcessResponseDeleteFiles(denMessageReader &r
 		if(result == derlProtocol::DeleteFileResult::success){
 			taskDelete.SetStatus(derlTaskFileDelete::Status::success);
 			
+			std::stringstream log;
+			log << "File deleted: " << path;
+			GetLogger()->Log(denLogger::LogSeverity::info, log.str());
+			
 		}else{
 			taskDelete.SetStatus(derlTaskFileDelete::Status::failure);
+			
+			std::stringstream log;
+			log << "Failed deleting file: " << path;
+			GetLogger()->Log(denLogger::LogSeverity::error, log.str());
 		}
 	}
 }
@@ -406,6 +426,10 @@ void derlRemoteClientConnection::pProcessResponseWriteFiles(denMessageReader &re
 			
 		}else{
 			taskWrite.SetStatus(derlTaskFileWrite::Status::failure);
+			
+			std::stringstream log;
+			log << "Failed writing file: " << path;
+			GetLogger()->Log(denLogger::LogSeverity::error, log.str());
 		}
 	}
 }
@@ -473,6 +497,10 @@ void derlRemoteClientConnection::pProcessResponseSendFileData(denMessageReader &
 			
 		}else{
 			block.SetStatus(derlTaskFileWriteBlock::Status::failure);
+			
+			std::stringstream log;
+			log << "Failed sending data: " << path << " offset " << offset << " size " << size;
+			GetLogger()->Log(denLogger::LogSeverity::error, log.str());
 		}
 	}
 }
@@ -510,13 +538,23 @@ void derlRemoteClientConnection::pProcessResponseFinishWriteFiles(denMessageRead
 		if(result == derlProtocol::WriteFileResult::success){
 			taskWrite.SetStatus(derlTaskFileWrite::Status::success);
 			
+			std::stringstream log;
+			log << "File written: " << path;
+			GetLogger()->Log(denLogger::LogSeverity::info, log.str());
+			
 		}else{
 			taskWrite.SetStatus(derlTaskFileWrite::Status::failure);
+			
+			std::stringstream log;
+			log << "Writing file failed: " << path;
+			GetLogger()->Log(denLogger::LogSeverity::error, log.str());
 		}
 	}
 }
 
 void derlRemoteClientConnection::pSendRequestLayout(){
+	GetLogger()->Log(denLogger::LogSeverity::info, "Request file layout");
+	
 	const denMessage::Ref message(denMessage::Pool().Get());
 	{
 		denMessageWriter writer(message->Item());
@@ -526,6 +564,10 @@ void derlRemoteClientConnection::pSendRequestLayout(){
 }
 
 void derlRemoteClientConnection::pSendRequestFileBlockHashes(const std::string &path, uint32_t blockSize){
+	std::stringstream log;
+	log << "Request file blocks: " << path << " blockSize " << blockSize;
+	GetLogger()->Log(denLogger::LogSeverity::info, log.str());
+	
 	const denMessage::Ref message(denMessage::Pool().Get());
 	{
 		denMessageWriter writer(message->Item());
@@ -547,6 +589,10 @@ void derlRemoteClientConnection::pSendRequestDeleteFiles(const derlTaskFileDelet
 		for(iter=tasks.cbegin(); iter!=tasks.cend(); iter++){
 			const derlTaskFileDelete &task = **iter;
 			writer.WriteString16(task.GetPath());
+			
+			std::stringstream log;
+			log << "Request delete file: " << task.GetPath();
+			GetLogger()->Log(denLogger::LogSeverity::info, log.str());
 		}
 	}
 	SendReliableMessage(message);
@@ -564,12 +610,20 @@ void derlRemoteClientConnection::pSendRequestWriteFiles(const derlTaskFileWrite:
 			const derlTaskFileWrite &task = **iter;
 			writer.WriteString16(task.GetPath());
 			writer.WriteULong(task.GetFileSize());
+			
+			std::stringstream log;
+			log << "Request write file: " << task.GetPath() << " size " << task.GetFileSize();
+			GetLogger()->Log(denLogger::LogSeverity::info, log.str());
 		}
 	}
 	SendReliableMessage(message);
 }
 
 void derlRemoteClientConnection::pSendSendFileData(const derlTaskFileWrite &task, const derlTaskFileWriteBlock &block){
+	std::stringstream log;
+	log << "Send file data: " << task.GetPath() << " offset " << block.GetOffset() << " size " << block.GetSize();
+	GetLogger()->Log(denLogger::LogSeverity::info, log.str());
+	
 	const denMessage::Ref message(denMessage::Pool().Get());
 	{
 		denMessageWriter writer(message->Item());
@@ -592,12 +646,20 @@ void derlRemoteClientConnection::pSendRequestFinishWriteFiles(const derlTaskFile
 		for(iter=tasks.cbegin(); iter!=tasks.cend(); iter++){
 			const derlTaskFileWrite &task = **iter;
 			writer.WriteString16(task.GetPath());
+			
+			std::stringstream log;
+			log << "Request finish write file: " << task.GetPath();
+			GetLogger()->Log(denLogger::LogSeverity::info, log.str());
 		}
 	}
 	SendReliableMessage(message);
 }
 
 void derlRemoteClientConnection::pSendStartApplication(const derlRunParameters &parameters){
+	std::stringstream log;
+	log << "Start application: ";
+	GetLogger()->Log(denLogger::LogSeverity::info, log.str());
+	
 	const denMessage::Ref message(denMessage::Pool().Get());
 	{
 		denMessageWriter writer(message->Item());
@@ -610,6 +672,10 @@ void derlRemoteClientConnection::pSendStartApplication(const derlRunParameters &
 }
 
 void derlRemoteClientConnection::pSendStopApplication(derlProtocol::StopApplicationMode mode){
+	std::stringstream log;
+	log << "Stop application: " << (int)mode;
+	GetLogger()->Log(denLogger::LogSeverity::info, log.str());
+	
 	const denMessage::Ref message(denMessage::Pool().Get());
 	{
 		denMessageWriter writer(message->Item());

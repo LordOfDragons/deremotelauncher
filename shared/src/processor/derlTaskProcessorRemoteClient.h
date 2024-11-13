@@ -74,6 +74,11 @@ public:
 	
 	/** \brief Process task sync client. */
 	virtual void ProcessSyncClient(derlTaskSyncClient &task);
+	
+	/** \brief Prepare sync client. */
+	virtual void PrepareSync(derlTaskSyncClient &task);
+	
+protected:
 };
 
 #endif

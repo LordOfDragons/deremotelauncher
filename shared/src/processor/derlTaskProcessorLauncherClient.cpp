@@ -94,6 +94,7 @@ bool derlTaskProcessorLauncherClient::FindNextTaskFileLayout(derlTaskFileLayout:
 	const derlTaskFileLayout::Ref checkTask(pClient.GetTaskFileLayout());
 	if(checkTask && checkTask->GetStatus() == derlTaskFileLayout::Status::pending){
 		task = checkTask;
+		task->SetStatus(derlTaskFileLayout::Status::processing);
 		return true;
 	}
 	return false;

@@ -34,7 +34,7 @@
 
 
 // Class derlTaskProcessorRemoteClient
-////////////////////////////
+////////////////////////////////////////
 
 derlTaskProcessorRemoteClient::derlTaskProcessorRemoteClient(derlRemoteClient &client) :
 pClient(client){
@@ -67,17 +67,37 @@ bool derlTaskProcessorRemoteClient::RunTask(){
 
 bool derlTaskProcessorRemoteClient::FindNextTaskSyncClient(derlTaskSyncClient::Ref &task) const{
 	const derlTaskSyncClient::Ref checkTask(pClient.GetTaskSyncClient());
-	if(checkTask && checkTask->GetStatus() == derlTaskSyncClient::Status::pending){
+	if(!checkTask){
+		return false;
+	}
+	
+	switch(checkTask->GetStatus()){
+	case derlTaskSyncClient::Status::pending:
+		task = checkTask;
+		task->SetStatus(derlTaskSyncClient::Status::preparing);
+		return true;
+		
+	case derlTaskSyncClient::Status::success:
+	case derlTaskSyncClient::Status::failure:
 		task = checkTask;
 		return true;
+		
+	default:
+		return false;
 	}
-	return false;
 }
 
 void derlTaskProcessorRemoteClient::ProcessSyncClient(derlTaskSyncClient &task){
-	derlTaskSyncClient::Status status = task.GetStatus();
+	derlTaskSyncClient::Status status;
 	
 	try{
+		if(task.GetStatus() == derlTaskSyncClient::Status::preparing){
+			PrepareSync(task);
+			status = derlTaskSyncClient::Status::processing;
+			
+		}else{
+			status = task.GetStatus();
+		}
 		
 	}catch(const std::exception &e){
 		LogException("ProcessSyncClient", e, "Failed");
@@ -90,7 +110,11 @@ void derlTaskProcessorRemoteClient::ProcessSyncClient(derlTaskSyncClient &task){
 	
 	std::lock_guard guard(pClient.GetMutex());
 	if(status == derlTaskSyncClient::Status::success){
-		
+		// TODO
 	}
 	task.SetStatus(status);
+}
+
+void derlTaskProcessorRemoteClient::PrepareSync(derlTaskSyncClient &task){
+	// TODO
 }

@@ -155,7 +155,8 @@ private:
 	void pSendStartApplication(const derlRunParameters &parameters);
 	void pSendStopApplication(derlProtocol::StopApplicationMode mode);
 	
-	derlTaskSyncClient::Ref pGetProcessingSyncTask() const;
+	derlTaskSyncClient::Ref pGetPendingSyncTask(const std::string &functionName);
+	derlTaskSyncClient::Ref pGetProcessingSyncTask(const std::string &functionName);
 };
 
 #endif

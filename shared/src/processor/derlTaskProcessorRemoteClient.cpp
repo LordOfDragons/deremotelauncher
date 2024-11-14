@@ -92,9 +92,7 @@ bool derlTaskProcessorRemoteClient::FindNextTaskSyncClient(derlTaskSyncClient::R
 }
 
 void derlTaskProcessorRemoteClient::ProcessFileLayoutServer(derlTaskFileLayout &task){
-	if(pEnableDebugLog){
-		LogDebug("ProcessFileLayoutServer", "Build file layout");
-	}
+	LogDebug("ProcessFileLayoutServer", "Build file layout");
 	
 	derlTaskFileLayout::Status status;
 	derlFileLayout::Ref layout;
@@ -160,7 +158,7 @@ void derlTaskProcessorRemoteClient::ProcessSyncClient(derlTaskSyncClient &task){
 		
 		// TODO
 		
-		status = derlTaskSyncClient::Status::preparing;
+		status = derlTaskSyncClient::Status::processing;
 		
 	}catch(const std::exception &e){
 		LogException("ProcessSyncClient", e, "Failed");

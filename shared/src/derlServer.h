@@ -164,6 +164,7 @@ public:
 	 * - processes network events.
 	 * - add pending file operations to be processed by a task processor.
 	 * - finish requests if pending file operations are finished.
+	 * - calls derlRemoteClient::Update() on all clients.
 	 * 
 	 * The caller is responsible to operate task processors himself if not using the default one.
 	 * 

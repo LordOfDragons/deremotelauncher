@@ -134,6 +134,17 @@ public:
 	
 	/** \brief Process finished pending operations. */
 	void FinishPendingOperations();
+	
+	/** \brief Log exception. */
+	void LogException(const std::string &functionName, const std::exception &exception,
+		const std::string &message);
+	
+	/** \brief Log message. */
+	virtual void Log(denLogger::LogSeverity severity, const std::string &functionName,
+		const std::string &message);
+	
+	/** \brief Debug log message only printed if debugging is enabled. */
+	void LogDebug(const std::string &functionName, const std::string &message);
 	/*@}*/
 	
 	

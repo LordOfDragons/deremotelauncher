@@ -216,7 +216,7 @@ public:
 	 * 
 	 * \param[in] elapsed Elapsed time since last update call.
 	 */
-	void Update(float elapsed);
+	virtual void Update(float elapsed);
 	/*@}*/
 	
 	
@@ -228,6 +228,15 @@ public:
 	
 	/** \brief Connection closed either by calling Disconnect() or by server. */
 	virtual void OnConnectionClosed();
+	
+	/** \brief Begin synchronize. */
+	virtual void OnSynchronizeBegin();
+	
+	/** \brief Synchronize update. */
+	virtual void OnSynchronizeUpdate();
+	
+	/** \brief Synchronize finished. */
+	virtual void OnSynchronizeFinished();
 	/*@}*/
 	
 	

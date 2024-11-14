@@ -211,9 +211,7 @@ void derlTaskProcessorLauncherClient::ProcessFileBlockHashes(derlTaskFileBlockHa
 }
 
 void derlTaskProcessorLauncherClient::ProcessFileLayout(derlTaskFileLayout &task){
-	if(pEnableDebugLog){
-		LogDebug("ProcessFileLayout", "Build file layout");
-	}
+	LogDebug("ProcessFileLayout", "Build file layout");
 	
 	derlTaskFileLayout::Status status;
 	derlFileLayout::Ref layout;

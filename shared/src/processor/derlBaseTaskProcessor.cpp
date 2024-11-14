@@ -39,9 +39,11 @@
 ////////////////////////////////
 
 derlBaseTaskProcessor::derlBaseTaskProcessor() :
+pExit(false),
 pNoTaskDelay(500),
 pFileHashReadSize(1024L * 8L),
-pLogClassName("derlBaseTaskProcessor"){
+pLogClassName("derlBaseTaskProcessor"),
+pEnableDebugLog(false){
 }
 
 // Management
@@ -64,6 +66,7 @@ void derlBaseTaskProcessor::Run(){
 }
 
 void derlBaseTaskProcessor::CalcFileLayout(derlFileLayout &layout, const std::string &pathDir){
+	//LogDebug("CalcFileLayout", pathDir);
 	ListDirEntries entries;
 	ListDirectoryFiles(entries, pathDir);
 	
@@ -82,6 +85,7 @@ void derlBaseTaskProcessor::CalcFileLayout(derlFileLayout &layout, const std::st
 }
 
 void derlBaseTaskProcessor::ListDirectoryFiles(ListDirEntries &entries, const std::string &pathDir){
+	//LogDebug("ListDirectoryFiles", pathDir);
 	const std::filesystem::path fspathDir(pathDir);
 	
 	std::filesystem::directory_iterator iter{pBaseDir / pathDir};
@@ -98,6 +102,7 @@ void derlBaseTaskProcessor::ListDirectoryFiles(ListDirEntries &entries, const st
 }
 
 void derlBaseTaskProcessor::CalcFileHash(derlFile &file){
+	//LogDebug("CalcFileHash", file.GetPath());
 	const uint64_t fileSize = file.GetSize();
 	SHA256 hash;
 	

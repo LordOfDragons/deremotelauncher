@@ -31,7 +31,8 @@
 // Class derlServer
 /////////////////////
 
-derlServer::derlServer(){
+derlServer::derlServer() :
+pServer(std::make_unique<derlServerServer>(*this)){
 }
 
 derlServer::~derlServer(){
@@ -104,6 +105,12 @@ void derlServer::StopListening(){
 
 void derlServer::Update(float elapsed){
 	pServer->Update(elapsed);
+	
+	const derlRemoteClient::List clients(pClients);
+	derlRemoteClient::List::const_iterator iter;
+	for(iter=clients.cbegin(); iter!=clients.cend(); iter++){
+		(*iter)->Update(elapsed);
+	}
 }
 
 // Events

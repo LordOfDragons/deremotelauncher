@@ -117,7 +117,7 @@ void derlLauncherClientConnection::MessageReceived(const denMessage::Ref &messag
 			std::string signature(16, 0);
 			reader.Read((void*)signature.c_str(), 16);
 			if(signature != derlProtocol::signatureServer){
-				GetLogger()->Log(denLogger::LogSeverity::error,
+				Log(denLogger::LogSeverity::error, "MessageReceived",
 					"Server answered with wrong signature, disconnecting.");
 				Disconnect();
 				return;
@@ -330,6 +330,30 @@ void derlLauncherClientConnection::FinishPendingOperations(){
 	}
 }
 
+void derlLauncherClientConnection::LogException(const std::string &functionName,
+const std::exception &exception, const std::string &message){
+	std::stringstream ss;
+	ss << message << ": " << exception.what();
+	Log(denLogger::LogSeverity::error, functionName, ss.str());
+}
+
+void derlLauncherClientConnection::Log(denLogger::LogSeverity severity,
+const std::string &functionName, const std::string &message){
+	if(!GetLogger()){
+		return;
+	}
+	
+	std::stringstream ss;
+	ss << "[derlLauncherClientConnection::" << functionName << "] " << message;
+	GetLogger()->Log(severity, ss.str());
+}
+
+void derlLauncherClientConnection::LogDebug(const std::string &functionName, const std::string &message){
+	//if(pEnableDebugLog){
+		Log(denLogger::LogSeverity::debug, functionName, message);
+	//}
+}
+
 // Private Functions
 //////////////////////
 
@@ -343,7 +367,7 @@ void derlLauncherClientConnection::pFinishFileBlockHashes(derlTaskFileBlockHashe
 		std::stringstream log;
 		log << "Block hashes for file requested but file layout is not present: "
 			<< task.GetPath() << ". Answering with empty file.";
-		GetLogger()->Log(denLogger::LogSeverity::warning, log.str());
+		Log(denLogger::LogSeverity::warning, "pFinishFileBlockHashes", log.str());
 		pSendResponseFileBlockHashes(task.GetPath());
 		return;
 	}
@@ -353,7 +377,7 @@ void derlLauncherClientConnection::pFinishFileBlockHashes(derlTaskFileBlockHashe
 		std::stringstream log;
 		log << "Block hashes for non-existing file requested: "
 			<< task.GetPath() << ". Answering with empty file.";
-		GetLogger()->Log(denLogger::LogSeverity::warning, log.str());
+		Log(denLogger::LogSeverity::warning, "pFinishFileBlockHashes", log.str());
 		pSendResponseFileBlockHashes(task.GetPath());
 		return;
 	}
@@ -382,7 +406,7 @@ void derlLauncherClientConnection::pProcessRequestFileBlockHashes(denMessageRead
 		std::stringstream log;
 		log << "Block hashes for file requested but file layout is not present: "
 			<< path << ". Answering with empty file.";
-		GetLogger()->Log(denLogger::LogSeverity::warning, log.str());
+		Log(denLogger::LogSeverity::warning, "pProcessRequestFileBlockHashes", log.str());
 		pSendResponseFileBlockHashes(path);
 		return;
 	}
@@ -392,7 +416,7 @@ void derlLauncherClientConnection::pProcessRequestFileBlockHashes(denMessageRead
 		std::stringstream log;
 		log << "Block hashes for non-existing file requested: "
 			<< path << ". Answering with empty file.";
-		GetLogger()->Log(denLogger::LogSeverity::warning, log.str());
+		Log(denLogger::LogSeverity::warning, "pProcessRequestFileBlockHashes", log.str());
 		pSendResponseFileBlockHashes(path);
 		return;
 	}

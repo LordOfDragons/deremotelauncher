@@ -96,6 +96,7 @@ void derlRemoteClient::SetSynchronizeDetails(const std::string &details){
 }
 
 void derlRemoteClient::Synchronize(){
+	{
 	std::lock_guard guard(pMutex);
 	
 	{
@@ -123,6 +124,9 @@ void derlRemoteClient::Synchronize(){
 	if(!pTaskSyncClient){
 		pTaskSyncClient = std::make_shared<derlTaskSyncClient>();
 	}
+	}
+	
+	OnSynchronizeBegin();
 }
 
 void derlRemoteClient::StartTaskProcessors(){
@@ -176,16 +180,42 @@ void derlRemoteClient::OnConnectionEstablished(){
 void derlRemoteClient::OnConnectionClosed(){
 }
 
+void derlRemoteClient::OnSynchronizeBegin(){
+}
 
+void derlRemoteClient::OnSynchronizeUpdate(){
+}
+
+void derlRemoteClient::OnSynchronizeFinished(){
+}
 
 // Protected Functions
 ////////////////////////
 
 void derlRemoteClient::FinishPendingOperations(){
+	bool sendEventSyncUpdate = false;
+	bool sendEventSyncEnd = false;
+	
+	{
 	std::lock_guard guard(pMutex);
 	
 	if(pTaskSyncClient){
 		pProcessTaskSyncClient(*pTaskSyncClient);
+		
+		if(pTaskSyncClient){
+			sendEventSyncUpdate = true;
+			
+		}else{
+			sendEventSyncEnd = true;
+		}
+	}
+	}
+	
+	if(sendEventSyncUpdate){
+		OnSynchronizeUpdate();
+		
+	}else if(sendEventSyncEnd){
+		OnSynchronizeFinished();
 	}
 }
 

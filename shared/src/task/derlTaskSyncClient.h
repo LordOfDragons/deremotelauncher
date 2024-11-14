@@ -54,6 +54,7 @@ public:
 	
 private:
 	Status pStatus;
+	std::string pError;
 	derlTaskFileWrite::Map pTasksWriteFile;
 	derlTaskFileDelete::Map pTaskDeleteFiles;
 	derlTaskFileBlockHashes::Map pTasksFileBlockHashes;
@@ -76,6 +77,10 @@ public:
 	/** \brief Status. */
 	inline Status GetStatus() const{ return pStatus; }
 	void SetStatus(Status status);
+	
+	/** \brief Error. */
+	inline const std::string &GetError() const{ return pError; }
+	void SetError(const std::string &error);
 	
 	/** \brief Delete file tasks. */
 	inline const derlTaskFileDelete::Map &GetTasksDeleteFile() const{ return pTaskDeleteFiles; }

@@ -50,14 +50,6 @@ void derlServer::SetPathDataDir(const std::filesystem::path &path){
 	pPathDataDir = path;
 }
 
-void derlServer::SetFileLayout(const derlFileLayout::Ref &layout){
-	pFileLayout = layout;
-}
-
-void derlServer::SetTaskFileLayout(const derlTaskFileLayout::Ref &task){
-	pTaskFileLayout = task;
-}
-
 const denLogger::Ref &derlServer::GetLogger() const{
 	return pServer->GetLogger();
 }

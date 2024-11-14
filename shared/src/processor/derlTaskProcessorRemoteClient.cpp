@@ -45,18 +45,24 @@ pClient(client){
 ///////////////
 
 bool derlTaskProcessorRemoteClient::RunTask(){
+	derlTaskFileLayout::Ref taskLayoutServer;
 	derlTaskSyncClient::Ref taskSyncClient;
 	
 	{
 	std::lock_guard guard(pClient.GetMutex());
-	std::lock_guard guard2(pClient.GetServer().GetMutex());
-	pBaseDir = pClient.GetServer().GetPathDataDir();
+	pBaseDir = pClient.GetPathDataDir();
 	
-	!pClient.GetServer().GetFileLayout()
+	FindNextTaskLayoutServer(taskLayoutServer)
+	|| !pClient.GetFileLayoutServer()
+	|| !pClient.GetFileLayoutClient()
 	|| FindNextTaskSyncClient(taskSyncClient);
 	}
 	
-	if(taskSyncClient){
+	if(taskLayoutServer){
+		ProcessFileLayoutServer(*taskLayoutServer);
+		return true;
+		
+	}else if(taskSyncClient){
 		ProcessSyncClient(*taskSyncClient);
 		return true;
 		
@@ -65,56 +71,115 @@ bool derlTaskProcessorRemoteClient::RunTask(){
 	}
 }
 
+bool derlTaskProcessorRemoteClient::FindNextTaskLayoutServer(derlTaskFileLayout::Ref &task) const{
+	const derlTaskFileLayout::Ref checkTask(pClient.GetTaskFileLayoutServer());
+	if(checkTask && checkTask->GetStatus() == derlTaskFileLayout::Status::pending){
+		task = checkTask;
+		task->SetStatus(derlTaskFileLayout::Status::processing);
+		return true;
+	}
+	return false;
+}
+
 bool derlTaskProcessorRemoteClient::FindNextTaskSyncClient(derlTaskSyncClient::Ref &task) const{
 	const derlTaskSyncClient::Ref checkTask(pClient.GetTaskSyncClient());
-	if(!checkTask){
-		return false;
-	}
-	
-	switch(checkTask->GetStatus()){
-	case derlTaskSyncClient::Status::pending:
+	if(checkTask && checkTask->GetStatus() == derlTaskSyncClient::Status::pending){
 		task = checkTask;
 		task->SetStatus(derlTaskSyncClient::Status::preparing);
 		return true;
+	}
+	return false;
+}
+
+void derlTaskProcessorRemoteClient::ProcessFileLayoutServer(derlTaskFileLayout &task){
+	if(pEnableDebugLog){
+		LogDebug("ProcessFileLayoutServer", "Build file layout");
+	}
+	
+	derlTaskFileLayout::Status status;
+	derlFileLayout::Ref layout;
+	std::string syncError;
+	
+	try{
+		layout = std::make_shared<derlFileLayout>();
+		CalcFileLayout(*layout, "");
+		status = derlTaskFileLayout::Status::success;
 		
-	case derlTaskSyncClient::Status::success:
-	case derlTaskSyncClient::Status::failure:
-		task = checkTask;
-		return true;
+	}catch(const std::exception &e){
+		LogException("ProcessFileLayoutServer", e, "Failed");
+		status = derlTaskFileLayout::Status::failure;
+		
+		std::stringstream ss;
+		ss << "Build server file layout failed: " << e.what();
+		syncError = ss.str();
+		
+	}catch(...){
+		Log(denLogger::LogSeverity::error, "ProcessFileLayoutServer", "Failed");
+		status = derlTaskFileLayout::Status::failure;
+		syncError = "Build server file layout failed: unknown error";
+	}
+	
+	std::lock_guard guard(pClient.GetMutex());
+	
+	switch(status){
+	case derlTaskFileLayout::Status::success:
+		pClient.SetFileLayoutServer(layout);
+		pClient.SetTaskFileLayoutServer(nullptr);
+		break;
+		
+	case derlTaskFileLayout::Status::failure:
+		pClient.SetFileLayoutServer(nullptr);
+		pClient.SetTaskFileLayoutServer(nullptr);
+		
+		if(pClient.GetTaskSyncClient()){
+			pClient.GetTaskSyncClient()->SetError(syncError);
+			pClient.GetTaskSyncClient()->SetStatus(derlTaskSyncClient::Status::failure);
+		}
+		break;
 		
 	default:
-		return false;
+		break;
 	}
 }
 
 void derlTaskProcessorRemoteClient::ProcessSyncClient(derlTaskSyncClient &task){
 	derlTaskSyncClient::Status status;
+	std::string syncError;
 	
 	try{
-		if(task.GetStatus() == derlTaskSyncClient::Status::preparing){
-			PrepareSync(task);
-			status = derlTaskSyncClient::Status::processing;
-			
-		}else{
-			status = task.GetStatus();
+		derlFileLayout::Ref layoutServer, layoutClient;
+		{
+		std::lock_guard guard(pClient.GetMutex());
+		layoutServer = pClient.GetFileLayoutServer();
+		layoutClient = pClient.GetFileLayoutClient();
 		}
+		
+		if(!layoutServer || !layoutClient){
+			return;
+		}
+		
+		// TODO
+		
+		status = derlTaskSyncClient::Status::preparing;
 		
 	}catch(const std::exception &e){
 		LogException("ProcessSyncClient", e, "Failed");
 		status = derlTaskSyncClient::Status::failure;
 		
+		std::stringstream ss;
+		ss << "Synchronize client failed: " << e.what();
+		syncError = ss.str();
+		
 	}catch(...){
-		Log(denLogger::LogSeverity::error, "ProcessFileBlockHashes", "Failed");
+		Log(denLogger::LogSeverity::error, "ProcessSyncClient", "Failed");
 		status = derlTaskSyncClient::Status::failure;
+		syncError = "Synchronize client failed: unknown error";
 	}
 	
 	std::lock_guard guard(pClient.GetMutex());
-	if(status == derlTaskSyncClient::Status::success){
-		// TODO
-	}
+	
 	task.SetStatus(status);
-}
-
-void derlTaskProcessorRemoteClient::PrepareSync(derlTaskSyncClient &task){
-	// TODO
+	if(status == derlTaskSyncClient::Status::failure){
+		task.SetError(syncError);
+	}
 }

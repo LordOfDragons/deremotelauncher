@@ -29,13 +29,12 @@
 #include <vector>
 #include <mutex>
 #include <thread>
-#include <filesystem>
 
 #include "derlFileLayout.h"
 #include "internal/derlRemoteClientConnection.h"
 #include "processor/derlTaskProcessorRemoteClient.h"
+#include "task/derlTaskFileLayout.h"
 #include "task/derlTaskSyncClient.h"
-#include <denetwork/denConnection.h>
 
 
 class derlServer;
@@ -55,6 +54,21 @@ public:
 	/** \brief List reference type. */
 	typedef std::vector<Ref> List;
 	
+	/** \brief Synchronize status. */
+	enum class SynchronizeStatus{
+		/** \brief Client has not synchronized yet. */
+		pending,
+		
+		/** \brief Client is synchronizing. */
+		processing,
+		
+		/** \brief Client is synchronized. */
+		ready,
+		
+		/** \brief Client synchronization failed. */
+		failed
+	};
+	
 	
 private:
 	friend class derlRemoteClientConnection;
@@ -63,8 +77,14 @@ private:
 	const derlRemoteClientConnection::Ref pConnection;
 	denLogger::Ref pLogger;
 	
-	derlFileLayout::Ref pFileLayout;
+	std::filesystem::path pPathDataDir;
+	SynchronizeStatus pSynchronizeStatus;
+	std::string pSynchronizeDetails;
+	bool pRunning;
 	
+	derlFileLayout::Ref pFileLayoutServer, pFileLayoutClient;
+	
+	derlTaskFileLayout::Ref pTaskFileLayoutServer, pTaskFileLayoutClient;
 	derlTaskSyncClient::Ref pTaskSyncClient;
 	std::mutex pMutex;
 	
@@ -95,13 +115,28 @@ public:
 	/** \brief Name identifying the client. */
 	const std::string &GetName() const;
 	
-	/** \brief File layout or nullptr. */
-	inline const derlFileLayout::Ref &GetFileLayout() const{ return pFileLayout; }
-	void SetFileLayout( const derlFileLayout::Ref &layout );
+	/** \brief Server file layout or nullptr. */
+	inline const derlFileLayout::Ref &GetFileLayoutServer() const{ return pFileLayoutServer; }
+	void SetFileLayoutServer( const derlFileLayout::Ref &layout );
+	
+	/** \brief Client file layout or nullptr. */
+	inline const derlFileLayout::Ref &GetFileLayoutClient() const{ return pFileLayoutClient; }
+	void SetFileLayoutClient( const derlFileLayout::Ref &layout );
+	
+	/** \brief Server file layout task. */
+	inline const derlTaskFileLayout::Ref &GetTaskFileLayoutServer() const{ return pTaskFileLayoutServer; }
+	void SetTaskFileLayoutServer(const derlTaskFileLayout::Ref &task);
+	
+	/** \brief Client file layout task. */
+	inline const derlTaskFileLayout::Ref &GetTaskFileLayoutClient() const{ return pTaskFileLayoutClient; }
+	void SetTaskFileLayoutClient(const derlTaskFileLayout::Ref &task);
 	
 	/** \brief Sync client task. */
 	inline const derlTaskSyncClient::Ref &GetTaskSyncClient() const{ return pTaskSyncClient; }
 	void SetTaskSyncClient(const derlTaskSyncClient::Ref &task);
+	
+	/** \brief Path to data directory. */
+	inline const std::filesystem::path &GetPathDataDir() const{ return pPathDataDir; }
 	
 	/** \brief Mutex. */
 	inline std::mutex &GetMutex(){ return pMutex; }
@@ -113,6 +148,22 @@ public:
 	
 	/** \brief Set logger or nullptr to clear. */
 	void SetLogger(const denLogger::Ref &logger);
+	
+	
+	
+	/** \brief Synchronize status. */
+	inline SynchronizeStatus GetSynchronizeStatus() const{ return pSynchronizeStatus; }
+	
+	/** \brief Last synchronize details for display. */
+	inline const std::string &GetSynchronizeDetails() const{ return pSynchronizeDetails; }
+	
+	/** \brief Set synchronize details for display. */
+	void SetSynchronizeDetails(const std::string &details);
+	
+	/**
+	 * \brief Synchronize client.
+	 */
+	virtual void Synchronize();
 	
 	
 	
@@ -181,7 +232,16 @@ public:
 	
 	
 	
+protected:
+	/**
+	 * \brief Finish pending operations.
+	 */
+	void FinishPendingOperations();
+	
+	
+	
 private:
+	void pProcessTaskSyncClient(derlTaskSyncClient &task);
 };
 
 #endif

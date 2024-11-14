@@ -25,6 +25,7 @@
 #include <stdexcept>
 
 #include "derlRemoteClient.h"
+#include "derlServer.h"
 #include "internal/derlRemoteClientConnection.h"
 
 
@@ -34,7 +35,8 @@
 derlRemoteClient::derlRemoteClient(derlServer &server,
 	const derlRemoteClientConnection::Ref &connection) :
 pServer(server),
-pConnection(connection){
+pConnection(connection),
+pSynchronizeStatus(SynchronizeStatus::pending){
 }
 
 derlRemoteClient::~derlRemoteClient(){
@@ -55,8 +57,20 @@ const std::string &derlRemoteClient::GetName() const{
 	}
 }
 
-void derlRemoteClient::SetFileLayout(const derlFileLayout::Ref &layout){
-	pFileLayout = layout;
+void derlRemoteClient::SetFileLayoutServer(const derlFileLayout::Ref &layout){
+	pFileLayoutServer = layout;
+}
+
+void derlRemoteClient::SetFileLayoutClient(const derlFileLayout::Ref &layout){
+	pFileLayoutClient = layout;
+}
+
+void derlRemoteClient::SetTaskFileLayoutServer(const derlTaskFileLayout::Ref &task){
+	pTaskFileLayoutServer = task;
+}
+
+void derlRemoteClient::SetTaskFileLayoutClient(const derlTaskFileLayout::Ref &task){
+	pTaskFileLayoutClient = task;
 }
 
 void derlRemoteClient::SetTaskSyncClient(const derlTaskSyncClient::Ref &task){
@@ -77,7 +91,39 @@ void derlRemoteClient::SetLogger(const denLogger::Ref &logger){
 	}
 }
 
+void derlRemoteClient::SetSynchronizeDetails(const std::string &details){
+	pSynchronizeDetails = details;
+}
 
+void derlRemoteClient::Synchronize(){
+	std::lock_guard guard(pMutex);
+	
+	{
+	derlServer &server = GetServer();
+	std::lock_guard guard2(server.GetMutex());
+	pPathDataDir = server.GetPathDataDir();
+	}
+	
+	pSynchronizeDetails.clear();
+	pSynchronizeStatus = SynchronizeStatus::processing;
+	
+	pFileLayoutServer = nullptr;
+	if(/*!pFileLayoutServer &&*/ !pTaskFileLayoutServer){
+		pTaskFileLayoutServer = std::make_shared<derlTaskFileLayout>();
+	}
+	
+	if(!pFileLayoutClient && !pTaskFileLayoutClient){
+		pTaskFileLayoutClient = std::make_shared<derlTaskFileLayout>();
+	}
+	
+	if(pTaskSyncClient && pTaskSyncClient->GetStatus() == derlTaskSyncClient::Status::failure){
+		pTaskSyncClient = nullptr;
+	}
+	
+	if(!pTaskSyncClient){
+		pTaskSyncClient = std::make_shared<derlTaskSyncClient>();
+	}
+}
 
 void derlRemoteClient::StartTaskProcessors(){
 	if(!pTaskProcessor){
@@ -116,6 +162,7 @@ void derlRemoteClient::Update(float elapsed){
 	if(pConnection){
 		pConnection->Update(elapsed);
 		pConnection->FinishPendingOperations();
+		FinishPendingOperations();
 	}
 }
 
@@ -127,4 +174,51 @@ void derlRemoteClient::OnConnectionEstablished(){
 }
 
 void derlRemoteClient::OnConnectionClosed(){
+}
+
+
+
+// Protected Functions
+////////////////////////
+
+void derlRemoteClient::FinishPendingOperations(){
+	std::lock_guard guard(pMutex);
+	
+	if(pTaskSyncClient){
+		pProcessTaskSyncClient(*pTaskSyncClient);
+	}
+}
+
+
+
+// Private Functions
+//////////////////////
+
+void derlRemoteClient::pProcessTaskSyncClient(derlTaskSyncClient &task){
+	if(!pFileLayoutServer || !pFileLayoutClient){
+		pSynchronizeDetails = "Scanning file systems...";
+	}
+	
+	switch(task.GetStatus()){
+	case derlTaskSyncClient::Status::success:
+		pSynchronizeDetails = "Synchronized.";
+		pSynchronizeStatus = SynchronizeStatus::ready;
+		pTaskSyncClient = nullptr;
+		break;
+		
+	case derlTaskSyncClient::Status::failure:
+		if(task.GetError().empty()){
+			pSynchronizeDetails = "Synchronize failed.";
+			
+		}else{
+			pSynchronizeDetails = task.GetError();
+		}
+		pSynchronizeStatus = SynchronizeStatus::failed;
+		pTaskSyncClient = nullptr;
+		break;
+		
+	default:
+		pSynchronizeDetails = "Synchronize...";
+		break;
+	}
 }

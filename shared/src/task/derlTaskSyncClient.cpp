@@ -42,3 +42,7 @@ derlTaskSyncClient::~derlTaskSyncClient(){
 void derlTaskSyncClient::SetStatus(Status status){
 	pStatus = status;
 }
+
+void derlTaskSyncClient::SetError(const std::string &error){
+	pError = error;
+}

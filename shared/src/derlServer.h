@@ -31,11 +31,9 @@
 #include <thread>
 #include <filesystem>
 
-#include "derlFileLayout.h"
 #include "derlRemoteClient.h"
 #include "internal/derlRemoteClientConnection.h"
 #include "processor/derlTaskProcessorServer.h"
-#include "task/derlTaskFileLayout.h"
 #include <denetwork/denConnection.h>
 
 class derlServerServer;
@@ -58,9 +56,6 @@ private:
 	
 	std::filesystem::path pPathDataDir;
 	
-	derlFileLayout::Ref pFileLayout;
-	
-	derlTaskFileLayout::Ref pTaskFileLayout;
 	std::mutex pMutex;
 	
 	derlTaskProcessorServer::Ref pTaskProcessor;
@@ -93,14 +88,6 @@ public:
 	 * \throws std::invalid_argument Connected to server.
 	 */
 	void SetPathDataDir(const std::filesystem::path &path);
-	
-	/** \brief File layout or nullptr. */
-	inline const derlFileLayout::Ref &GetFileLayout() const{ return pFileLayout; }
-	void SetFileLayout( const derlFileLayout::Ref &layout );
-	
-	/** \brief File layout task. */
-	inline const derlTaskFileLayout::Ref &GetTaskFileLayout() const{ return pTaskFileLayout; }
-	void SetTaskFileLayout(const derlTaskFileLayout::Ref &task);
 	
 	/** \brief Mutex. */
 	inline std::mutex &GetMutex(){ return pMutex; }

@@ -68,19 +68,6 @@ public:
 	 * \returns true if task is run or false otherwise.
 	 */
 	bool RunTask() override;
-	
-	
-	
-	/**
-	 * \brief Find next file layout task.
-	 * \returns true if task is found otherwise false.
-	 */
-	bool FindNextTaskFileLayout(derlTaskFileLayout::Ref &task) const;
-	
-	
-	
-	/** \brief Process task file layout. */
-	virtual void ProcessFileLayout(derlTaskFileLayout &task);
 };
 
 #endif

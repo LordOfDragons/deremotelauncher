@@ -28,6 +28,7 @@
 #include "derlBaseTaskProcessor.h"
 
 #include "../task/derlTaskSyncClient.h"
+#include "../task/derlTaskFileLayout.h"
 
 class derlRemoteClient;
 
@@ -66,17 +67,29 @@ public:
 	 */
 	bool RunTask() override;
 	
+	
+	
+	/**
+	 * \brief Find next server file layout task.
+	 * \returns true if task is found otherwise false.
+	 */
+	bool FindNextTaskLayoutServer(derlTaskFileLayout::Ref &task) const;
+	
 	/**
 	 * \brief Find next sync client task.
 	 * \returns true if task is found otherwise false.
 	 */
 	bool FindNextTaskSyncClient(derlTaskSyncClient::Ref &task) const;
 	
+	
+	
 	/** \brief Process task sync client. */
 	virtual void ProcessSyncClient(derlTaskSyncClient &task);
 	
-	/** \brief Prepare sync client. */
-	virtual void PrepareSync(derlTaskSyncClient &task);
+	
+	
+	/** \brief Process task file layout server. */
+	virtual void ProcessFileLayoutServer(derlTaskFileLayout &task);
 	
 protected:
 };

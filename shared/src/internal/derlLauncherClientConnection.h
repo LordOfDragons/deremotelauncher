@@ -164,7 +164,8 @@ private:
 	void pSendResponseFileBlockHashes(const std::string &path, uint32_t blockSize);
 	void pSendResponseFileBlockHashes(const derlFile &file);
 	void pSendResponseDeleteFiles(const derlTaskFileDelete::List &tasks);
-	void pSendResponseWriteFiles(const std::string &path, const derlTaskFileWriteBlock::List &blocks);
+	void pSendResponseWriteFiles(const derlTaskFileWrite::List &task);
+	void pSendFileDataReceived(const std::string &path, const derlTaskFileWriteBlock::List &blocks);
 	void pSendResponseFinishWriteFiles(const derlTaskFileWrite::List &task);
 };
 

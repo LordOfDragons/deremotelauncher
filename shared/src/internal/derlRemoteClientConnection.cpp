@@ -298,37 +298,43 @@ void derlRemoteClientConnection::FinishPendingOperations(){
 			case derlTaskFileWrite::Status::processing:{
 				const derlTaskFileWriteBlock::List &blocks = task->GetBlocks();
 				if(blocks.empty()){
-					task->SetStatus(derlTaskFileWrite::Status::finishing);
-					finishTasks.push_back(task);
-					
-				}else{
-					derlTaskFileWriteBlock::List::const_iterator iterBlock;
-					for(iterBlock=blocks.cbegin(); iterBlock!=blocks.cend(); iterBlock++){
-						derlTaskFileWriteBlock &block = **iterBlock;
-						if(block.GetStatus() == derlTaskFileWriteBlock::Status::pending){
-							block.SetStatus(derlTaskFileWriteBlock::Status::processing);
-							try{
-								pSendSendFileData(*task, block);
-								
-							}catch(const std::exception &e){
-								task->SetStatus(derlTaskFileWrite::Status::failure);
-								LogException("SendSendFileData", e, "Failed");
-								taskSync->SetStatus(derlTaskSyncClient::Status::failure);
-								
-								std::stringstream ss;
-								ss << "Synchronize client failed: " << e.what();
-								taskSync->SetError(ss.str());
-								return;
-								
-							}catch(...){
-								task->SetStatus(derlTaskFileWrite::Status::failure);
-								Log(denLogger::LogSeverity::error, "SendSendFileData", "Failed");
-								taskSync->SetStatus(derlTaskSyncClient::Status::failure);
-								taskSync->SetError("Synchronize client failed: unknown error");
-								return;
-							}
+					break;
+				}
+				
+				derlTaskFileWriteBlock::List::const_iterator iterBlock;
+				for(iterBlock=blocks.cbegin(); iterBlock!=blocks.cend(); iterBlock++){
+					derlTaskFileWriteBlock &block = **iterBlock;
+					if(block.GetStatus() == derlTaskFileWriteBlock::Status::dataReady){
+						block.SetStatus(derlTaskFileWriteBlock::Status::processing);
+						try{
+							pSendSendFileData(*task, block);
+							
+						}catch(const std::exception &e){
+							task->SetStatus(derlTaskFileWrite::Status::failure);
+							LogException("SendSendFileData", e, "Failed");
+							taskSync->SetStatus(derlTaskSyncClient::Status::failure);
+							
+							std::stringstream ss;
+							ss << "Synchronize client failed: " << e.what();
+							taskSync->SetError(ss.str());
+							return;
+							
+						}catch(...){
+							task->SetStatus(derlTaskFileWrite::Status::failure);
+							Log(denLogger::LogSeverity::error, "SendSendFileData", "Failed");
+							taskSync->SetStatus(derlTaskSyncClient::Status::failure);
+							taskSync->SetError("Synchronize client failed: unknown error");
+							return;
 						}
 					}
+				}
+				}break;
+				
+			case derlTaskFileWrite::Status::finishing:{
+				const derlTaskFileWriteBlock::List &blocks = task->GetBlocks();
+				if(blocks.empty()){
+					task->SetStatus(derlTaskFileWrite::Status::finishing);
+					finishTasks.push_back(task);
 				}
 				}break;
 				

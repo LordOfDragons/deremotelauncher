@@ -52,7 +52,8 @@ derlFile::Map::const_iterator derlFileLayout::GetFilesEnd() const{
 }
 
 derlFile::Ref derlFileLayout::GetFileAt(const std::string &path) const{
-	return pFiles.at(path);
+	derlFile::Map::const_iterator iter(pFiles.find(path));
+	return iter != pFiles.cend() ? iter->second : nullptr;
 }
 
 derlFileLayout::ListPath derlFileLayout::GetAllPath() const{

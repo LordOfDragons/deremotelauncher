@@ -44,6 +44,8 @@ public:
 	/** \brief Status. */
 	enum class Status{
 		pending,
+		readingData,
+		dataReady,
 		processing,
 		success,
 		failure
@@ -59,6 +61,9 @@ private:
 public:
 	/** \name Constructors and Destructors */
 	/*@{*/
+	/** \brief Create task. */
+	derlTaskFileWriteBlock(uint64_t offset, uint64_t size);
+	
 	/** \brief Create task. */
 	derlTaskFileWriteBlock(uint64_t offset, uint64_t size, const std::string &data);
 	
@@ -82,6 +87,9 @@ public:
 	
 	/** \brief Data. */
 	inline const std::string &GetData() const{ return pData; }
+	
+	/** \brief Set data. */
+	void SetData(const std::string &data);
 	
 	/** \brief Drop data after writing is finished to free memory. */
 	void DropData();

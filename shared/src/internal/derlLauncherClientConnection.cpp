@@ -258,40 +258,54 @@ void derlLauncherClientConnection::FinishPendingOperations(){
 	derlTaskFileWrite::Map &tasks = pClient.GetTasksWriteFile();
 	if(!tasks.empty()){
 		derlTaskFileWrite::Map::const_iterator citer;
+		derlTaskFileWrite::List tasksSendReady;
+		
 		for(citer = tasks.cbegin(); citer != tasks.cend(); citer++){
-			if(citer->second->GetStatus() != derlTaskFileWrite::Status::pending){
-				continue;
-			}
-			
-			derlTaskFileWriteBlock::List &blocks = citer->second->GetBlocks();
-			derlTaskFileWriteBlock::List::const_iterator citerBlock;
-			derlTaskFileWriteBlock::List finished;
-			for(citerBlock = blocks.cbegin(); citerBlock != blocks.cend(); citerBlock++){
-				switch((*citerBlock)->GetStatus()){
-				case derlTaskFileWriteBlock::Status::success:
-				case derlTaskFileWriteBlock::Status::failure:
-					finished.push_back(*citerBlock);
-					break;
-					
-				default:
-					break;
-				}
-			}
-			
-			if(!finished.empty()){
-				derlTaskFileWriteBlock::List::const_iterator iter;
-				for(iter = finished.cbegin(); iter != finished.cend(); iter++){
-					derlTaskFileWriteBlock::List::iterator iterErase(
-						std::find(blocks.begin(), blocks.end(), *iter));
-					if(iterErase != blocks.end()){
-						blocks.erase(iterErase);
+			switch(citer->second->GetStatus()){
+			case derlTaskFileWrite::Status::pending:
+				tasksSendReady.push_back(citer->second);
+				break;
+				
+			case derlTaskFileWrite::Status::processing:{
+				derlTaskFileWriteBlock::List &blocks = citer->second->GetBlocks();
+				derlTaskFileWriteBlock::List::const_iterator citerBlock;
+				derlTaskFileWriteBlock::List finished;
+				for(citerBlock = blocks.cbegin(); citerBlock != blocks.cend(); citerBlock++){
+					switch((*citerBlock)->GetStatus()){
+					case derlTaskFileWriteBlock::Status::success:
+					case derlTaskFileWriteBlock::Status::failure:
+						finished.push_back(*citerBlock);
+						break;
+						
+					default:
+						break;
 					}
 				}
 				
-				if(GetConnected()){
-					pSendResponseWriteFiles(citer->first, finished);
+				if(!finished.empty()){
+					derlTaskFileWriteBlock::List::const_iterator iter;
+					for(iter = finished.cbegin(); iter != finished.cend(); iter++){
+						derlTaskFileWriteBlock::List::iterator iterErase(
+							std::find(blocks.begin(), blocks.end(), *iter));
+						if(iterErase != blocks.end()){
+							blocks.erase(iterErase);
+						}
+					}
+					
+					if(GetConnected()){
+						pSendFileDataReceived(citer->first, finished);
+					}
 				}
+				}break;
+				
+			default:
+				break;
+				continue;
 			}
+		}
+		
+		if(!tasksSendReady.empty() && GetConnected()){
+			pSendResponseWriteFiles(tasksSendReady);
 		}
 	}
 	}
@@ -492,7 +506,7 @@ void derlLauncherClientConnection::pProcessRequestFinishWriteFiles(denMessageRea
 		
 		if(iter != tasks.end()){
 			const derlTaskFileWrite::Ref &task = iter->second;
-			if(task->GetStatus() == derlTaskFileWrite::Status::pending){
+			if(task->GetStatus() == derlTaskFileWrite::Status::processing){
 				if(task->GetBlocks().empty()){
 					task->SetStatus(derlTaskFileWrite::Status::success);
 					
@@ -611,7 +625,36 @@ void derlLauncherClientConnection::pSendResponseDeleteFiles(const derlTaskFileDe
 	SendReliableMessage(message);
 }
 
-void derlLauncherClientConnection::pSendResponseWriteFiles(const std::string &path,
+void derlLauncherClientConnection::pSendResponseWriteFiles(const derlTaskFileWrite::List &tasks){
+	if(tasks.size() > DERL_MAX_UINT_SIZE){
+		throw std::runtime_error("Too many files");
+	}
+	
+	const denMessage::Ref message(denMessage::Pool().Get());
+	{
+		denMessageWriter writer(message->Item());
+		writer.WriteByte((uint8_t)derlProtocol::MessageCodes::responseWriteFiles);
+		writer.WriteUInt((uint32_t)tasks.size());
+		
+		derlTaskFileWrite::List::const_iterator iter;
+		for(iter=tasks.cbegin(); iter!=tasks.cend(); iter++){
+			derlTaskFileWrite &task = **iter;
+			writer.WriteString16(task.GetPath());
+			
+			if(task.GetStatus() == derlTaskFileWrite::Status::pending){
+				writer.WriteByte((uint8_t)derlProtocol::WriteFileResult::success);
+				task.SetStatus(derlTaskFileWrite::Status::processing);
+				
+			}else{
+				writer.WriteByte((uint8_t)derlProtocol::WriteFileResult::failure);
+				task.SetStatus(derlTaskFileWrite::Status::failure);
+			}
+		}
+	}
+	SendReliableMessage(message);
+}
+
+void derlLauncherClientConnection::pSendFileDataReceived(const std::string &path,
 const derlTaskFileWriteBlock::List &blocks){
 	if(blocks.size() > DERL_MAX_UINT_SIZE){
 		throw std::runtime_error("Too many blocks");
@@ -620,7 +663,7 @@ const derlTaskFileWriteBlock::List &blocks){
 	const denMessage::Ref message(denMessage::Pool().Get());
 	{
 		denMessageWriter writer(message->Item());
-		writer.WriteByte((uint8_t)derlProtocol::MessageCodes::responseWriteFiles);
+		writer.WriteByte((uint8_t)derlProtocol::MessageCodes::fileDataReceived);
 		writer.WriteUInt((uint32_t)blocks.size());
 		
 		derlTaskFileWriteBlock::List::const_iterator iter;
@@ -629,10 +672,10 @@ const derlTaskFileWriteBlock::List &blocks){
 			writer.WriteString16(path);
 			
 			if(block.GetStatus() == derlTaskFileWriteBlock::Status::success){
-				writer.WriteByte((uint8_t)derlProtocol::WriteFileResult::success);
+				writer.WriteByte((uint8_t)derlProtocol::WriteDataResult::success);
 				
 			}else{
-				writer.WriteByte((uint8_t)derlProtocol::WriteFileResult::failure);
+				writer.WriteByte((uint8_t)derlProtocol::WriteDataResult::failure);
 			}
 		}
 	}

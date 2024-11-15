@@ -81,17 +81,40 @@ public:
 	 */
 	bool FindNextTaskSyncClient(derlTaskSyncClient::Ref &task) const;
 	
+	/**
+	 * \brief Find next read file blocks task.
+	 * \returns true if task is found otherwise false.
+	 */
+	bool FindNextTaskReadFileBlocks(derlTaskFileWrite::Ref &task) const;
+	
 	
 	
 	/** \brief Process task sync client. */
 	virtual void ProcessSyncClient(derlTaskSyncClient &task);
 	
-	
+	/** \brief Process task file write. */
+	virtual void ProcessReadFileBlocks(derlTaskFileWrite &task);
 	
 	/** \brief Process task file layout server. */
 	virtual void ProcessFileLayoutServer(derlTaskFileLayout &task);
 	
+	
+	
 protected:
+	/** Compare file layouts and add delete file tasks. */
+	void AddFileDeleteTasks(derlTaskSyncClient &task, const derlFileLayout &layoutServer,
+		const derlFileLayout &layoutClient);
+	
+	/** Compare file layouts and add write file tasks. */
+	void AddFileWriteTasks(derlTaskSyncClient &task, const derlFileLayout &layoutServer,
+		const derlFileLayout &layoutClient);
+	
+	/** Create write file task writing the entire file. */
+	void AddFileWriteTaskFull(derlTaskSyncClient &task, const derlFile &file);
+	
+	/** Create write file task writing only changed blocks. */
+	void AddFileWriteTaskPartial(derlTaskSyncClient &task, const derlFile &fileServer,
+		const derlFile &fileClient);
 };
 
 #endif

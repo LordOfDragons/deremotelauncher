@@ -28,6 +28,12 @@
 // Class derlTaskFileWriteBlock
 /////////////////////////////////
 
+derlTaskFileWriteBlock::derlTaskFileWriteBlock(uint64_t offset, uint64_t size) :
+pStatus(Status::pending),
+pOffset(offset),
+pSize(size){
+}
+
 derlTaskFileWriteBlock::derlTaskFileWriteBlock(
 	uint64_t offset, uint64_t size, const std::string &data) :
 pStatus(Status::pending),
@@ -45,6 +51,10 @@ derlTaskFileWriteBlock::~derlTaskFileWriteBlock(){
 
 void derlTaskFileWriteBlock::SetStatus(Status status){
 	pStatus = status;
+}
+
+void derlTaskFileWriteBlock::SetData(const std::string &data){
+	pData = data;
 }
 
 void derlTaskFileWriteBlock::DropData(){

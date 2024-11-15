@@ -137,7 +137,7 @@ derlTaskFileWrite::Ref &task, derlTaskFileWriteBlock::Ref &block) const{
 	const derlTaskFileWrite::Map &tasks = pClient.GetTasksWriteFile();
 	derlTaskFileWrite::Map::const_iterator iter;
 	for(iter = tasks.cbegin(); iter != tasks.cend(); iter++){
-		if(iter->second->GetStatus() != derlTaskFileWrite::Status::pending){
+		if(iter->second->GetStatus() != derlTaskFileWrite::Status::processing){
 			continue;
 		}
 		
@@ -286,6 +286,7 @@ void derlTaskProcessorLauncherClient::ProcessWriteFileBlock(derlTaskFileWrite &t
 		std::stringstream ss;
 		ss << "Failed size " << block.GetSize() << " at " << block.GetOffset() << " to " << task.GetPath();
 		LogException("ProcessWriteFileBlock", e, ss.str());
+		CloseFile();
 		status = derlTaskFileWriteBlock::Status::failure;
 		
 	}catch(...){

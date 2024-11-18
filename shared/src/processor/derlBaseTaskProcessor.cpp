@@ -53,6 +53,10 @@ void derlBaseTaskProcessor::SetBaseDirectory(const std::filesystem::path &path){
 	pBaseDir = path;
 }
 
+void derlBaseTaskProcessor::SetPartSize(uint64_t size){
+	pPartSize = size;
+}
+
 void derlBaseTaskProcessor::Exit(){
 	pExit = true;
 }
@@ -182,6 +186,10 @@ void derlBaseTaskProcessor::OpenFile(const std::string &path, bool write){
 	pFilePath = pBaseDir / path;
 	
 	try{
+		if(write && pFilePath.has_parent_path()){
+			std::filesystem::create_directories(pFilePath.parent_path());
+		}
+		
 		pFileStream.open(pFilePath, pFileStream.binary | (write ? pFileStream.out : pFileStream.in));
 		if(pFileStream.fail()){
 			throw std::runtime_error(std::strerror(errno));

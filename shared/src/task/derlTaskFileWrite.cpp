@@ -31,7 +31,8 @@
 derlTaskFileWrite::derlTaskFileWrite(const std::string &path) :
 pPath(path),
 pStatus(Status::pending),
-pFileSize(0L){
+pFileSize(0L),
+pBlockSize(0L){
 }
 
 derlTaskFileWrite::~derlTaskFileWrite(){
@@ -47,4 +48,8 @@ void derlTaskFileWrite::SetStatus(Status status){
 
 void derlTaskFileWrite::SetFileSize(uint64_t fileSize){
 	pFileSize = fileSize;
+}
+
+void derlTaskFileWrite::SetBlockSize(uint64_t blockSize){
+	pBlockSize = blockSize;
 }

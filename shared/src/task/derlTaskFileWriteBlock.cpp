@@ -23,21 +23,22 @@
  */
 
 #include "derlTaskFileWriteBlock.h"
+#include "../derlFileBlock.h"
 
 
 // Class derlTaskFileWriteBlock
 /////////////////////////////////
 
-derlTaskFileWriteBlock::derlTaskFileWriteBlock(uint64_t offset, uint64_t size) :
+derlTaskFileWriteBlock::derlTaskFileWriteBlock(int index, uint64_t size) :
 pStatus(Status::pending),
-pOffset(offset),
+pIndex(index),
 pSize(size){
 }
 
 derlTaskFileWriteBlock::derlTaskFileWriteBlock(
-	uint64_t offset, uint64_t size, const std::string &data) :
+	int index, uint64_t size, const std::string &data) :
 pStatus(Status::pending),
-pOffset(offset),
+pIndex(index),
 pSize(size),
 pData(data){
 }
@@ -51,12 +52,4 @@ derlTaskFileWriteBlock::~derlTaskFileWriteBlock(){
 
 void derlTaskFileWriteBlock::SetStatus(Status status){
 	pStatus = status;
-}
-
-void derlTaskFileWriteBlock::SetData(const std::string &data){
-	pData = data;
-}
-
-void derlTaskFileWriteBlock::DropData(){
-	pData.clear();
 }

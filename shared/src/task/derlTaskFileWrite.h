@@ -62,6 +62,7 @@ private:
 	const std::string pPath;
 	Status pStatus;
 	uint64_t pFileSize;
+	uint64_t pBlockSize;
 	derlTaskFileWriteBlock::List pBlocks;
 	
 	
@@ -89,6 +90,10 @@ public:
 	/** \brief File size. */
 	inline uint64_t GetFileSize() const{ return pFileSize; }
 	void SetFileSize(uint64_t fileSize);
+	
+	/** \brief Block size. */
+	inline uint64_t GetBlockSize() const{ return pBlockSize; }
+	void SetBlockSize(uint64_t blockSize);
 	
 	/** \brief Blocks. */
 	inline const derlTaskFileWriteBlock::List &GetBlocks() const{ return pBlocks; }

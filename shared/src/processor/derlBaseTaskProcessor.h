@@ -54,6 +54,7 @@ protected:
 	bool pExit;
 	std::chrono::milliseconds pNoTaskDelay;
 	std::filesystem::path pBaseDir, pFilePath;
+	uint64_t pPartSize;
 	std::fstream pFileStream;
 	uint64_t pFileHashReadSize;
 	std::string pLogClassName;
@@ -80,6 +81,12 @@ public:
 	
 	/** \brief Set base directory. */
 	void SetBaseDirectory(const std::filesystem::path &path);
+	
+	/** \brief Part size. */
+	inline uint64_t GetPartSize() const{ return pPartSize; }
+	
+	/** \brief Set part size. */
+	void SetPartSize(uint64_t size);
 	
 	/** \brief Request task processor to exit the next time possible. */
 	void Exit();
@@ -121,6 +128,7 @@ public:
 	 * \brief Open file for reading or writing.
 	 * 
 	 * Default implementation opens an std::filestream for reading/writing binary data.
+	 * If parent directories do not exist they are created first.
 	 * If file is open CloseFile() is called first.
 	 */
 	virtual void OpenFile(const std::string &path, bool write);

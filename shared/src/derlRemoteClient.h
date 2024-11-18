@@ -138,6 +138,9 @@ public:
 	/** \brief Path to data directory. */
 	inline const std::filesystem::path &GetPathDataDir() const{ return pPathDataDir; }
 	
+	/** \brief Part size. */
+	int GetPartSize() const;
+	
 	/** \brief Mutex. */
 	inline std::mutex &GetMutex(){ return pMutex; }
 	

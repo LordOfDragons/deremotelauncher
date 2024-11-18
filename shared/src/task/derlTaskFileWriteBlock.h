@@ -26,8 +26,10 @@
 #define _DERLTASKFILEWRITEBLOCK_H_
 
 #include <memory>
-#include <vector>
 #include <string>
+#include <vector>
+
+class derlFileBlock;
 
 
 /**
@@ -54,7 +56,8 @@ public:
 	
 private:
 	Status pStatus;
-	uint64_t pOffset, pSize;
+	int pIndex;
+	uint64_t pSize;
 	std::string pData;
 	
 	
@@ -62,10 +65,10 @@ public:
 	/** \name Constructors and Destructors */
 	/*@{*/
 	/** \brief Create task. */
-	derlTaskFileWriteBlock(uint64_t offset, uint64_t size);
+	derlTaskFileWriteBlock(int index, uint64_t size);
 	
 	/** \brief Create task. */
-	derlTaskFileWriteBlock(uint64_t offset, uint64_t size, const std::string &data);
+	derlTaskFileWriteBlock(int index, uint64_t size, const std::string &data);
 	
 	/** \brief Clean up task. */
 	~derlTaskFileWriteBlock() noexcept;
@@ -79,20 +82,15 @@ public:
 	inline Status GetStatus() const{ return pStatus; }
 	void SetStatus(Status status);
 	
-	/** \brief Offset. */
-	inline uint64_t GetOffset() const{ return pOffset; }
+	/** \brief Index. */
+	inline int GetIndex() const{ return pIndex; }
 	
 	/** \brief Size. */
 	inline uint64_t GetSize() const{ return pSize; }
 	
 	/** \brief Data. */
+	inline std::string &GetData(){ return pData; }
 	inline const std::string &GetData() const{ return pData; }
-	
-	/** \brief Set data. */
-	void SetData(const std::string &data);
-	
-	/** \brief Drop data after writing is finished to free memory. */
-	void DropData();
 	/*@}*/
 };
 

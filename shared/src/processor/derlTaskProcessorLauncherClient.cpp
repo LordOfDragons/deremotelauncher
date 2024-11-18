@@ -56,6 +56,7 @@ bool derlTaskProcessorLauncherClient::RunTask(){
 	{
 	std::lock_guard guard(pClient.GetMutex());
 	pBaseDir = pClient.GetPathDataDir();
+	pPartSize = pClient.GetPartSize();
 	
 	FindNextTaskFileLayout(taskFileLayout)
 	|| !pClient.GetFileLayout()
@@ -144,7 +145,7 @@ derlTaskFileWrite::Ref &task, derlTaskFileWriteBlock::Ref &block) const{
 		const derlTaskFileWriteBlock::List &blocks = iter->second->GetBlocks();
 		derlTaskFileWriteBlock::List::const_iterator iterBlock;
 		for(iterBlock = blocks.cbegin(); iterBlock != blocks.cend(); iterBlock++){
-			if((*iterBlock)->GetStatus() != derlTaskFileWriteBlock::Status::pending){
+			if((*iterBlock)->GetStatus() != derlTaskFileWriteBlock::Status::dataReady){
 				continue;
 			}
 			
@@ -270,7 +271,8 @@ void derlTaskProcessorLauncherClient::ProcessDeleteFile(derlTaskFileDelete &task
 void derlTaskProcessorLauncherClient::ProcessWriteFileBlock(derlTaskFileWrite &task, derlTaskFileWriteBlock &block){
 	if(pEnableDebugLog){
 		std::stringstream ss;
-		ss << "Write block size " << block.GetSize() << " at " << block.GetOffset() << " to " << task.GetPath();
+		ss << "Write block size " << block.GetSize()
+			<< " index " << block.GetIndex() << " path " << task.GetPath();
 		LogDebug("ProcessWriteFileBlock", ss.str());
 	}
 	
@@ -278,20 +280,22 @@ void derlTaskProcessorLauncherClient::ProcessWriteFileBlock(derlTaskFileWrite &t
 	
 	try{
 		OpenFile(task.GetPath(), true);
-		WriteFile(block.GetData().c_str(), block.GetOffset(), block.GetSize());
+		WriteFile(block.GetData().c_str(), task.GetBlockSize() * block.GetIndex(), block.GetSize());
 		CloseFile();
 		status = derlTaskFileWriteBlock::Status::success;
 		
 	}catch(const std::exception &e){
 		std::stringstream ss;
-		ss << "Failed size " << block.GetSize() << " at " << block.GetOffset() << " to " << task.GetPath();
+		ss << "Failed size " << block.GetSize()
+			<< " index " << block.GetIndex() << " path " << task.GetPath();
 		LogException("ProcessWriteFileBlock", e, ss.str());
 		CloseFile();
 		status = derlTaskFileWriteBlock::Status::failure;
 		
 	}catch(...){
 		std::stringstream ss;
-		ss << "Failed size " << block.GetSize() << " at " << block.GetOffset() << " to " << task.GetPath();
+		ss << "Failed size " << block.GetSize()
+			<< " index " << block.GetIndex() << " path " << task.GetPath();
 		Log(denLogger::LogSeverity::error, "ProcessWriteFileBlock", ss.str());
 		CloseFile();
 		status = derlTaskFileWriteBlock::Status::failure;

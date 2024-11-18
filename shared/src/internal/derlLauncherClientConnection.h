@@ -62,6 +62,7 @@ private:
 	derlLauncherClient &pClient;
 	bool pConnectionAccepted;
 	uint32_t pEnabledFeatures;
+	int pPartSize;
 	
 	const denState::Ref pStateRun;
 	const denValueInt::Ref pValueRunStatus;
@@ -85,6 +86,10 @@ public:
 	
 	/** \name Management */
 	/*@{*/
+	/** \brief Part size. */
+	inline int GetPartSize() const{ return pPartSize; }
+	
+	
 	/** \brief Set run status. */
 	void SetRunStatus(RunStatus status);
 	
@@ -153,20 +158,20 @@ private:
 	
 	void pProcessRequestLayout();
 	void pProcessRequestFileBlockHashes(denMessageReader &reader);
-	void pProcessRequestDeleteFiles(denMessageReader &reader);
-	void pProcessRequestWriteFiles(denMessageReader &reader);
+	void pProcessRequestDeleteFile(denMessageReader &reader);
+	void pProcessRequestWriteFile(denMessageReader &reader);
 	void pProcessSendFileData(denMessageReader &reader);
-	void pProcessRequestFinishWriteFiles(denMessageReader &reader);
+	void pProcessRequestFinishWriteFile(denMessageReader &reader);
 	void pProcessStartApplication(denMessageReader &reader);
 	void pProcessStopApplication(denMessageReader &reader);
 	
 	void pSendResponseFileLayout(const derlFileLayout &layout);
 	void pSendResponseFileBlockHashes(const std::string &path, uint32_t blockSize);
 	void pSendResponseFileBlockHashes(const derlFile &file);
-	void pSendResponseDeleteFiles(const derlTaskFileDelete::List &tasks);
+	void pSendResponsesDeleteFile(const derlTaskFileDelete::List &tasks);
 	void pSendResponseWriteFiles(const derlTaskFileWrite::List &task);
 	void pSendFileDataReceived(const std::string &path, const derlTaskFileWriteBlock::List &blocks);
-	void pSendResponseFinishWriteFiles(const derlTaskFileWrite::List &task);
+	void pSendResponseFinishWriteFile(const derlTaskFileWrite::Ref &task);
 };
 
 #endif

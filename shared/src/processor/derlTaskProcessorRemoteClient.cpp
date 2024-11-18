@@ -47,19 +47,20 @@ pClient(client){
 bool derlTaskProcessorRemoteClient::RunTask(){
 	derlTaskFileLayout::Ref taskLayoutServer;
 	derlTaskSyncClient::Ref taskSyncClient;
-	derlTaskFileWrite::Ref taskFileWrite;
+	derlTaskFileWrite::Ref taskReadFileBlocks;
 	bool fastReturn = false;
 	
 	{
 	std::lock_guard guard(pClient.GetMutex());
 	pBaseDir = pClient.GetPathDataDir();
+	pPartSize = pClient.GetPartSize();
 	fastReturn = pClient.GetTaskSyncClient() != nullptr;
 	
 	FindNextTaskLayoutServer(taskLayoutServer)
 	|| !pClient.GetFileLayoutServer()
 	|| !pClient.GetFileLayoutClient()
 	|| FindNextTaskSyncClient(taskSyncClient)
-	|| FindNextTaskReadFileBlocks(taskFileWrite);
+	|| FindNextTaskReadFileBlocks(taskReadFileBlocks);
 	}
 	
 	if(taskLayoutServer){
@@ -70,8 +71,8 @@ bool derlTaskProcessorRemoteClient::RunTask(){
 		ProcessSyncClient(*taskSyncClient);
 		return true;
 		
-	}else if(taskFileWrite){
-		ProcessReadFileBlocks(*taskFileWrite);
+	}else if(taskReadFileBlocks){
+		ProcessReadFileBlocks(*taskReadFileBlocks);
 		return true;
 		
 	}else{
@@ -130,11 +131,11 @@ bool derlTaskProcessorRemoteClient::FindNextTaskReadFileBlocks(derlTaskFileWrite
 			hasBlocksToProcess = true;
 		}
 		
-		{
+		/*{
 		std::stringstream ss;
 		ss << "CHECK: " << iter->second->GetPath() << " " << iter->second->GetBlocks().size();
 		((derlTaskProcessorRemoteClient&)*this).LogDebug("FindNextTaskReadFileBlocks", ss.str());
-		}
+		}*/
 		
 		if(hasBlocksToProcess){
 			task = iter->second;
@@ -151,10 +152,30 @@ void derlTaskProcessorRemoteClient::ProcessFileLayoutServer(derlTaskFileLayout &
 	derlTaskFileLayout::Status status;
 	derlFileLayout::Ref layout;
 	std::string syncError;
+	const uint64_t blockSize = 1024000;
 	
 	try{
 		layout = std::make_shared<derlFileLayout>();
+		
 		CalcFileLayout(*layout, "");
+		
+		derlFile::Map::const_iterator iterFile;
+		for(iterFile=layout->GetFilesBegin(); iterFile!=layout->GetFilesEnd(); iterFile++){
+			derlFile &file = *iterFile->second;
+			file.SetBlockSize(blockSize);
+			
+			if(file.GetSize() <= blockSize){
+				const derlFileBlock::Ref block(std::make_shared<derlFileBlock>(0, file.GetSize()));
+				block->SetHash(file.GetHash());
+				file.AddBlock(block);
+				
+			}else{
+				derlFileBlock::List blocks;
+				CalcFileBlockHashes(blocks, file.GetPath(), file.GetBlockSize());
+				file.SetBlocks(blocks);
+			}
+		}
+		
 		status = derlTaskFileLayout::Status::success;
 		
 	}catch(const std::exception &e){
@@ -252,7 +273,7 @@ void derlTaskProcessorRemoteClient::ProcessReadFileBlocks(derlTaskFileWrite &tas
 	std::string syncError;
 	bool failure = false;
 	
-	OpenFile(task.GetPath(), true);
+	OpenFile(task.GetPath(), false);
 	
 	for(iterBlock = blocks.cbegin(); iterBlock != blocks.cend(); iterBlock++){
 		derlTaskFileWriteBlock &block = **iterBlock;
@@ -261,16 +282,16 @@ void derlTaskProcessorRemoteClient::ProcessReadFileBlocks(derlTaskFileWrite &tas
 		}
 		
 		try{
-			std::string data;
+			std::string &data = block.GetData();
 			data.assign(block.GetSize(), 0);
-			ReadFile((void*)data.c_str(), block.GetOffset(), block.GetSize());
-			block.SetData(data);
+			ReadFile((void*)data.c_str(), task.GetBlockSize() * block.GetIndex(), block.GetSize());
 			readyBlocks.push_back(*iterBlock);
 			
 		}catch(const std::exception &e){
 			failedBlocks.push_back(*iterBlock);
 			std::stringstream ss;
-			ss << "Failed size " << block.GetSize() << " at " << block.GetOffset() << " to " << task.GetPath();
+			ss << "Failed size " << block.GetSize()
+				<< " block " << block.GetIndex() << " path " << task.GetPath();
 			LogException("ProcessReadFileBlocks", e, ss.str());
 			syncError = ss.str();
 			failure = true;
@@ -279,7 +300,8 @@ void derlTaskProcessorRemoteClient::ProcessReadFileBlocks(derlTaskFileWrite &tas
 		}catch(...){
 			failedBlocks.push_back(*iterBlock);
 			std::stringstream ss;
-			ss << "Failed size " << block.GetSize() << " at " << block.GetOffset() << " to " << task.GetPath();
+			ss << "Failed size " << block.GetSize()
+				<< " block " << block.GetIndex() << " path " << task.GetPath();
 			Log(denLogger::LogSeverity::error, "ProcessReadFileBlocks", ss.str());
 			CloseFile();
 			syncError = ss.str();
@@ -365,11 +387,13 @@ void derlTaskProcessorRemoteClient::AddFileWriteTaskFull(derlTaskSyncClient &tas
 	const derlTaskFileWrite::Ref taskWrite(std::make_shared<derlTaskFileWrite>(file.GetPath()));
 	derlTaskFileWriteBlock::List &taskBlocks = taskWrite->GetBlocks();
 	taskWrite->SetFileSize(file.GetSize());
+	taskWrite->SetBlockSize(file.GetBlockSize());
 	
 	derlFileBlock::List::const_iterator iter;
-	for(iter=file.GetBlocksBegin(); iter!=file.GetBlocksEnd(); iter++){
+	int index;
+	for(iter=file.GetBlocksBegin(), index=0; iter!=file.GetBlocksEnd(); iter++, index++){
 		const derlFileBlock &block = **iter;
-		taskBlocks.push_back(std::make_shared<derlTaskFileWriteBlock>(block.GetOffset(), block.GetSize()));
+		taskBlocks.push_back(std::make_shared<derlTaskFileWriteBlock>(index, block.GetSize()));
 	}
 	
 	task.GetTasksWriteFile()[file.GetPath()] = taskWrite;
@@ -380,10 +404,13 @@ const derlFile &fileServer, const derlFile &fileClient){
 	const derlTaskFileWrite::Ref taskWrite(std::make_shared<derlTaskFileWrite>(fileServer.GetPath()));
 	derlTaskFileWriteBlock::List &taskBlocks = taskWrite->GetBlocks();
 	taskWrite->SetFileSize(fileServer.GetSize());
+	taskWrite->SetBlockSize(fileServer.GetBlockSize());
 	
 	derlFileBlock::List::const_iterator iterServer, iterClient;
-	for(iterClient=fileClient.GetBlocksBegin(), iterServer=fileServer.GetBlocksBegin();
-	iterServer!=fileServer.GetBlocksEnd(); iterClient++, iterServer++){
+	int index;
+	
+	for(iterClient=fileClient.GetBlocksBegin(), index=0, iterServer=fileServer.GetBlocksBegin();
+	iterServer!=fileServer.GetBlocksEnd(); iterClient++, iterServer++, index++){
 		const derlFileBlock &blockServer = **iterServer;
 		const derlFileBlock &blockClient = **iterClient;
 		
@@ -393,8 +420,7 @@ const derlFile &fileServer, const derlFile &fileClient){
 			continue;
 		}
 		
-		taskBlocks.push_back(std::make_shared<derlTaskFileWriteBlock>(
-			blockServer.GetOffset(), blockServer.GetSize()));
+		taskBlocks.push_back(std::make_shared<derlTaskFileWriteBlock>(index, blockServer.GetSize()));
 	}
 	
 	task.GetTasksWriteFile()[fileServer.GetPath()] = taskWrite;

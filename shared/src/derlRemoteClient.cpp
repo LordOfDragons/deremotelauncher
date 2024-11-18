@@ -77,6 +77,10 @@ void derlRemoteClient::SetTaskSyncClient(const derlTaskSyncClient::Ref &task){
 	pTaskSyncClient = task;
 }
 
+int derlRemoteClient::GetPartSize() const{
+	return pConnection ? pConnection->GetPartSize() : 1357;
+}
+
 const denLogger::Ref &derlRemoteClient::GetLogger() const{
 	return pLogger;
 }

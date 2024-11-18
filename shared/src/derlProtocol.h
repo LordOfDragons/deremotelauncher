@@ -42,17 +42,33 @@ namespace derlProtocol{
 		responseFileLayout = 4,
 		requestFileBlockHashes = 5,
 		responseFileBlockHashes = 6,
-		requestDeleteFiles = 7,
-		responseDeleteFiles = 8,
-		requestWriteFiles = 9,
-		responseWriteFiles = 10,
+		requestDeleteFile = 7,
+		responseDeleteFile = 8,
+		requestWriteFile = 9,
+		responseWriteFile = 10,
 		sendFileData = 11,
 		fileDataReceived = 12,
-		requestFinishWriteFiles = 13,
-		responseFinishWriteFiles = 14,
+		requestFinishWriteFile = 13,
+		responseFinishWriteFile = 14,
 		startApplication = 15,
 		stopApplication = 16,
 		logs = 17
+	};
+	
+	/**
+	 * \brief File layout flags.
+	 */
+	enum class FileLayoutFlags{
+		finish = 0x1,
+		empty = 0x2
+	};
+	
+	/**
+	 * \brief File block hashes flags.
+	 */
+	enum class FileBlockHashesFlags{
+		finish = 0x1,
+		empty = 0x2
 	};
 	
 	/**
@@ -69,6 +85,13 @@ namespace derlProtocol{
 	enum class WriteFileResult{
 		success = 0,
 		failure = 1
+	};
+	
+	/**
+	 * \brief Write data flags.
+	 */
+	enum class WriteDataFlags{
+		finish = 0x1
 	};
 	
 	/**

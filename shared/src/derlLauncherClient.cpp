@@ -129,10 +129,18 @@ void derlLauncherClient::Disconnect(){
 }
 
 void derlLauncherClient::Update(float elapsed){
+	std::lock_guard guard(pConnection->GetMutex());
+	pConnection->SendQueuedMessages();
 	pConnection->Update(elapsed);
-	pConnection->FinishPendingOperations();
 }
 
+void derlLauncherClient::ProcessReceivedMessages(){
+	pConnection->ProcessReceivedMessages();
+}
+
+void derlLauncherClient::FinishPendingOperations(){
+	pConnection->FinishPendingOperations();
+}
 
 // Events
 ///////////

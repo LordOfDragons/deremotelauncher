@@ -51,7 +51,13 @@ pSupportedFeatures(0),
 pEnabledFeatures(0),
 pPartSize(1357),
 pStateRun(std::make_shared<denState>(false)),
-pValueRunStatus(std::make_shared<denValueInt>(denValueIntegerFormat::uint8))
+pValueRunStatus(std::make_shared<denValueInt>(denValueIntegerFormat::uint8)),
+pMaxInProgressFiles(1),
+pMaxInProgressBlocks(1),
+pMaxInProgressParts(20),
+pCountInProgressFiles(0),
+pCountInProgressBlocks(0),
+pCountInProgressParts(0)
 {
 	pValueRunStatus->SetValue((uint64_t)derlProtocol::RunStateStatus::stopped);
 	pStateRun->AddValue(pValueRunStatus);
@@ -106,104 +112,78 @@ void derlRemoteClientConnection::ConnectionClosed(){
 	
 	pClient = nullptr;
 	client->OnConnectionClosed();
+	
+	pCountInProgressParts = 0;
+	pCountInProgressBlocks = 0;
+	pCountInProgressFiles = 0;
 }
 
 void derlRemoteClientConnection::MessageProgress(size_t bytesReceived){
 }
 
 void derlRemoteClientConnection::MessageReceived(const denMessage::Ref &message){
-	denMessageReader reader(message->Item());
-	const derlProtocol::MessageCodes code = (derlProtocol::MessageCodes)reader.ReadByte();
+	if(pClient){
+		pQueueReceived.Add(message);
+		
+	}else{
+		pMessageReceivedConnect(message);
+	}
+}
+
+void derlRemoteClientConnection::SendQueuedMessages(){
+	derlMessageQueue::Messages messages;
+	pQueueSend.PopAll(messages);
 	
-	if(!pClient){
-		if(!GetParentServer()){
-			Log(denLogger::LogSeverity::error, "MessageReceived",
-				"Server link missing (internal error), disconnecting.");
-			Disconnect();
-			return;
-		}
-		
-		if(code != derlProtocol::MessageCodes::connectRequest){
-			Log(denLogger::LogSeverity::error, "MessageReceived",
-				"Client send request other than ConnectRequest, disconnecting.");
-			Disconnect();
-			return;
-		}
-		
-		std::string signature(16, 0);
-		reader.Read((void*)signature.c_str(), 16);
-		if(signature != derlProtocol::signatureClient){
-			Log(denLogger::LogSeverity::error, "MessageReceived",
-				"Client requested with wrong signature, disconnecting.");
-			Disconnect();
-			return;
-		}
-		
-		pEnabledFeatures = reader.ReadUInt() & pSupportedFeatures;
-		pName = reader.ReadString8();
-		
-		denMessage::Ref message(denMessage::Pool().Get());
-		{
-			denMessageWriter writer(message->Item());
-			writer.WriteByte((uint8_t)derlProtocol::MessageCodes::connectAccepted);
-			writer.Write(derlProtocol::signatureServer, 16);
-			writer.WriteUInt(pEnabledFeatures);
-		}
-		SendReliableMessage(message);
-		
-		message = denMessage::Pool().Get();
-		{
-			denMessageWriter writer(message->Item());
-			writer.WriteByte((uint8_t)derlProtocol::LinkCodes::runState);
-		}
-		LinkState(message, pStateRun, false);
-		
-		const denServer::Connections &connections = GetParentServer()->GetConnections();
-		denServer::Connections::const_iterator iter;
-		for(iter=connections.cbegin(); iter!=connections.cend(); iter++){
-			if(iter->get() == this){
-				const derlRemoteClient::Ref client(pServer.CreateClient(
-					std::dynamic_pointer_cast<derlRemoteClientConnection>(*iter)));
-				pServer.GetClients().push_back(client);
-				pClient = client.get();
-				pClient->OnConnectionEstablished();
-				return;
-			}
-		}
-		
-		Log(denLogger::LogSeverity::error, "MessageReceived",
-			"Connection not found (internal error), disconnecting.");
-		Disconnect();
-		return;
+	derlMessageQueue::Messages::const_iterator iter;
+	for(iter=messages.cbegin(); iter!=messages.cend(); iter++){
+		SendReliableMessage(*iter);
+	}
+}
+
+void derlRemoteClientConnection::ProcessReceivedMessages(){
+	derlMessageQueue::Messages messages;
+	{
+	std::lock_guard guard(pMutex);
+	pQueueReceived.PopAll(messages);
 	}
 	
-	switch(code){
-	case derlProtocol::MessageCodes::logs:
-		pProcessRequestLogs(reader);
-		break;
+	derlMessageQueue::Messages::const_iterator iter;
+	for(iter=messages.cbegin(); iter!=messages.cend(); iter++){
+		denMessageReader reader((*iter)->Item());
+		const derlProtocol::MessageCodes code = (derlProtocol::MessageCodes)reader.ReadByte();
 		
-	case derlProtocol::MessageCodes::responseFileLayout:
-		pProcessResponseFileLayout(reader);
-		break;
-		
-	case derlProtocol::MessageCodes::responseFileBlockHashes:
-		pProcessResponseFileBlockHashes(reader);
-		break;
-		
-	case derlProtocol::MessageCodes::responseDeleteFile:
-		pProcessResponseDeleteFile(reader);
-		break;
-		
-	case derlProtocol::MessageCodes::responseWriteFile:
-		pProcessResponseWriteFile(reader);
-		break;
-		
-	case derlProtocol::MessageCodes::responseFinishWriteFile:
-		pProcessResponseFinishWriteFile(reader);
-		break;
-		
-	default:
-		break; // ignore all other messages
+		switch(code){
+		case derlProtocol::MessageCodes::logs:
+			pProcessRequestLogs(reader);
+			break;
+			
+		case derlProtocol::MessageCodes::responseFileLayout:
+			pProcessResponseFileLayout(reader);
+			break;
+			
+		case derlProtocol::MessageCodes::responseFileBlockHashes:
+			pProcessResponseFileBlockHashes(reader);
+			break;
+			
+		case derlProtocol::MessageCodes::responseDeleteFile:
+			pProcessResponseDeleteFile(reader);
+			break;
+			
+		case derlProtocol::MessageCodes::responseWriteFile:
+			pProcessResponseWriteFile(reader);
+			break;
+			
+		case derlProtocol::MessageCodes::fileDataReceived:
+			pProcessFileDataReceived(reader);
+			break;
+			
+		case derlProtocol::MessageCodes::responseFinishWriteFile:
+			pProcessResponseFinishWriteFile(reader);
+			break;
+			
+		default:
+			break; // ignore all other messages
+		}
 	}
 }
 
@@ -292,13 +272,19 @@ void derlRemoteClientConnection::FinishPendingOperations(){
 			const derlTaskFileWrite::Ref &task = iter->second;
 			switch(task->GetStatus()){
 			case derlTaskFileWrite::Status::pending:
+				if(pCountInProgressFiles >= pMaxInProgressFiles){
+					break;
+				}
 				task->SetStatus(derlTaskFileWrite::Status::preparing);
 				prepareTasks.push_back(task);
+				pCountInProgressFiles++;
 				break;
 				
 			case derlTaskFileWrite::Status::processing:{
 				const derlTaskFileWriteBlock::List &blocks = task->GetBlocks();
 				if(blocks.empty()){
+					task->SetStatus(derlTaskFileWrite::Status::finishing);
+					finishTasks.push_back(task);
 					break;
 				}
 				
@@ -306,9 +292,14 @@ void derlRemoteClientConnection::FinishPendingOperations(){
 				for(iterBlock=blocks.cbegin(); iterBlock!=blocks.cend(); iterBlock++){
 					derlTaskFileWriteBlock &block = **iterBlock;
 					if(block.GetStatus() == derlTaskFileWriteBlock::Status::dataReady){
+						if(pCountInProgressBlocks >= pMaxInProgressBlocks){
+							continue;
+						}
+						
 						block.SetStatus(derlTaskFileWriteBlock::Status::processing);
 						try{
 							pSendSendFileData(*task, block);
+							pCountInProgressBlocks++;
 							
 						}catch(const std::exception &e){
 							task->SetStatus(derlTaskFileWrite::Status::failure);
@@ -328,14 +319,6 @@ void derlRemoteClientConnection::FinishPendingOperations(){
 							return;
 						}
 					}
-				}
-				}break;
-				
-			case derlTaskFileWrite::Status::finishing:{
-				const derlTaskFileWriteBlock::List &blocks = task->GetBlocks();
-				if(blocks.empty()){
-					task->SetStatus(derlTaskFileWrite::Status::finishing);
-					finishTasks.push_back(task);
 				}
 				}break;
 				
@@ -424,6 +407,71 @@ void derlRemoteClientConnection::LogDebug(const std::string &functionName, const
 // Private Functions
 //////////////////////
 
+void derlRemoteClientConnection::pMessageReceivedConnect(const denMessage::Ref &message){
+	denMessageReader reader(message->Item());
+	const derlProtocol::MessageCodes code = (derlProtocol::MessageCodes)reader.ReadByte();
+	
+	if(!GetParentServer()){
+		Log(denLogger::LogSeverity::error, "MessageReceived",
+			"Server link missing (internal error), disconnecting.");
+		Disconnect();
+		return;
+	}
+	
+	if(code != derlProtocol::MessageCodes::connectRequest){
+		Log(denLogger::LogSeverity::error, "MessageReceived",
+			"Client send request other than ConnectRequest, disconnecting.");
+		Disconnect();
+		return;
+	}
+	
+	std::string signature(16, 0);
+	reader.Read((void*)signature.c_str(), 16);
+	if(signature != derlProtocol::signatureClient){
+		Log(denLogger::LogSeverity::error, "MessageReceived",
+			"Client requested with wrong signature, disconnecting.");
+		Disconnect();
+		return;
+	}
+	
+	pEnabledFeatures = reader.ReadUInt() & pSupportedFeatures;
+	pName = reader.ReadString8();
+	
+	denMessage::Ref response(denMessage::Pool().Get());
+	{
+		denMessageWriter writer(response->Item());
+		writer.WriteByte((uint8_t)derlProtocol::MessageCodes::connectAccepted);
+		writer.Write(derlProtocol::signatureServer, 16);
+		writer.WriteUInt(pEnabledFeatures);
+	}
+	SendReliableMessage(response);
+	
+	response = denMessage::Pool().Get();
+	{
+		denMessageWriter writer(response->Item());
+		writer.WriteByte((uint8_t)derlProtocol::LinkCodes::runState);
+	}
+	LinkState(response, pStateRun, false);
+	
+	const denServer::Connections &connections = GetParentServer()->GetConnections();
+	denServer::Connections::const_iterator iter;
+	for(iter=connections.cbegin(); iter!=connections.cend(); iter++){
+		if(iter->get() == this){
+			const derlRemoteClient::Ref client(pServer.CreateClient(
+				std::dynamic_pointer_cast<derlRemoteClientConnection>(*iter)));
+			pServer.GetClients().push_back(client);
+			pClient = client.get();
+			pClient->OnConnectionEstablished();
+			return;
+		}
+	}
+	
+	Log(denLogger::LogSeverity::error, "MessageReceived",
+		"Connection not found (internal error), disconnecting.");
+	Disconnect();
+	return;
+}
+
 void derlRemoteClientConnection::pProcessRequestLogs(denMessageReader &reader){
 	denLogger::LogSeverity severity;
 	switch((derlProtocol::LogLevel)reader.ReadByte()){
@@ -482,7 +530,12 @@ void derlRemoteClientConnection::pProcessResponseFileLayout(denMessageReader &re
 	if((flags & (uint8_t)derlProtocol::FileLayoutFlags::finish) != 0){
 		pClient->SetFileLayoutClient(taskLayout->GetLayout());
 		pClient->SetTaskFileLayoutClient(nullptr);
-		Log(denLogger::LogSeverity::info, "pProcessResponseFileLayout", "File layout received.");
+		
+		{
+		std::stringstream ss;
+		ss << "File layout received. " << pClient->GetFileLayoutClient()->GetFileCount() << " file(s)";
+		Log(denLogger::LogSeverity::info, "pProcessResponseFileLayout", ss.str());
+		}
 	}
 }
 
@@ -657,7 +710,7 @@ void derlRemoteClientConnection::pProcessResponseWriteFile(denMessageReader &rea
 	}
 }
 
-void derlRemoteClientConnection::pProcessResponseSendFileData(denMessageReader &reader){
+void derlRemoteClientConnection::pProcessFileDataReceived(denMessageReader &reader){
 	const derlTaskSyncClient::Ref taskSync(pGetProcessingSyncTask("pProcessResponseSendFileData"));
 	if(!taskSync){
 		return;
@@ -710,6 +763,7 @@ void derlRemoteClientConnection::pProcessResponseSendFileData(denMessageReader &
 	}
 	
 	blocks.erase(iterBlock);
+	pCountInProgressBlocks--;
 	}
 	
 	if(result != derlProtocol::WriteDataResult::success){
@@ -745,14 +799,15 @@ void derlRemoteClientConnection::pProcessResponseFinishWriteFile(denMessageReade
 	}
 	
 	derlTaskFileWrite &taskWrite = *iterWrite->second;
-	if(taskWrite.GetStatus() != derlTaskFileWrite::Status::processing){
+	if(taskWrite.GetStatus() != derlTaskFileWrite::Status::finishing){
 		std::stringstream log;
-		log << "Finish write file response received but it is not processing: " << path;
+		log << "Finish write file response received but it is not finishing: " << path;
 		Log(denLogger::LogSeverity::warning, "pProcessResponseFinishWriteFile", log.str());
 		return;
 	}
 	
 	tasksWrite.erase(iterWrite);
+	pCountInProgressFiles--;
 	}
 	
 	if(result == derlProtocol::WriteFileResult::success){
@@ -772,14 +827,13 @@ void derlRemoteClientConnection::pProcessResponseFinishWriteFile(denMessageReade
 
 void derlRemoteClientConnection::pSendRequestLayout(){
 	Log(denLogger::LogSeverity::info, "pSendRequestLayout", "Request file layout");
-	
-	
+	std::lock_guard guard(pMutex);
 	const denMessage::Ref message(denMessage::Pool().Get());
 	{
 		denMessageWriter writer(message->Item());
 		writer.WriteByte((uint8_t)derlProtocol::MessageCodes::requestFileLayout);
 	}
-	SendReliableMessage(message);
+	pQueueSend.Add(message);
 }
 
 void derlRemoteClientConnection::pSendRequestFileBlockHashes(const std::string &path, uint32_t blockSize){
@@ -787,6 +841,7 @@ void derlRemoteClientConnection::pSendRequestFileBlockHashes(const std::string &
 	log << "Request file blocks: " << path << " blockSize " << blockSize;
 	Log(denLogger::LogSeverity::info, "pSendRequestFileBlockHashes", log.str());
 	
+	std::lock_guard guard(pMutex);
 	const denMessage::Ref message(denMessage::Pool().Get());
 	{
 		denMessageWriter writer(message->Item());
@@ -794,10 +849,11 @@ void derlRemoteClientConnection::pSendRequestFileBlockHashes(const std::string &
 		writer.WriteString16(path);
 		writer.WriteUInt(blockSize);
 	}
-	SendReliableMessage(message);
+	pQueueSend.Add(message);
 }
 
 void derlRemoteClientConnection::pSendRequestsDeleteFile(const derlTaskFileDelete::List &tasks){
+	std::lock_guard guard(pMutex);
 	derlTaskFileDelete::List::const_iterator iter;
 	for(iter=tasks.cbegin(); iter!=tasks.cend(); iter++){
 		const derlTaskFileDelete &task = **iter;
@@ -812,11 +868,12 @@ void derlRemoteClientConnection::pSendRequestsDeleteFile(const derlTaskFileDelet
 			log << "Request delete file: " << task.GetPath();
 			Log(denLogger::LogSeverity::info, "pSendRequestsDeleteFile", log.str());
 		}
-		SendReliableMessage(message);
+		pQueueSend.Add(message);
 	}
 }
 
 void derlRemoteClientConnection::pSendRequestsWriteFile(const derlTaskFileWrite::List &tasks){
+	std::lock_guard guard(pMutex);
 	derlTaskFileWrite::List::const_iterator iter;
 	for(iter=tasks.cbegin(); iter!=tasks.cend(); iter++){
 		const derlTaskFileWrite &task = **iter;
@@ -827,12 +884,14 @@ void derlRemoteClientConnection::pSendRequestsWriteFile(const derlTaskFileWrite:
 			writer.WriteByte((uint8_t)derlProtocol::MessageCodes::requestWriteFile);
 			writer.WriteString16(task.GetPath());
 			writer.WriteULong(task.GetFileSize());
+			writer.WriteULong(task.GetBlockSize());
+			writer.WriteUInt((int)task.GetBlocks().size());
 			
 			std::stringstream log;
 			log << "Request write file: " << task.GetPath() << " size " << task.GetFileSize();
 			Log(denLogger::LogSeverity::info, "pSendRequestsWriteFile", log.str());
 		}
-		SendReliableMessage(message);
+		pQueueSend.Add(message);
 	}
 }
 
@@ -846,6 +905,7 @@ void derlRemoteClientConnection::pSendSendFileData(const derlTaskFileWrite &task
 	const int count = (int)((blockSize - 1L) / (uint64_t)pPartSize) + 1;
 	int i;
 	
+	std::lock_guard guard(pMutex);
 	for(i=0; i<count; i++){
 		const uint64_t partOffset = (uint64_t)pPartSize * i;
 		const int partSize = std::min(pPartSize, (int)(blockSize - partOffset));
@@ -866,11 +926,12 @@ void derlRemoteClientConnection::pSendSendFileData(const derlTaskFileWrite &task
 			
 			writer.Write(blockData + partOffset, (size_t)partSize);
 		}
-		SendReliableMessage(message);
+		pQueueSend.Add(message);
 	}
 }
 
 void derlRemoteClientConnection::pSendRequestsFinishWriteFile(const derlTaskFileWrite::List &tasks){
+	std::lock_guard guard(pMutex);
 	derlTaskFileWrite::List::const_iterator iter;
 	for(iter=tasks.cbegin(); iter!=tasks.cend(); iter++){
 		const derlTaskFileWrite &task = **iter;
@@ -885,7 +946,7 @@ void derlRemoteClientConnection::pSendRequestsFinishWriteFile(const derlTaskFile
 			log << "Request finish write file: " << task.GetPath();
 			Log(denLogger::LogSeverity::info, "pSendRequestsFinishWriteFile", log.str());
 		}
-		SendReliableMessage(message);
+		pQueueSend.Add(message);
 	}
 }
 
@@ -894,6 +955,7 @@ void derlRemoteClientConnection::pSendStartApplication(const derlRunParameters &
 	log << "Start application: ";
 	Log(denLogger::LogSeverity::info, "pSendStartApplication", log.str());
 	
+	std::lock_guard guard(pMutex);
 	const denMessage::Ref message(denMessage::Pool().Get());
 	{
 		denMessageWriter writer(message->Item());
@@ -902,7 +964,7 @@ void derlRemoteClientConnection::pSendStartApplication(const derlRunParameters &
 		writer.WriteString8(parameters.GetProfileName());
 		writer.WriteString16(parameters.GetArguments());
 	}
-	SendReliableMessage(message);
+	pQueueSend.Add(message);
 }
 
 void derlRemoteClientConnection::pSendStopApplication(derlProtocol::StopApplicationMode mode){
@@ -910,13 +972,14 @@ void derlRemoteClientConnection::pSendStopApplication(derlProtocol::StopApplicat
 	log << "Stop application: " << (int)mode;
 	Log(denLogger::LogSeverity::info, "pSendStopApplication", log.str());
 	
+	std::lock_guard guard(pMutex);
 	const denMessage::Ref message(denMessage::Pool().Get());
 	{
 		denMessageWriter writer(message->Item());
 		writer.WriteByte((uint8_t)derlProtocol::MessageCodes::stopApplication);
 		writer.WriteByte((uint8_t)mode);
 	}
-	SendReliableMessage(message);
+	pQueueSend.Add(message);
 }
 
 derlTaskSyncClient::Ref derlRemoteClientConnection::pGetPendingSyncTask(const std::string &functionName){

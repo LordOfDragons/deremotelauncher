@@ -63,6 +63,7 @@ private:
 	Status pStatus;
 	uint64_t pFileSize;
 	uint64_t pBlockSize;
+	int pBlockCount;
 	derlTaskFileWriteBlock::List pBlocks;
 	
 	
@@ -94,6 +95,10 @@ public:
 	/** \brief Block size. */
 	inline uint64_t GetBlockSize() const{ return pBlockSize; }
 	void SetBlockSize(uint64_t blockSize);
+	
+	/** \brief Block count. */
+	inline int GetBlockCount() const{ return pBlockCount; }
+	void SetBlockCount(int blockCount);
 	
 	/** \brief Blocks. */
 	inline const derlTaskFileWriteBlock::List &GetBlocks() const{ return pBlocks; }

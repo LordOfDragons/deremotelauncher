@@ -110,62 +110,11 @@ void derlLauncherClientConnection::MessageProgress(size_t bytesReceived){
 }
 
 void derlLauncherClientConnection::MessageReceived(const denMessage::Ref &message){
-	denMessageReader reader(message->Item());
-	const derlProtocol::MessageCodes code = (derlProtocol::MessageCodes)reader.ReadByte();
-	
-	if(!pConnectionAccepted){
-		if(code == derlProtocol::MessageCodes::connectAccepted){
-			std::string signature(16, 0);
-			reader.Read((void*)signature.c_str(), 16);
-			if(signature != derlProtocol::signatureServer){
-				Log(denLogger::LogSeverity::error, "MessageReceived",
-					"Server answered with wrong signature, disconnecting.");
-				Disconnect();
-				return;
-			}
-			
-			pEnabledFeatures = reader.ReadUInt();
-			pConnectionAccepted = true;
-			pClient.OnConnectionEstablished();
-		}
-		return;
-	}
-	
-	switch(code){
-	case derlProtocol::MessageCodes::requestFileLayout:
-		pProcessRequestLayout();
-		break;
+	if(pConnectionAccepted){
+		pQueueReceived.Add(message);
 		
-	case derlProtocol::MessageCodes::requestFileBlockHashes:
-		pProcessRequestFileBlockHashes(reader);
-		break;
-		
-	case derlProtocol::MessageCodes::requestDeleteFile:
-		pProcessRequestDeleteFile(reader);
-		break;
-		
-	case derlProtocol::MessageCodes::requestWriteFile:
-		pProcessRequestWriteFile(reader);
-		break;
-		
-	case derlProtocol::MessageCodes::sendFileData:
-		pProcessSendFileData(reader);
-		break;
-		
-	case derlProtocol::MessageCodes::requestFinishWriteFile:
-		pProcessRequestFinishWriteFile(reader);
-		break;
-		
-	case derlProtocol::MessageCodes::startApplication:
-		pProcessStartApplication(reader);
-		break;
-		
-	case derlProtocol::MessageCodes::stopApplication:
-		pProcessStopApplication(reader);
-		break;
-		
-	default:
-		break; // ignore all other messages
+	}else{
+		pMessageReceivedConnect(message);
 	}
 }
 
@@ -183,6 +132,67 @@ denState::Ref derlLauncherClientConnection::CreateState(const denMessage::Ref &m
 		
 	default:
 		return nullptr; // ignore all other messages
+	}
+}
+
+void derlLauncherClientConnection::SendQueuedMessages(){
+	derlMessageQueue::Messages messages;
+	pQueueSend.PopAll(messages);
+	
+	derlMessageQueue::Messages::const_iterator iter;
+	for(iter=messages.cbegin(); iter!=messages.cend(); iter++){
+		SendReliableMessage(*iter);
+	}
+}
+
+void derlLauncherClientConnection::ProcessReceivedMessages(){
+	derlMessageQueue::Messages messages;
+	{
+	std::lock_guard guard(pMutex);
+	pQueueReceived.PopAll(messages);
+	}
+	
+	derlMessageQueue::Messages::const_iterator iter;
+	for(iter=messages.cbegin(); iter!=messages.cend(); iter++){
+		denMessageReader reader((*iter)->Item());
+		const derlProtocol::MessageCodes code = (derlProtocol::MessageCodes)reader.ReadByte();
+		
+		switch(code){
+		case derlProtocol::MessageCodes::requestFileLayout:
+			pProcessRequestLayout();
+			break;
+			
+		case derlProtocol::MessageCodes::requestFileBlockHashes:
+			pProcessRequestFileBlockHashes(reader);
+			break;
+			
+		case derlProtocol::MessageCodes::requestDeleteFile:
+			pProcessRequestDeleteFile(reader);
+			break;
+			
+		case derlProtocol::MessageCodes::requestWriteFile:
+			pProcessRequestWriteFile(reader);
+			break;
+			
+		case derlProtocol::MessageCodes::sendFileData:
+			pProcessSendFileData(reader);
+			break;
+			
+		case derlProtocol::MessageCodes::requestFinishWriteFile:
+			pProcessRequestFinishWriteFile(reader);
+			break;
+			
+		case derlProtocol::MessageCodes::startApplication:
+			pProcessStartApplication(reader);
+			break;
+			
+		case derlProtocol::MessageCodes::stopApplication:
+			pProcessStopApplication(reader);
+			break;
+			
+		default:
+			break; // ignore all other messages
+		}
 	}
 }
 
@@ -372,6 +382,27 @@ void derlLauncherClientConnection::LogDebug(const std::string &functionName, con
 // Private Functions
 //////////////////////
 
+void derlLauncherClientConnection::pMessageReceivedConnect(const denMessage::Ref &message){
+	denMessageReader reader(message->Item());
+	const derlProtocol::MessageCodes code = (derlProtocol::MessageCodes)reader.ReadByte();
+	if(code != derlProtocol::MessageCodes::connectAccepted){
+		return;
+	}
+	
+	std::string signature(16, 0);
+	reader.Read((void*)signature.c_str(), 16);
+	if(signature != derlProtocol::signatureServer){
+		Log(denLogger::LogSeverity::error, "MessageReceived",
+			"Server answered with wrong signature, disconnecting.");
+		Disconnect();
+		return;
+	}
+	
+	pEnabledFeatures = reader.ReadUInt();
+	pConnectionAccepted = true;
+	pClient.OnConnectionEstablished();
+}
+
 void derlLauncherClientConnection::pFinishFileBlockHashes(derlTaskFileBlockHashes &task){
 	if(task.GetStatus() != derlTaskFileBlockHashes::Status::success){
 		pSendResponseFileBlockHashes(task.GetPath());
@@ -464,17 +495,8 @@ void derlLauncherClientConnection::pProcessRequestWriteFile(denMessageReader &re
 	const std::string path(reader.ReadString16());
 	const derlTaskFileWrite::Ref task(std::make_shared<derlTaskFileWrite>(path));
 	task->SetFileSize(reader.ReadULong());
-	
-	const derlFile::Ref &file = pClient.GetFileLayout()->GetFileAt(path);
-	if(!file){
-		std::stringstream log;
-		log << "Write file request received but file does not exist: " << path;
-		Log(denLogger::LogSeverity::warning, "pProcessRequestWriteFile", log.str());
-		task->SetStatus(derlTaskFileWrite::Status::failure);
-		return;
-	}
-	
-	task->SetBlockSize(file->GetBlockSize());
+	task->SetBlockSize(reader.ReadULong());
+	task->SetBlockCount((int)reader.ReadUInt());
 	
 	tasks[path] = task;
 }
@@ -485,6 +507,9 @@ void derlLauncherClientConnection::pProcessSendFileData(denMessageReader &reader
 	const std::lock_guard guard(pClient.GetMutex());
 	const derlTaskFileWrite::Map::const_iterator iter(pClient.GetTasksWriteFile().find(path));
 	if(iter == pClient.GetTasksWriteFile().cend()){
+		std::stringstream log;
+		log << "Send file data received but task does not exist: " << path;
+		Log(denLogger::LogSeverity::warning, "pProcessSendFileData", log.str());
 		return; // ignore
 	}
 	
@@ -504,26 +529,18 @@ void derlLauncherClientConnection::pProcessSendFileData(denMessageReader &reader
 	
 	derlTaskFileWriteBlock::Ref taskBlock;
 	if(iterBlock == blocks.cend()){
-		const derlFile::Ref &file = pClient.GetFileLayout()->GetFileAt(path);
-		if(!file){
-			std::stringstream log;
-			log << "Send file data received but file does not exist: " << path;
-			Log(denLogger::LogSeverity::warning, "pProcessSendFileData", log.str());
-			taskWrite.SetStatus(derlTaskFileWrite::Status::failure);
-			return;
-		}
-		
-		if(indexBlock < 0 || indexBlock >= file->GetBlockCount()){
+		if(indexBlock < 0 || indexBlock >= taskWrite.GetBlockCount()){
 			std::stringstream log;
 			log << "Send file data received but block index is out of range: "
-				<< path << " index " << indexBlock << " count " << file->GetBlockCount();
+				<< path << " index " << indexBlock << " count " << taskWrite.GetBlockCount();
 			Log(denLogger::LogSeverity::warning, "pProcessSendFileData", log.str());
 			taskWrite.SetStatus(derlTaskFileWrite::Status::failure);
 			return;
 		}
 		
-		const derlFileBlock::Ref &fileBlock = file->GetBlockAt(indexBlock);
-		const int blockSize = fileBlock->GetSize();
+		const uint64_t blockOffset = taskWrite.GetBlockSize() * indexBlock;
+		const uint64_t blockSize = std::min(
+			taskWrite.GetBlockSize(), taskWrite.GetFileSize() - blockOffset);
 		
 		taskBlock = std::make_shared<derlTaskFileWriteBlock>(indexBlock, blockSize);
 		taskBlock->GetData().assign(blockSize, 0);
@@ -596,18 +613,19 @@ void derlLauncherClientConnection::pProcessStopApplication(denMessageReader &rea
 }
 
 void derlLauncherClientConnection::pSendResponseFileLayout(const derlFileLayout &layout){
+	std::lock_guard guard(pMutex);
 	if(layout.GetFileCount() == 0){
 		const denMessage::Ref message(denMessage::Pool().Get());
 		{
 			denMessageWriter writer(message->Item());
 			writer.WriteByte((uint8_t)derlProtocol::MessageCodes::responseFileLayout);
 			writer.WriteByte((uint8_t)derlProtocol::FileLayoutFlags::finish
-				|| (uint8_t)derlProtocol::FileLayoutFlags::empty);
+				| (uint8_t)derlProtocol::FileLayoutFlags::empty);
 			writer.WriteString16("");
 			writer.WriteULong(0L);
 			writer.WriteString8("");
 		}
-		SendReliableMessage(message);
+		pQueueSend.Add(message);
 		return;
 	}
 	
@@ -631,26 +649,28 @@ void derlLauncherClientConnection::pSendResponseFileLayout(const derlFileLayout 
 		writer.WriteULong(file.GetSize());
 		writer.WriteString8(file.GetHash());
 		}
-		SendReliableMessage(message);
+		pQueueSend.Add(message);
 	}
 }
 
 void derlLauncherClientConnection::pSendResponseFileBlockHashes(
 const std::string &path, uint32_t blockSize){
+	std::lock_guard guard(pMutex);
 	const denMessage::Ref message(denMessage::Pool().Get());
 	{
 		denMessageWriter writer(message->Item());
 		writer.WriteByte((uint8_t)derlProtocol::MessageCodes::responseFileBlockHashes);
 		writer.WriteString16(path);
 		writer.WriteByte((uint8_t)derlProtocol::FileBlockHashesFlags::finish
-			|| (uint8_t)derlProtocol::FileBlockHashesFlags::empty);
+			| (uint8_t)derlProtocol::FileBlockHashesFlags::empty);
 		writer.WriteUInt(0);
 		writer.WriteString8("");
 	}
-	SendReliableMessage(message);
+	pQueueSend.Add(message);
 }
 
 void derlLauncherClientConnection::pSendResponseFileBlockHashes(const derlFile &file){
+	std::lock_guard guard(pMutex);
 	const std::string &path = file.GetPath();
 	const int count = file.GetBlockCount();
 	int i;
@@ -662,11 +682,11 @@ void derlLauncherClientConnection::pSendResponseFileBlockHashes(const derlFile &
 			writer.WriteByte((uint8_t)derlProtocol::MessageCodes::responseFileBlockHashes);
 			writer.WriteString16(path);
 			writer.WriteByte((uint8_t)derlProtocol::FileBlockHashesFlags::finish
-				|| (uint8_t)derlProtocol::FileBlockHashesFlags::empty);
+				| (uint8_t)derlProtocol::FileBlockHashesFlags::empty);
 			writer.WriteUInt(0);
 			writer.WriteString8("");
 		}
-		SendReliableMessage(message);
+		pQueueSend.Add(message);
 		return;
 	}
 	
@@ -686,11 +706,12 @@ void derlLauncherClientConnection::pSendResponseFileBlockHashes(const derlFile &
 			writer.WriteUInt(i);
 			writer.WriteString8(file.GetBlockAt(i)->GetHash());
 		}
-		SendReliableMessage(message);
+		pQueueSend.Add(message);
 	}
 }
 
 void derlLauncherClientConnection::pSendResponsesDeleteFile(const derlTaskFileDelete::List &tasks){
+	std::lock_guard guard(pMutex);
 	derlTaskFileDelete::List::const_iterator iter;
 	for(iter=tasks.cbegin(); iter!=tasks.cend(); iter++){
 		const derlTaskFileDelete &task = **iter;
@@ -708,11 +729,12 @@ void derlLauncherClientConnection::pSendResponsesDeleteFile(const derlTaskFileDe
 				writer.WriteByte((uint8_t)derlProtocol::DeleteFileResult::failure);
 			}
 		}
-		SendReliableMessage(message);
+		pQueueSend.Add(message);
 	}
 }
 
 void derlLauncherClientConnection::pSendResponseWriteFiles(const derlTaskFileWrite::List &tasks){
+	std::lock_guard guard(pMutex);
 	derlTaskFileWrite::List::const_iterator iter;
 	for(iter=tasks.cbegin(); iter!=tasks.cend(); iter++){
 		derlTaskFileWrite &task = **iter;
@@ -732,26 +754,23 @@ void derlLauncherClientConnection::pSendResponseWriteFiles(const derlTaskFileWri
 				task.SetStatus(derlTaskFileWrite::Status::failure);
 			}
 		}
-		SendReliableMessage(message);
+		pQueueSend.Add(message);
 	}
 }
 
 void derlLauncherClientConnection::pSendFileDataReceived(const std::string &path,
 const derlTaskFileWriteBlock::List &blocks){
-	if(blocks.size() > DERL_MAX_UINT_SIZE){
-		throw std::runtime_error("Too many blocks");
-	}
-	
-	const denMessage::Ref message(denMessage::Pool().Get());
-	{
-		denMessageWriter writer(message->Item());
-		writer.WriteByte((uint8_t)derlProtocol::MessageCodes::fileDataReceived);
-		writer.WriteUInt((uint32_t)blocks.size());
+	std::lock_guard guard(pMutex);
+	derlTaskFileWriteBlock::List::const_iterator iter;
+	for(iter = blocks.cbegin(); iter != blocks.cend(); iter++){
+		const derlTaskFileWriteBlock &block = **iter;
 		
-		derlTaskFileWriteBlock::List::const_iterator iter;
-		for(iter = blocks.cbegin(); iter != blocks.cend(); iter++){
-			const derlTaskFileWriteBlock &block = **iter;
+		const denMessage::Ref message(denMessage::Pool().Get());
+		{
+			denMessageWriter writer(message->Item());
+			writer.WriteByte((uint8_t)derlProtocol::MessageCodes::fileDataReceived);
 			writer.WriteString16(path);
+			writer.WriteUInt((uint32_t)block.GetIndex());
 			
 			if(block.GetStatus() == derlTaskFileWriteBlock::Status::success){
 				writer.WriteByte((uint8_t)derlProtocol::WriteDataResult::success);
@@ -760,11 +779,13 @@ const derlTaskFileWriteBlock::List &blocks){
 				writer.WriteByte((uint8_t)derlProtocol::WriteDataResult::failure);
 			}
 		}
+		pQueueSend.Add(message);
+		Log(denLogger::LogSeverity::info, "pSendFileDataReceived", "Block finished");
 	}
-	SendReliableMessage(message);
 }
 
 void derlLauncherClientConnection::pSendResponseFinishWriteFile(const derlTaskFileWrite::Ref &task){
+	std::lock_guard guard(pMutex);
 	const denMessage::Ref message(denMessage::Pool().Get());
 	{
 		denMessageWriter writer(message->Item());
@@ -778,5 +799,5 @@ void derlLauncherClientConnection::pSendResponseFinishWriteFile(const derlTaskFi
 			writer.WriteByte((uint8_t)derlProtocol::FinishWriteFileResult::failure);
 		}
 	}
-	SendReliableMessage(message);
+	pQueueSend.Add(message);
 }

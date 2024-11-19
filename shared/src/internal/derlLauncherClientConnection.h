@@ -25,12 +25,14 @@
 #ifndef _DERLLAUNCHERCLIENTCONNECTION_H_
 #define _DERLLAUNCHERCLIENTCONNECTION_H_
 
+#include <mutex>
 #include <memory>
 
 #include <denetwork/denConnection.h>
 #include <denetwork/state/denState.h>
 #include <denetwork/value/denValueInteger.h>
 
+#include "../derlMessageQueue.h"
 #include "../task/derlTaskFileWrite.h"
 #include "../task/derlTaskFileDelete.h"
 #include "../task/derlTaskFileBlockHashes.h"
@@ -57,7 +59,6 @@ public:
 	};
 	
 	
-	
 private:
 	derlLauncherClient &pClient;
 	bool pConnectionAccepted;
@@ -68,6 +69,9 @@ private:
 	const denValueInt::Ref pValueRunStatus;
 	
 	bool pPendingRequestLayout;
+	
+	std::mutex pMutex;
+	derlMessageQueue pQueueReceived, pQueueSend;
 	
 	
 public:
@@ -88,6 +92,15 @@ public:
 	/*@{*/
 	/** \brief Part size. */
 	inline int GetPartSize() const{ return pPartSize; }
+	
+	/** \brief Mutex to lock all access to denConnection resources. */
+	inline std::mutex &GetMutex(){ return pMutex; }
+	
+	/** \brief Received message queue. */
+	inline derlMessageQueue &GetQueueReceived(){ return pQueueReceived; }
+	
+	/** \brief Send message queue. */
+	inline derlMessageQueue &GetQueueSend(){ return pQueueSend; }
 	
 	
 	/** \brief Set run status. */
@@ -115,7 +128,8 @@ public:
 	
 	/**
 	 * \brief Message received.
-	 * \param[in] message Received message. Reference can be stored for later use.
+	 * 
+	 * Stores the message in the received message queue to avoid stalling.
 	 */
 	void MessageReceived(const denMessage::Ref &message) override;
 	
@@ -137,6 +151,15 @@ public:
 	 */
 	denState::Ref CreateState(const denMessage::Ref &message, bool readOnly) override;
 	
+	/**
+	 * \brief Send queues messages.
+	 * \warning Caller has to lock GetMutex() while calling this method.
+	 * */
+	void SendQueuedMessages();
+	
+	/** \brief Process received messages. */
+	void ProcessReceivedMessages();
+	
 	/** \brief Process finished pending operations. */
 	void FinishPendingOperations();
 	
@@ -154,6 +177,8 @@ public:
 	
 	
 private:
+	void pMessageReceivedConnect(const denMessage::Ref &message);
+	
 	void pFinishFileBlockHashes(derlTaskFileBlockHashes &task);
 	
 	void pProcessRequestLayout();

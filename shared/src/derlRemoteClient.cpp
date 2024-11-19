@@ -48,13 +48,7 @@ derlRemoteClient::~derlRemoteClient(){
 ///////////////
 
 const std::string &derlRemoteClient::GetName() const{
-	if(pConnection){
-		return pConnection->GetName();
-		
-	}else{
-		static const std::string name;
-		return name;
-	}
+	return pConnection->GetName();
 }
 
 void derlRemoteClient::SetFileLayoutServer(const derlFileLayout::Ref &layout){
@@ -78,7 +72,7 @@ void derlRemoteClient::SetTaskSyncClient(const derlTaskSyncClient::Ref &task){
 }
 
 int derlRemoteClient::GetPartSize() const{
-	return pConnection ? pConnection->GetPartSize() : 1357;
+	return pConnection->GetPartSize();
 }
 
 const denLogger::Ref &derlRemoteClient::GetLogger() const{
@@ -87,9 +81,7 @@ const denLogger::Ref &derlRemoteClient::GetLogger() const{
 
 void derlRemoteClient::SetLogger(const denLogger::Ref &logger){
 	pLogger = logger;
-	if(pConnection){
-		pConnection->SetLogger(logger);
-	}
+	pConnection->SetLogger(logger);
 	if(pTaskProcessor){
 		pTaskProcessor->SetLogger(logger);
 	}
@@ -161,42 +153,22 @@ void derlRemoteClient::StopTaskProcessors(){
 
 
 void derlRemoteClient::Disconnect(){
-	if(pConnection){
-		pConnection->Disconnect();
-	}
+	pConnection->Disconnect();
 }
 
 void derlRemoteClient::Update(float elapsed){
-	if(pConnection){
-		pConnection->Update(elapsed);
-		pConnection->FinishPendingOperations();
-		FinishPendingOperations();
-	}
+	std::lock_guard guard(pConnection->GetMutex());
+	pConnection->SendQueuedMessages();
+	pConnection->Update(elapsed);
 }
 
-
-// Events
-///////////
-
-void derlRemoteClient::OnConnectionEstablished(){
+void derlRemoteClient::ProcessReceivedMessages(){
+	pConnection->ProcessReceivedMessages();
 }
-
-void derlRemoteClient::OnConnectionClosed(){
-}
-
-void derlRemoteClient::OnSynchronizeBegin(){
-}
-
-void derlRemoteClient::OnSynchronizeUpdate(){
-}
-
-void derlRemoteClient::OnSynchronizeFinished(){
-}
-
-// Protected Functions
-////////////////////////
 
 void derlRemoteClient::FinishPendingOperations(){
+	pConnection->FinishPendingOperations();
+	
 	bool sendEventSyncUpdate = false;
 	bool sendEventSyncEnd = false;
 	
@@ -223,7 +195,23 @@ void derlRemoteClient::FinishPendingOperations(){
 	}
 }
 
+// Events
+///////////
 
+void derlRemoteClient::OnConnectionEstablished(){
+}
+
+void derlRemoteClient::OnConnectionClosed(){
+}
+
+void derlRemoteClient::OnSynchronizeBegin(){
+}
+
+void derlRemoteClient::OnSynchronizeUpdate(){
+}
+
+void derlRemoteClient::OnSynchronizeFinished(){
+}
 
 // Private Functions
 //////////////////////

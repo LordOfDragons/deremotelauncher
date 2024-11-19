@@ -47,6 +47,9 @@ derlTaskProcessorLauncherClient::~derlTaskProcessorLauncherClient(){
 ///////////////
 
 bool derlTaskProcessorLauncherClient::RunTask(){
+	pClient.ProcessReceivedMessages();
+	pClient.FinishPendingOperations();
+	
 	derlTaskFileBlockHashes::Ref taskFileBlockHashes;
 	derlTaskFileWriteBlock::Ref taskWriteFileBlock;
 	derlTaskFileLayout::Ref taskFileLayout;
@@ -65,6 +68,12 @@ bool derlTaskProcessorLauncherClient::RunTask(){
 	|| FindNextTaskWriteFileBlock(taskWriteFile, taskWriteFileBlock);
 	}
 	
+	{
+	std::stringstream ss;
+	ss << "Next tasks: " << taskFileBlockHashes.get() << " " << taskWriteFile.get()
+		<< " " << taskFileLayout.get() << " " << taskDeleteFile.get() << " " << taskWriteFile.get();
+	pClient.GetLogger()->Log(denLogger::LogSeverity::info, ss.str());
+	}
 	if(taskFileLayout){
 		ProcessFileLayout(*taskFileLayout);
 		return true;

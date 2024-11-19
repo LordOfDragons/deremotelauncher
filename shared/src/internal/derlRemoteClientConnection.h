@@ -25,8 +25,10 @@
 #ifndef _DERLREMOTECLIENTCONNECTION_H_
 #define _DERLREMOTECLIENTCONNECTION_H_
 
+#include <mutex>
 #include <memory>
 
+#include "../derlMessageQueue.h"
 #include "../derlRunParameters.h"
 #include "../derlProtocol.h"
 #include "../task/derlTaskFileWrite.h"
@@ -75,6 +77,17 @@ private:
 	const denState::Ref pStateRun;
 	const denValueInt::Ref pValueRunStatus;
 	
+	int pMaxInProgressFiles;
+	int pMaxInProgressBlocks;
+	int pMaxInProgressParts;
+	
+	int pCountInProgressFiles;
+	int pCountInProgressBlocks;
+	int pCountInProgressParts;
+	
+	std::mutex pMutex;
+	derlMessageQueue pQueueReceived, pQueueSend;
+	
 	
 public:
 	/** \name Constructors and Destructors */
@@ -103,6 +116,15 @@ public:
 	/** \brief Part size. */
 	inline int GetPartSize() const{ return pPartSize; }
 	
+	/** \brief Mutex to lock all access to denConnection resources. */
+	inline std::mutex &GetMutex(){ return pMutex; }
+	
+	/** \brief Received message queue. */
+	inline derlMessageQueue &GetQueueReceived(){ return pQueueReceived; }
+	
+	/** \brief Send message queue. */
+	inline derlMessageQueue &GetQueueSend(){ return pQueueSend; }
+	
 	
 	/** \brief Get run status. */
 	RunStatus GetRunStatus() const;
@@ -127,6 +149,15 @@ public:
 	 */
 	void MessageReceived(const denMessage::Ref &message) override;
 	
+	/**
+	 * \brief Send queues messages.
+	 * \warning Caller has to lock GetMutex() while calling this method.
+	 * */
+	void SendQueuedMessages();
+	
+	/** \brief Process received messages. */
+	void ProcessReceivedMessages();
+	
 	/** \brief Process finished pending operations. */
 	void FinishPendingOperations();
 	
@@ -144,12 +175,14 @@ public:
 	
 	
 private:
+	void pMessageReceivedConnect(const denMessage::Ref &message);
+	
 	void pProcessRequestLogs(denMessageReader &reader);
 	void pProcessResponseFileLayout(denMessageReader &reader);
 	void pProcessResponseFileBlockHashes(denMessageReader &reader);
 	void pProcessResponseDeleteFile(denMessageReader &reader);
 	void pProcessResponseWriteFile(denMessageReader &reader);
-	void pProcessResponseSendFileData(denMessageReader &reader);
+	void pProcessFileDataReceived(denMessageReader &reader);
 	void pProcessResponseFinishWriteFile(denMessageReader &reader);
 	
 	void pSendRequestLayout();

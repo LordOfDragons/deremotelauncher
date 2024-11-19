@@ -22,39 +22,53 @@
  * SOFTWARE.
  */
 
-#include "derlTaskFileWrite.h"
+#ifndef _DERLMESSAGEQUEUE_H_
+#define _DERLMESSAGEQUEUE_H_
+
+#include <memory>
+#include <queue>
+#include <vector>
+#include <denetwork/message/denMessage.h>
 
 
-// Class derlTaskFileWrite
-////////////////////////////
+/**
+ * \brief Message queue.
+ */
+class derlMessageQueue{
+public:
+	/** \brief Message list type. */
+	typedef std::vector<denMessage::Ref> Messages;
+	
+	
+private:
+	typedef std::queue<denMessage::Ref> Queue;
+	
+	Queue pQueue;
+	
+	
+	
+public:
+	/** \name Constructors and Destructors */
+	/*@{*/
+	/**
+	 * \brief Create message queue.
+	 */
+	derlMessageQueue() = default;
+	
+	/** \brief Clean up message queue. */
+	~derlMessageQueue() = default;
+	/*@}*/
+	
+	
+	
+	/** \name Management */
+	/*@{*/
+	/** \brief Add message to queue. */
+	void Add(const denMessage::Ref &message);
+	
+	/** \brief Pop all messages from queue adding them to messages. */
+	void PopAll(Messages &messages);
+	/*@}*/
+};
 
-derlTaskFileWrite::derlTaskFileWrite(const std::string &path) :
-pPath(path),
-pStatus(Status::pending),
-pFileSize(0L),
-pBlockSize(0L),
-pBlockCount(0){
-}
-
-derlTaskFileWrite::~derlTaskFileWrite(){
-}
-
-
-// Management
-///////////////
-
-void derlTaskFileWrite::SetStatus(Status status){
-	pStatus = status;
-}
-
-void derlTaskFileWrite::SetFileSize(uint64_t fileSize){
-	pFileSize = fileSize;
-}
-
-void derlTaskFileWrite::SetBlockSize(uint64_t blockSize){
-	pBlockSize = blockSize;
-}
-
-void derlTaskFileWrite::SetBlockCount(int blockCount){
-	pBlockCount = blockCount;
-}
+#endif

@@ -220,6 +220,12 @@ public:
 	 * \param[in] elapsed Elapsed time since last update call.
 	 */
 	virtual void Update(float elapsed);
+	
+	/** \brief Process received messages. */
+	void ProcessReceivedMessages();
+	
+	/** \brief Finish pending connection operations. */
+	void FinishPendingOperations();
 	/*@}*/
 	
 	
@@ -241,14 +247,6 @@ public:
 	/** \brief Synchronize finished. */
 	virtual void OnSynchronizeFinished();
 	/*@}*/
-	
-	
-	
-protected:
-	/**
-	 * \brief Finish pending operations.
-	 */
-	void FinishPendingOperations();
 	
 	
 	

@@ -22,39 +22,22 @@
  * SOFTWARE.
  */
 
-#include "derlTaskFileWrite.h"
+#include "derlMessageQueue.h"
 
 
-// Class derlTaskFileWrite
-////////////////////////////
-
-derlTaskFileWrite::derlTaskFileWrite(const std::string &path) :
-pPath(path),
-pStatus(Status::pending),
-pFileSize(0L),
-pBlockSize(0L),
-pBlockCount(0){
-}
-
-derlTaskFileWrite::~derlTaskFileWrite(){
-}
-
+// Class derlMessageQueue
+///////////////////////////
 
 // Management
 ///////////////
 
-void derlTaskFileWrite::SetStatus(Status status){
-	pStatus = status;
+void derlMessageQueue::Add(const denMessage::Ref &message){
+	pQueue.push(message);
 }
 
-void derlTaskFileWrite::SetFileSize(uint64_t fileSize){
-	pFileSize = fileSize;
-}
-
-void derlTaskFileWrite::SetBlockSize(uint64_t blockSize){
-	pBlockSize = blockSize;
-}
-
-void derlTaskFileWrite::SetBlockCount(int blockCount){
-	pBlockCount = blockCount;
+void derlMessageQueue::PopAll(Messages &messages){
+	while(!pQueue.empty()){
+		messages.push_back(pQueue.front());
+		pQueue.pop();
+	}
 }

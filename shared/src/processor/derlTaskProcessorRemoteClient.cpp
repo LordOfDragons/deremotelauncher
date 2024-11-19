@@ -45,6 +45,9 @@ pClient(client){
 ///////////////
 
 bool derlTaskProcessorRemoteClient::RunTask(){
+	pClient.ProcessReceivedMessages();
+	pClient.FinishPendingOperations();
+	
 	derlTaskFileLayout::Ref taskLayoutServer;
 	derlTaskSyncClient::Ref taskSyncClient;
 	derlTaskFileWrite::Ref taskReadFileBlocks;
@@ -152,7 +155,7 @@ void derlTaskProcessorRemoteClient::ProcessFileLayoutServer(derlTaskFileLayout &
 	derlTaskFileLayout::Status status;
 	derlFileLayout::Ref layout;
 	std::string syncError;
-	const uint64_t blockSize = 1024000;
+	const uint64_t blockSize = 1024000L;
 	
 	try{
 		layout = std::make_shared<derlFileLayout>();
@@ -388,6 +391,7 @@ void derlTaskProcessorRemoteClient::AddFileWriteTaskFull(derlTaskSyncClient &tas
 	derlTaskFileWriteBlock::List &taskBlocks = taskWrite->GetBlocks();
 	taskWrite->SetFileSize(file.GetSize());
 	taskWrite->SetBlockSize(file.GetBlockSize());
+	taskWrite->SetBlockCount(file.GetBlockCount());
 	
 	derlFileBlock::List::const_iterator iter;
 	int index;
@@ -405,6 +409,7 @@ const derlFile &fileServer, const derlFile &fileClient){
 	derlTaskFileWriteBlock::List &taskBlocks = taskWrite->GetBlocks();
 	taskWrite->SetFileSize(fileServer.GetSize());
 	taskWrite->SetBlockSize(fileServer.GetBlockSize());
+	taskWrite->SetBlockCount(fileServer.GetBlockCount());
 	
 	derlFileBlock::List::const_iterator iterServer, iterClient;
 	int index;

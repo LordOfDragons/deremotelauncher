@@ -209,6 +209,12 @@ public:
 	 * \param[in] elapsed Elapsed time since last update call.
 	 */
 	void Update(float elapsed);
+	
+	/** \brief Process received messages. */
+	void ProcessReceivedMessages();
+	
+	/** \brief Finish pending connection operations. */
+	void FinishPendingOperations();
 	/*@}*/
 	
 	

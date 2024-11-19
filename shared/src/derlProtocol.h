@@ -88,18 +88,20 @@ namespace derlProtocol{
 	};
 	
 	/**
-	 * \brief Write data flags.
+	 * \brief Send file data flags.
 	 */
-	enum class WriteDataFlags{
-		finish = 0x1
+	enum class SendFileDataFlags{
+		finish = 0x1,
+		batch = 0x2
 	};
 	
 	/**
-	 * \brief Write data result.
+	 * \brief File data received result.
 	 */
-	enum class WriteDataResult{
+	enum class FileDataReceivedResult{
 		success = 0,
-		failure = 1
+		failure = 1,
+		batch = 2
 	};
 	
 	/**

@@ -32,7 +32,10 @@
 derlTaskFileWriteBlock::derlTaskFileWriteBlock(int index, uint64_t size) :
 pStatus(Status::pending),
 pIndex(index),
-pSize(size){
+pSize(size),
+pNextPartIndex(0),
+pPartCount(0),
+pBatchesFinished(0){
 }
 
 derlTaskFileWriteBlock::derlTaskFileWriteBlock(
@@ -40,7 +43,10 @@ derlTaskFileWriteBlock::derlTaskFileWriteBlock(
 pStatus(Status::pending),
 pIndex(index),
 pSize(size),
-pData(data){
+pData(data),
+pNextPartIndex(0),
+pPartCount(0),
+pBatchesFinished(0){
 }
 
 derlTaskFileWriteBlock::~derlTaskFileWriteBlock(){
@@ -52,4 +58,24 @@ derlTaskFileWriteBlock::~derlTaskFileWriteBlock(){
 
 void derlTaskFileWriteBlock::SetStatus(Status status){
 	pStatus = status;
+}
+
+void derlTaskFileWriteBlock::SetNextPartIndex(int index){
+	pNextPartIndex = index;
+}
+
+void derlTaskFileWriteBlock::SetPartCount(int count){
+	pPartCount = count;
+}
+
+void derlTaskFileWriteBlock::CalcPartCount(int partSize){
+	pPartCount = (int)((pSize - 1L) / (uint64_t)partSize) + 1;
+}
+
+uint8_t *derlTaskFileWriteBlock::PartDataPointer(int partSize, int indexPart) const{
+	return (uint8_t*)pData.c_str() + (uint64_t)partSize * indexPart;
+}
+
+void derlTaskFileWriteBlock::SetBatchesFinished(int count){
+	pBatchesFinished = count;
 }

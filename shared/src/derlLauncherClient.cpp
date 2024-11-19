@@ -57,7 +57,7 @@ void derlLauncherClient::SetPathDataDir(const std::filesystem::path &path){
 }
 
 int derlLauncherClient::GetPartSize() const{
-	return pConnection ? pConnection->GetPartSize() : 1357;
+	return pConnection->GetPartSize();
 }
 
 void derlLauncherClient::SetFileLayout(const derlFileLayout::Ref &layout){

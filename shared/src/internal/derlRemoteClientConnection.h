@@ -73,17 +73,18 @@ private:
 	const uint32_t pSupportedFeatures;
 	uint32_t pEnabledFeatures;
 	int pPartSize;
+	int pBatchSize;
 	
 	const denState::Ref pStateRun;
 	const denValueInt::Ref pValueRunStatus;
 	
 	int pMaxInProgressFiles;
 	int pMaxInProgressBlocks;
-	int pMaxInProgressParts;
+	int pMaxInProgressBatches;
 	
 	int pCountInProgressFiles;
 	int pCountInProgressBlocks;
-	int pCountInProgressParts;
+	int pCountInProgressBatches;
 	
 	std::mutex pMutex;
 	derlMessageQueue pQueueReceived, pQueueSend;
@@ -115,6 +116,9 @@ public:
 	
 	/** \brief Part size. */
 	inline int GetPartSize() const{ return pPartSize; }
+	
+	/** \brief Batch size. */
+	inline int GetBatchSize() const{ return pBatchSize; }
 	
 	/** \brief Mutex to lock all access to denConnection resources. */
 	inline std::mutex &GetMutex(){ return pMutex; }
@@ -189,7 +193,7 @@ private:
 	void pSendRequestFileBlockHashes(const std::string &path, uint32_t blockSize);
 	void pSendRequestsDeleteFile(const derlTaskFileDelete::List &tasks);
 	void pSendRequestsWriteFile(const derlTaskFileWrite::List &tasks);
-	void pSendSendFileData(const derlTaskFileWrite &task, const derlTaskFileWriteBlock &block);
+	void pSendSendFileData(const derlTaskFileWrite &task, derlTaskFileWriteBlock &block);
 	void pSendRequestsFinishWriteFile(const derlTaskFileWrite::List &tasks);
 	void pSendStartApplication(const derlRunParameters &parameters);
 	void pSendStopApplication(derlProtocol::StopApplicationMode mode);

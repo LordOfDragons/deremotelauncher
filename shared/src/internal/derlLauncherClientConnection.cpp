@@ -280,17 +280,31 @@ void derlLauncherClientConnection::FinishPendingOperations(){
 			case derlTaskFileWrite::Status::processing:{
 				derlTaskFileWriteBlock::List &blocks = citer->second->GetBlocks();
 				derlTaskFileWriteBlock::List::const_iterator citerBlock;
-				derlTaskFileWriteBlock::List finished;
+				derlTaskFileWriteBlock::List finished, batch;
+				
 				for(citerBlock = blocks.cbegin(); citerBlock != blocks.cend(); citerBlock++){
-					switch((*citerBlock)->GetStatus()){
+					derlTaskFileWriteBlock &taskBlock = **citerBlock;
+					
+					switch(taskBlock.GetStatus()){
 					case derlTaskFileWriteBlock::Status::success:
 					case derlTaskFileWriteBlock::Status::failure:
 						finished.push_back(*citerBlock);
 						break;
 						
+					case derlTaskFileWriteBlock::Status::readingData:
+						if(taskBlock.GetBatchesFinished() > 0){
+							taskBlock.SetBatchesFinished(taskBlock.GetBatchesFinished() - 1);
+							batch.push_back(*citerBlock);
+						}
+						break;
+						
 					default:
 						break;
 					}
+				}
+				
+				if(!batch.empty() && GetConnected()){
+					pSendFileDataReceivedBatch(citer->first, batch);
 				}
 				
 				if(!finished.empty()){
@@ -304,7 +318,7 @@ void derlLauncherClientConnection::FinishPendingOperations(){
 					}
 					
 					if(GetConnected()){
-						pSendFileDataReceived(citer->first, finished);
+						pSendFileDataReceivedFinished(citer->first, finished);
 					}
 				}
 				}break;
@@ -519,6 +533,11 @@ void derlLauncherClientConnection::pProcessSendFileData(denMessageReader &reader
 	const uint8_t flags = reader.ReadByte();
 	
 	const uint64_t size = (uint64_t)(reader.GetLength() - reader.GetPosition());
+	{
+		std::stringstream log;
+		log << "Send file data received: " << path << " " << indexPart << " " << (int)flags;
+		Log(denLogger::LogSeverity::warning, "pProcessSendFileData", log.str());
+	}
 	
 	derlTaskFileWriteBlock::List &blocks = taskWrite.GetBlocks();
 	
@@ -545,13 +564,14 @@ void derlLauncherClientConnection::pProcessSendFileData(denMessageReader &reader
 		taskBlock = std::make_shared<derlTaskFileWriteBlock>(indexBlock, blockSize);
 		taskBlock->GetData().assign(blockSize, 0);
 		taskBlock->SetStatus(derlTaskFileWriteBlock::Status::readingData);
+		taskBlock->CalcPartCount(pPartSize);
 		blocks.push_back(taskBlock);
 		
 	}else{
 		taskBlock = *iterBlock;
 	}
 	
-	const int partCount = (int)((taskBlock->GetSize() - 1L) / (uint64_t)pPartSize) + 1;
+	const int partCount = taskBlock->GetPartCount();
 	if(indexPart < 0 || indexPart >= partCount){
 		std::stringstream log;
 		log << "Send file data received but part index is out of range: " << path
@@ -561,13 +581,13 @@ void derlLauncherClientConnection::pProcessSendFileData(denMessageReader &reader
 		return;
 	}
 	
-	uint8_t * const blockData = (uint8_t*)taskBlock->GetData().c_str();
-	const uint64_t partOffset = (uint64_t)pPartSize * indexPart;
+	reader.Read(taskBlock->PartDataPointer(pPartSize, indexPart), size);
 	
-	reader.Read(blockData + partOffset, size);
-	
-	if((flags & (uint8_t)derlProtocol::WriteDataFlags::finish) != 0){
+	if((flags & (uint8_t)derlProtocol::SendFileDataFlags::finish) != 0){
 		taskBlock->SetStatus(derlTaskFileWriteBlock::Status::dataReady);
+		
+	}else if((flags & (uint8_t)derlProtocol::SendFileDataFlags::batch) != 0){
+		taskBlock->SetBatchesFinished(taskBlock->GetBatchesFinished() + 1);
 	}
 }
 
@@ -758,29 +778,47 @@ void derlLauncherClientConnection::pSendResponseWriteFiles(const derlTaskFileWri
 	}
 }
 
-void derlLauncherClientConnection::pSendFileDataReceived(const std::string &path,
-const derlTaskFileWriteBlock::List &blocks){
+void derlLauncherClientConnection::pSendFileDataReceivedBatch(
+const std::string &path, const derlTaskFileWriteBlock::List &blocks){
 	std::lock_guard guard(pMutex);
 	derlTaskFileWriteBlock::List::const_iterator iter;
+	
 	for(iter = blocks.cbegin(); iter != blocks.cend(); iter++){
-		const derlTaskFileWriteBlock &block = **iter;
-		
 		const denMessage::Ref message(denMessage::Pool().Get());
 		{
 			denMessageWriter writer(message->Item());
 			writer.WriteByte((uint8_t)derlProtocol::MessageCodes::fileDataReceived);
 			writer.WriteString16(path);
-			writer.WriteUInt((uint32_t)block.GetIndex());
+			writer.WriteUInt((uint32_t)(*iter)->GetIndex());
+			writer.WriteByte((uint8_t)derlProtocol::FileDataReceivedResult::batch);
+		}
+		pQueueSend.Add(message);
+		Log(denLogger::LogSeverity::info, "pSendFileDataReceivedBatch", "Batch finished");
+	}
+}
+
+void derlLauncherClientConnection::pSendFileDataReceivedFinished(
+const std::string &path, const derlTaskFileWriteBlock::List &blocks){
+	std::lock_guard guard(pMutex);
+	derlTaskFileWriteBlock::List::const_iterator iter;
+	
+	for(iter = blocks.cbegin(); iter != blocks.cend(); iter++){
+		const denMessage::Ref message(denMessage::Pool().Get());
+		{
+			denMessageWriter writer(message->Item());
+			writer.WriteByte((uint8_t)derlProtocol::MessageCodes::fileDataReceived);
+			writer.WriteString16(path);
+			writer.WriteUInt((uint32_t)(*iter)->GetIndex());
 			
-			if(block.GetStatus() == derlTaskFileWriteBlock::Status::success){
-				writer.WriteByte((uint8_t)derlProtocol::WriteDataResult::success);
+			if((*iter)->GetStatus() == derlTaskFileWriteBlock::Status::success){
+				writer.WriteByte((uint8_t)derlProtocol::FileDataReceivedResult::success);
 				
 			}else{
-				writer.WriteByte((uint8_t)derlProtocol::WriteDataResult::failure);
+				writer.WriteByte((uint8_t)derlProtocol::FileDataReceivedResult::failure);
 			}
 		}
 		pQueueSend.Add(message);
-		Log(denLogger::LogSeverity::info, "pSendFileDataReceived", "Block finished");
+		Log(denLogger::LogSeverity::info, "pSendFileDataReceivedFinished", "Block finished");
 	}
 }
 

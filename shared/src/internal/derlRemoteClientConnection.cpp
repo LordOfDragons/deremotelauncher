@@ -50,14 +50,15 @@ pClient(nullptr),
 pSupportedFeatures(0),
 pEnabledFeatures(0),
 pPartSize(1357),
+pBatchSize(10),
 pStateRun(std::make_shared<denState>(false)),
 pValueRunStatus(std::make_shared<denValueInt>(denValueIntegerFormat::uint8)),
 pMaxInProgressFiles(1),
 pMaxInProgressBlocks(1),
-pMaxInProgressParts(20),
+pMaxInProgressBatches(2),
 pCountInProgressFiles(0),
 pCountInProgressBlocks(0),
-pCountInProgressParts(0)
+pCountInProgressBatches(0)
 {
 	pValueRunStatus->SetValue((uint64_t)derlProtocol::RunStateStatus::stopped);
 	pStateRun->AddValue(pValueRunStatus);
@@ -110,12 +111,13 @@ void derlRemoteClientConnection::ConnectionClosed(){
 	}
 	}
 	
-	pClient = nullptr;
-	client->OnConnectionClosed();
-	
-	pCountInProgressParts = 0;
+	pCountInProgressBatches = 0;
 	pCountInProgressBlocks = 0;
 	pCountInProgressFiles = 0;
+	
+	pClient = nullptr;
+	
+	client->OnConnectionClosed();
 }
 
 void derlRemoteClientConnection::MessageProgress(size_t bytesReceived){
@@ -291,15 +293,34 @@ void derlRemoteClientConnection::FinishPendingOperations(){
 				derlTaskFileWriteBlock::List::const_iterator iterBlock;
 				for(iterBlock=blocks.cbegin(); iterBlock!=blocks.cend(); iterBlock++){
 					derlTaskFileWriteBlock &block = **iterBlock;
+					bool claimBlockCount = false;
+					
 					if(block.GetStatus() == derlTaskFileWriteBlock::Status::dataReady){
+						{
+							std::stringstream ss;
+							ss << "CHECK " << pCountInProgressBatches << " " << pCountInProgressBlocks << " " << pCountInProgressFiles;
+							Log(denLogger::LogSeverity::error, "FinishPendingOperations", ss.str());
+						}
 						if(pCountInProgressBlocks >= pMaxInProgressBlocks){
 							continue;
 						}
 						
+						claimBlockCount = true;
 						block.SetStatus(derlTaskFileWriteBlock::Status::processing);
+					}
+					
+					if(block.GetStatus() == derlTaskFileWriteBlock::Status::processing){
+						if(pCountInProgressBatches >= pMaxInProgressBatches){
+							break;
+						}
+						
 						try{
+							
 							pSendSendFileData(*task, block);
-							pCountInProgressBlocks++;
+							
+							if(claimBlockCount){
+								pCountInProgressBlocks++;
+							}
 							
 						}catch(const std::exception &e){
 							task->SetStatus(derlTaskFileWrite::Status::failure);
@@ -720,7 +741,7 @@ void derlRemoteClientConnection::pProcessFileDataReceived(denMessageReader &read
 	
 	const std::string path(reader.ReadString16());
 	const int indexBlock = reader.ReadUInt();
-	const derlProtocol::WriteDataResult result = (derlProtocol::WriteDataResult)reader.ReadByte();
+	const derlProtocol::FileDataReceivedResult result = (derlProtocol::FileDataReceivedResult)reader.ReadByte();
 	
 	derlTaskFileWrite::Map::const_iterator iterWrite(tasksWrite.find(path));
 	if(iterWrite == tasksWrite.cend()){
@@ -762,11 +783,26 @@ void derlRemoteClientConnection::pProcessFileDataReceived(denMessageReader &read
 		return;
 	}
 	
-	blocks.erase(iterBlock);
-	pCountInProgressBlocks--;
+	if(pCountInProgressBatches > 0){
+		pCountInProgressBatches--;
 	}
 	
-	if(result != derlProtocol::WriteDataResult::success){
+	if(result == derlProtocol::FileDataReceivedResult::batch){
+		{
+		std::stringstream log;
+		log << "Batch finished " << pCountInProgressBatches << " " << pCountInProgressBlocks << " " << pCountInProgressFiles;
+		Log(denLogger::LogSeverity::error, "pProcessResponseSendFileData", log.str());
+		}
+		return;
+	}
+	
+	blocks.erase(iterBlock);
+	if(pCountInProgressBlocks > 0){
+		pCountInProgressBlocks--;
+	}
+	}
+	
+	if(result != derlProtocol::FileDataReceivedResult::success){
 		taskWrite.SetStatus(derlTaskFileWrite::Status::failure);
 		
 		std::stringstream log;
@@ -807,7 +843,9 @@ void derlRemoteClientConnection::pProcessResponseFinishWriteFile(denMessageReade
 	}
 	
 	tasksWrite.erase(iterWrite);
-	pCountInProgressFiles--;
+	if(pCountInProgressFiles > 0){
+		pCountInProgressFiles--;
+	}
 	}
 	
 	if(result == derlProtocol::WriteFileResult::success){
@@ -822,6 +860,12 @@ void derlRemoteClientConnection::pProcessResponseFinishWriteFile(denMessageReade
 		
 		taskSync->SetError(log.str());
 		taskSync->SetStatus(derlTaskSyncClient::Status::failure);
+	}
+	
+	{
+	std::stringstream log;
+	log << "CHECK " << pCountInProgressBatches << " " << pCountInProgressBlocks << " " << pCountInProgressFiles;
+	Log(denLogger::LogSeverity::info, "pProcessResponseFinishWriteFile", log.str());
 	}
 }
 
@@ -895,18 +939,29 @@ void derlRemoteClientConnection::pSendRequestsWriteFile(const derlTaskFileWrite:
 	}
 }
 
-void derlRemoteClientConnection::pSendSendFileData(const derlTaskFileWrite &task, const derlTaskFileWriteBlock &block){
+void derlRemoteClientConnection::pSendSendFileData(const derlTaskFileWrite &task, derlTaskFileWriteBlock &block){
+	{
 	std::stringstream log;
-	log << "Send file data: " << task.GetPath() << " block " << block.GetIndex() << " size " << block.GetSize();
+	log << "Send file data: " << task.GetPath() << " block " << block.GetIndex() << " size " << block.GetSize() << " part " << block.GetNextPartIndex() << "/" << block.GetPartCount();
 	Log(denLogger::LogSeverity::info, "pSendSendFileData", log.str());
+	}
 	
 	const uint64_t blockSize = block.GetSize();
 	const uint8_t * const blockData = (const uint8_t *)block.GetData().c_str();
-	const int count = (int)((blockSize - 1L) / (uint64_t)pPartSize) + 1;
-	int i;
+	const int partCount = block.GetPartCount();
+	const int lastIndex = partCount - 1;
+	int i, batchCounter = 0;
 	
 	std::lock_guard guard(pMutex);
-	for(i=0; i<count; i++){
+	for(i=block.GetNextPartIndex(); i<partCount; i++, batchCounter++){
+		if(batchCounter == pBatchSize){
+			batchCounter = 0;
+			pCountInProgressBatches++;
+			if(pCountInProgressBatches >= pMaxInProgressBatches){
+				break;
+			}
+		}
+		
 		const uint64_t partOffset = (uint64_t)pPartSize * i;
 		const int partSize = std::min(pPartSize, (int)(blockSize - partOffset));
 		
@@ -919,14 +974,26 @@ void derlRemoteClientConnection::pSendSendFileData(const derlTaskFileWrite &task
 			writer.WriteUInt((uint32_t)i);
 			
 			uint8_t flags = 0;
-			if(i == count - 1){
-				flags |= (uint8_t)derlProtocol::WriteDataFlags::finish;
+			if(i == lastIndex){
+				flags |= (uint8_t)derlProtocol::SendFileDataFlags::finish;
+				pCountInProgressBatches++;
+				
+			}else if(batchCounter == pBatchSize - 1){
+				flags |= (uint8_t)derlProtocol::SendFileDataFlags::batch;
 			}
 			writer.WriteByte(flags);
 			
 			writer.Write(blockData + partOffset, (size_t)partSize);
 		}
 		pQueueSend.Add(message);
+	}
+	
+	block.SetNextPartIndex(i);
+	
+	{
+	std::stringstream log;
+	log << "CHECK " << block.GetNextPartIndex() << " " << pCountInProgressBatches << " " << pCountInProgressBlocks << " " << pCountInProgressFiles;
+	Log(denLogger::LogSeverity::info, "pSendSendFileData", log.str());
 	}
 }
 

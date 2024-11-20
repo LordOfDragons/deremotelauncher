@@ -55,6 +55,10 @@ public:
 	typedef std::shared_ptr<derlLauncherClient> Ref;
 	
 	
+protected:
+	std::string pLogClassName;
+	
+	
 private:
 	friend class derlLauncherClientConnection;
 	
@@ -65,11 +69,12 @@ private:
 	
 	derlFileLayout::Ref pFileLayout;
 	
+	std::mutex pMutex;
+	
 	derlTaskFileLayout::Ref pTaskFileLayout;
 	derlTaskFileWrite::Map pTasksWriteFile;
 	derlTaskFileDelete::Map pTaskDeleteFiles;
 	derlTaskFileBlockHashes::Map pTasksFileBlockHashes;
-	std::mutex pMutex;
 	
 	derlTaskProcessorLauncherClient::Ref pTaskProcessor;
 	std::unique_ptr<std::thread> pThreadTaskProcessor;
@@ -133,7 +138,7 @@ public:
 	inline const derlTaskFileBlockHashes::Map &GetTasksFileBlockHashes() const{ return pTasksFileBlockHashes; }
 	inline derlTaskFileBlockHashes::Map &GetTasksFileBlockHashes(){ return pTasksFileBlockHashes; }
 	
-	/** \brief Mutex. */
+	/** \brief Mutex for accessing client members. */
 	inline std::mutex &GetMutex(){ return pMutex; }
 	
 	
@@ -149,6 +154,12 @@ public:
 	
 	/** \brief Set logger or nullptr to clear. */
 	void SetLogger(const denLogger::Ref &logger);
+	
+	/** \brief Debug logging is enabled. */
+	bool GetEnableDebugLog() const;
+	
+	/** \brief Set if debug logging is enabled. */
+	void SetEnableDebugLog(bool enable);
 	
 	
 	
@@ -215,6 +226,19 @@ public:
 	
 	/** \brief Finish pending connection operations. */
 	void FinishPendingOperations();
+	
+	
+	
+	/** \brief Log exception. */
+	void LogException(const std::string &functionName, const std::exception &exception,
+		const std::string &message);
+	
+	/** \brief Log message. */
+	virtual void Log(denLogger::LogSeverity severity, const std::string &functionName,
+		const std::string &message);
+	
+	/** \brief Debug log message only printed if debugging is enabled. */
+	void LogDebug(const std::string &functionName, const std::string &message);
 	/*@}*/
 	
 	
@@ -230,10 +254,6 @@ public:
 	/** \brief Connection closed either by calling Disconnect() or by server. */
 	virtual void OnConnectionClosed();
 	/*@}*/
-	
-	
-	
-private:
 };
 
 #endif

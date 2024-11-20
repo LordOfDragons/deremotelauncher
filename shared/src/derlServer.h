@@ -56,12 +56,12 @@ private:
 	
 	std::filesystem::path pPathDataDir;
 	
-	std::mutex pMutex;
-	
 	derlTaskProcessorServer::Ref pTaskProcessor;
 	std::unique_ptr<std::thread> pThreadTaskProcessor;
 	
 	derlRemoteClient::List pClients;
+	
+	std::mutex pMutex;
 	
 	
 public:
@@ -89,14 +89,14 @@ public:
 	 */
 	void SetPathDataDir(const std::filesystem::path &path);
 	
-	/** \brief Mutex. */
-	inline std::mutex &GetMutex(){ return pMutex; }
-	
 	/** \brief Logger or null. */
 	const denLogger::Ref &GetLogger() const;
 	
 	/** \brief Set logger or nullptr to clear. */
 	void SetLogger(const denLogger::Ref &logger);
+	
+	/** \brief Mutex for accessing server members. */
+	inline std::mutex &GetMutex(){ return pMutex; }
 	
 	
 	

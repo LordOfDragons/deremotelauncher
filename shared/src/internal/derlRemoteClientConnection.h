@@ -74,6 +74,7 @@ private:
 	uint32_t pEnabledFeatures;
 	int pPartSize;
 	int pBatchSize;
+	bool pEnableDebugLog;
 	
 	const denState::Ref pStateRun;
 	const denValueInt::Ref pValueRunStatus;
@@ -86,7 +87,6 @@ private:
 	int pCountInProgressBlocks;
 	int pCountInProgressBatches;
 	
-	std::mutex pMutex;
 	derlMessageQueue pQueueReceived, pQueueSend;
 	
 	
@@ -120,14 +120,17 @@ public:
 	/** \brief Batch size. */
 	inline int GetBatchSize() const{ return pBatchSize; }
 	
-	/** \brief Mutex to lock all access to denConnection resources. */
-	inline std::mutex &GetMutex(){ return pMutex; }
-	
 	/** \brief Received message queue. */
 	inline derlMessageQueue &GetQueueReceived(){ return pQueueReceived; }
 	
 	/** \brief Send message queue. */
 	inline derlMessageQueue &GetQueueSend(){ return pQueueSend; }
+	
+	/** \brief Debug logging is enabled. */
+	inline bool GetEnableDebugLog() const{ return pEnableDebugLog; }
+	
+	/** \brief Set if debug logging is enabled. */
+	void SetEnableDebugLog(bool enable);
 	
 	
 	/** \brief Get run status. */
@@ -155,7 +158,7 @@ public:
 	
 	/**
 	 * \brief Send queues messages.
-	 * \warning Caller has to lock GetMutex() while calling this method.
+	 * \warning Caller has to lock derlGlobal::mutexNetwork while calling this method.
 	 * */
 	void SendQueuedMessages();
 	
@@ -179,7 +182,7 @@ public:
 	
 	
 private:
-	void pMessageReceivedConnect(const denMessage::Ref &message);
+	void pMessageReceivedConnect(denMessage &message);
 	
 	void pProcessRequestLogs(denMessageReader &reader);
 	void pProcessResponseFileLayout(denMessageReader &reader);

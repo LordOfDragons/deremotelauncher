@@ -60,17 +60,19 @@ public:
 	
 	
 private:
+	typedef std::unique_lock<std::mutex> Lock;
+	
 	derlLauncherClient &pClient;
 	bool pConnectionAccepted;
 	uint32_t pEnabledFeatures;
 	int pPartSize;
+	bool pEnableDebugLog;
 	
 	const denState::Ref pStateRun;
 	const denValueInt::Ref pValueRunStatus;
 	
 	bool pPendingRequestLayout;
 	
-	std::mutex pMutex;
 	derlMessageQueue pQueueReceived, pQueueSend;
 	
 	
@@ -93,14 +95,17 @@ public:
 	/** \brief Part size. */
 	inline int GetPartSize() const{ return pPartSize; }
 	
-	/** \brief Mutex to lock all access to denConnection resources. */
-	inline std::mutex &GetMutex(){ return pMutex; }
-	
 	/** \brief Received message queue. */
 	inline derlMessageQueue &GetQueueReceived(){ return pQueueReceived; }
 	
 	/** \brief Send message queue. */
 	inline derlMessageQueue &GetQueueSend(){ return pQueueSend; }
+	
+	/** \brief Debug logging is enabled. */
+	inline bool GetEnableDebugLog() const{ return pEnableDebugLog; }
+	
+	/** \brief Set if debug logging is enabled. */
+	void SetEnableDebugLog(bool enable);
 	
 	
 	/** \brief Set run status. */
@@ -153,7 +158,7 @@ public:
 	
 	/**
 	 * \brief Send queues messages.
-	 * \warning Caller has to lock GetMutex() while calling this method.
+	 * \warning Caller has to lock derlGlobal::mutexNetwork while calling this method.
 	 * */
 	void SendQueuedMessages();
 	
@@ -177,16 +182,16 @@ public:
 	
 	
 private:
-	void pMessageReceivedConnect(const denMessage::Ref &message);
+	void pMessageReceivedConnect(denMessage &message);
 	
-	void pFinishFileBlockHashes(derlTaskFileBlockHashes &task);
+	void pFinishFileBlockHashes(Lock &lockClient, derlTaskFileBlockHashes &task);
 	
-	void pProcessRequestLayout();
-	void pProcessRequestFileBlockHashes(denMessageReader &reader);
+	void pProcessRequestLayout(Lock &lockClient);
+	void pProcessRequestFileBlockHashes(Lock &lockClient, denMessageReader &reader);
 	void pProcessRequestDeleteFile(denMessageReader &reader);
 	void pProcessRequestWriteFile(denMessageReader &reader);
 	void pProcessSendFileData(denMessageReader &reader);
-	void pProcessRequestFinishWriteFile(denMessageReader &reader);
+	void pProcessRequestFinishWriteFile(Lock &lockClient, denMessageReader &reader);
 	void pProcessStartApplication(denMessageReader &reader);
 	void pProcessStopApplication(denMessageReader &reader);
 	

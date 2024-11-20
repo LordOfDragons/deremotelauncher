@@ -25,6 +25,7 @@
 #include <stdexcept>
 
 #include "derlLauncherClient.h"
+#include "derlGlobal.h"
 #include "internal/derlLauncherClientConnection.h"
 
 
@@ -32,6 +33,7 @@
 /////////////////////////////
 
 derlLauncherClient::derlLauncherClient() :
+pLogClassName("derlLauncherClient"),
 pConnection(std::make_unique<derlLauncherClientConnection>(*this)),
 pName("Client"){
 }
@@ -87,15 +89,25 @@ void derlLauncherClient::SetLogger(const denLogger::Ref &logger){
 	}
 }
 
+bool derlLauncherClient::GetEnableDebugLog() const{
+	return pConnection->GetEnableDebugLog();
+}
+
+void derlLauncherClient::SetEnableDebugLog(bool enable){
+	pConnection->SetEnableDebugLog(enable);
+}
+
 
 
 void derlLauncherClient::StartTaskProcessors(){
 	if(!pTaskProcessor){
+		Log(denLogger::LogSeverity::info, "StartTaskProcessors", "Create task processor");
 		pTaskProcessor = std::make_shared<derlTaskProcessorLauncherClient>(*this);
 		pTaskProcessor->SetLogger(GetLogger());
 	}
 	
 	if(!pThreadTaskProcessor){
+		Log(denLogger::LogSeverity::info, "StartTaskProcessors", "Run task processor thread");
 		pThreadTaskProcessor = std::make_unique<std::thread>([](derlTaskProcessorLauncherClient &processor){
 			processor.Run();
 		}, std::ref(*pTaskProcessor));
@@ -104,10 +116,12 @@ void derlLauncherClient::StartTaskProcessors(){
 
 void derlLauncherClient::StopTaskProcessors(){
 	if(pTaskProcessor){
+		Log(denLogger::LogSeverity::info, "StopTaskProcessors", "Exit task processor");
 		pTaskProcessor->Exit();
 	}
 	
 	if(pThreadTaskProcessor){
+		Log(denLogger::LogSeverity::info, "StopTaskProcessors", "Join task processor thread");
 		pThreadTaskProcessor->join();
 		pThreadTaskProcessor = nullptr;
 	}
@@ -121,17 +135,22 @@ void derlLauncherClient::ConnectTo(const std::string &address){
 		throw std::invalid_argument("data directory path is empty");
 	}
 	
+	const std::lock_guard guard(derlGlobal::mutexNetwork);
 	pConnection->ConnectTo(address);
 }
 
 void derlLauncherClient::Disconnect(){
+	const std::lock_guard guard(derlGlobal::mutexNetwork);
 	pConnection->Disconnect();
 }
 
 void derlLauncherClient::Update(float elapsed){
-	std::lock_guard guard(pConnection->GetMutex());
 	pConnection->SendQueuedMessages();
+	
+	{
+	const std::lock_guard guard(derlGlobal::mutexNetwork);
 	pConnection->Update(elapsed);
+	}
 }
 
 void derlLauncherClient::ProcessReceivedMessages(){
@@ -140,6 +159,30 @@ void derlLauncherClient::ProcessReceivedMessages(){
 
 void derlLauncherClient::FinishPendingOperations(){
 	pConnection->FinishPendingOperations();
+}
+
+void derlLauncherClient::LogException(const std::string &functionName,
+const std::exception &exception, const std::string &message){
+	std::stringstream ss;
+	ss << message << ": " << exception.what();
+	Log(denLogger::LogSeverity::error, functionName, ss.str());
+}
+
+void derlLauncherClient::Log(denLogger::LogSeverity severity,
+const std::string &functionName, const std::string &message){
+	if(!GetLogger()){
+		return;
+	}
+	
+	std::stringstream ss;
+	ss << "[" << pLogClassName << "::" << functionName << "] " << message;
+	GetLogger()->Log(severity, ss.str());
+}
+
+void derlLauncherClient::LogDebug(const std::string &functionName, const std::string &message){
+	if(GetEnableDebugLog()){
+		Log(denLogger::LogSeverity::debug, functionName, message);
+	}
 }
 
 // Events

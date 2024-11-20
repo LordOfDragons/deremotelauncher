@@ -54,9 +54,10 @@ bool derlTaskProcessorRemoteClient::RunTask(){
 	bool fastReturn = false;
 	
 	{
-	std::lock_guard guard(pClient.GetMutex());
+	const std::lock_guard guard(pClient.GetMutex());
 	pBaseDir = pClient.GetPathDataDir();
 	pPartSize = pClient.GetPartSize();
+	pEnableDebugLog = pClient.GetEnableDebugLog();
 	fastReturn = pClient.GetTaskSyncClient() != nullptr;
 	
 	FindNextTaskLayoutServer(taskLayoutServer)
@@ -195,7 +196,7 @@ void derlTaskProcessorRemoteClient::ProcessFileLayoutServer(derlTaskFileLayout &
 		syncError = "Build server file layout failed: unknown error";
 	}
 	
-	std::lock_guard guard(pClient.GetMutex());
+	const std::lock_guard guard(pClient.GetMutex());
 	
 	switch(status){
 	case derlTaskFileLayout::Status::success:
@@ -227,7 +228,7 @@ void derlTaskProcessorRemoteClient::ProcessSyncClient(derlTaskSyncClient &task){
 	try{
 		derlFileLayout::Ref layoutServer, layoutClient;
 		{
-		std::lock_guard guard(pClient.GetMutex());
+		const std::lock_guard guard(pClient.GetMutex());
 		layoutServer = pClient.GetFileLayoutServer();
 		layoutClient = pClient.GetFileLayoutClient();
 		}
@@ -255,7 +256,7 @@ void derlTaskProcessorRemoteClient::ProcessSyncClient(derlTaskSyncClient &task){
 		syncError = "Synchronize client failed: unknown error";
 	}
 	
-	std::lock_guard guard(pClient.GetMutex());
+	const std::lock_guard guard(pClient.GetMutex());
 	
 	task.SetStatus(status);
 	if(status == derlTaskSyncClient::Status::failure){
@@ -315,7 +316,7 @@ void derlTaskProcessorRemoteClient::ProcessReadFileBlocks(derlTaskFileWrite &tas
 	
 	CloseFile();
 	
-	std::lock_guard guard(pClient.GetMutex());
+	const std::lock_guard guard(pClient.GetMutex());
 	
 	for(iterBlock = readyBlocks.cbegin(); iterBlock != readyBlocks.cend(); iterBlock++){
 		(*iterBlock)->SetStatus(derlTaskFileWriteBlock::Status::dataReady);

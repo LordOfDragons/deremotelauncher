@@ -26,6 +26,7 @@
 
 #include "derlRemoteClient.h"
 #include "derlServer.h"
+#include "derlGlobal.h"
 #include "internal/derlRemoteClientConnection.h"
 
 
@@ -34,6 +35,7 @@
 
 derlRemoteClient::derlRemoteClient(derlServer &server,
 	const derlRemoteClientConnection::Ref &connection) :
+pLogClassName("derlRemoteClient"),
 pServer(server),
 pConnection(connection),
 pSynchronizeStatus(SynchronizeStatus::pending){
@@ -41,6 +43,7 @@ pSynchronizeStatus(SynchronizeStatus::pending){
 
 derlRemoteClient::~derlRemoteClient(){
 	StopTaskProcessors();
+	pConnection->SetClient(nullptr);
 }
 
 
@@ -87,19 +90,22 @@ void derlRemoteClient::SetLogger(const denLogger::Ref &logger){
 	}
 }
 
+bool derlRemoteClient::GetEnableDebugLog() const{
+	return pConnection->GetEnableDebugLog();
+}
+
+void derlRemoteClient::SetEnableDebugLog(bool enable){
+	pConnection->SetEnableDebugLog(enable);
+}
+
 void derlRemoteClient::SetSynchronizeDetails(const std::string &details){
 	pSynchronizeDetails = details;
 }
 
 void derlRemoteClient::Synchronize(){
 	{
-	std::lock_guard guard(pMutex);
-	
-	{
-	derlServer &server = GetServer();
-	std::lock_guard guard2(server.GetMutex());
-	pPathDataDir = server.GetPathDataDir();
-	}
+	const std::lock_guard guard(pMutex);
+	pPathDataDir = GetServer().GetPathDataDir();
 	
 	pSynchronizeDetails.clear();
 	pSynchronizeStatus = SynchronizeStatus::processing;
@@ -127,11 +133,13 @@ void derlRemoteClient::Synchronize(){
 
 void derlRemoteClient::StartTaskProcessors(){
 	if(!pTaskProcessor){
+		Log(denLogger::LogSeverity::info, "StartTaskProcessors", "Create task processor");
 		pTaskProcessor = std::make_shared<derlTaskProcessorRemoteClient>(*this);
 		pTaskProcessor->SetLogger(GetLogger());
 	}
 	
 	if(!pThreadTaskProcessor){
+		Log(denLogger::LogSeverity::info, "StartTaskProcessors", "Run task processor thread");
 		pThreadTaskProcessor = std::make_unique<std::thread>([](derlTaskProcessorRemoteClient &processor){
 			processor.Run();
 		}, std::ref(*pTaskProcessor));
@@ -140,10 +148,12 @@ void derlRemoteClient::StartTaskProcessors(){
 
 void derlRemoteClient::StopTaskProcessors(){
 	if(pTaskProcessor){
+		Log(denLogger::LogSeverity::info, "StopTaskProcessors", "Exit task processor");
 		pTaskProcessor->Exit();
 	}
 	
 	if(pThreadTaskProcessor){
+		Log(denLogger::LogSeverity::info, "StopTaskProcessors", "Join task processor thread");
 		pThreadTaskProcessor->join();
 		pThreadTaskProcessor = nullptr;
 	}
@@ -153,12 +163,18 @@ void derlRemoteClient::StopTaskProcessors(){
 
 
 void derlRemoteClient::Disconnect(){
+	const std::lock_guard guard(derlGlobal::mutexNetwork);
 	pConnection->Disconnect();
 }
 
+bool derlRemoteClient::GetConnected(){
+	return pConnection->GetConnected();
+}
+
 void derlRemoteClient::Update(float elapsed){
-	std::lock_guard guard(pConnection->GetMutex());
 	pConnection->SendQueuedMessages();
+	
+	const std::lock_guard guard(derlGlobal::mutexNetwork);
 	pConnection->Update(elapsed);
 }
 
@@ -173,8 +189,7 @@ void derlRemoteClient::FinishPendingOperations(){
 	bool sendEventSyncEnd = false;
 	
 	{
-	std::lock_guard guard(pMutex);
-	
+	const std::lock_guard guard(pMutex);
 	if(pTaskSyncClient){
 		pProcessTaskSyncClient(*pTaskSyncClient);
 		
@@ -192,6 +207,30 @@ void derlRemoteClient::FinishPendingOperations(){
 		
 	}else if(sendEventSyncEnd){
 		OnSynchronizeFinished();
+	}
+}
+
+void derlRemoteClient::LogException(const std::string &functionName,
+const std::exception &exception, const std::string &message){
+	std::stringstream ss;
+	ss << message << ": " << exception.what();
+	Log(denLogger::LogSeverity::error, functionName, ss.str());
+}
+
+void derlRemoteClient::Log(denLogger::LogSeverity severity,
+const std::string &functionName, const std::string &message){
+	if(!GetLogger()){
+		return;
+	}
+	
+	std::stringstream ss;
+	ss << "[" << pLogClassName << "::" << functionName << "] " << message;
+	GetLogger()->Log(severity, ss.str());
+}
+
+void derlRemoteClient::LogDebug(const std::string &functionName, const std::string &message){
+	if(GetEnableDebugLog()){
+		Log(denLogger::LogSeverity::debug, functionName, message);
 	}
 }
 

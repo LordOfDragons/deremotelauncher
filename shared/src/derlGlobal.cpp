@@ -22,32 +22,6 @@
  * SOFTWARE.
  */
 
-#include "derlMessageQueue.h"
+#include "derlGlobal.h"
 
-
-// Class derlMessageQueue
-///////////////////////////
-
-// Management
-///////////////
-
-void derlMessageQueue::Add(const denMessage::Ref &message){
-	pQueue.push(message);
-}
-
-bool derlMessageQueue::Pop(denMessage::Ref &message){
-	if(pQueue.empty()){
-		return false;
-	}
-	
-	message = pQueue.front();
-	pQueue.pop();
-	return true;
-}
-
-void derlMessageQueue::PopAll(Messages &messages){
-	while(!pQueue.empty()){
-		messages.push_back(pQueue.front());
-		pQueue.pop();
-	}
-}
+std::mutex derlGlobal::mutexNetwork;

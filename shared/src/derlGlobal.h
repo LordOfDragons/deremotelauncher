@@ -22,32 +22,27 @@
  * SOFTWARE.
  */
 
-#include "derlMessageQueue.h"
+#ifndef _DERLGLOBAL_H_
+#define _DERLGLOBAL_H_
+
+#include <mutex>
 
 
-// Class derlMessageQueue
-///////////////////////////
-
-// Management
-///////////////
-
-void derlMessageQueue::Add(const denMessage::Ref &message){
-	pQueue.push(message);
-}
-
-bool derlMessageQueue::Pop(denMessage::Ref &message){
-	if(pQueue.empty()){
-		return false;
-	}
+/**
+ * \brief Global.
+ */
+class derlGlobal{
+public:
+	/**
+	 * \brief Global DENetwork mutex.
+	 * 
+	 * Mutex has to be locked whenever DENetwork update or pooling methods are called.
+	 */
+	static std::mutex mutexNetwork;
 	
-	message = pQueue.front();
-	pQueue.pop();
-	return true;
-}
+	
+private:
+	derlGlobal() = default;
+};
 
-void derlMessageQueue::PopAll(Messages &messages){
-	while(!pQueue.empty()){
-		messages.push_back(pQueue.front());
-		pQueue.pop();
-	}
-}
+#endif

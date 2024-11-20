@@ -22,9 +22,11 @@
  * SOFTWARE.
  */
 
+#include <algorithm>
 #include <stdexcept>
 
 #include "derlServer.h"
+#include "derlGlobal.h"
 #include "internal/derlServerServer.h"
 
 
@@ -96,20 +98,32 @@ void derlServer::ListenOn(const std::string &address){
 		throw std::invalid_argument("data directory path is empty");
 	}
 	
+	const std::lock_guard guard(derlGlobal::mutexNetwork);
 	pServer->ListenOn(address);
 }
 
 void derlServer::StopListening(){
+	const std::lock_guard guard(derlGlobal::mutexNetwork);
 	pServer->StopListening();
 }
 
 void derlServer::Update(float elapsed){
+	{
+	const std::lock_guard guard(derlGlobal::mutexNetwork);
 	pServer->Update(elapsed);
+	}
 	
-	const derlRemoteClient::List clients(pClients);
+	derlRemoteClient::List closed;
 	derlRemoteClient::List::const_iterator iter;
-	for(iter=clients.cbegin(); iter!=clients.cend(); iter++){
+	for(iter=pClients.cbegin(); iter!=pClients.cend(); iter++){
 		(*iter)->Update(elapsed);
+		if(!(*iter)->GetConnected()){
+			closed.push_back(*iter);
+		}
+	}
+	
+	for(iter=closed.cbegin(); iter!=closed.cend(); iter++){
+		pClients.erase(std::find(pClients.cbegin(), pClients.cend(), *iter));
 	}
 }
 

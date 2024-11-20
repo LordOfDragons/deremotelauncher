@@ -33,7 +33,7 @@
 
 
 // Class derlTaskProcessorLauncherClient
-////////////////////////////
+//////////////////////////////////////////
 
 derlTaskProcessorLauncherClient::derlTaskProcessorLauncherClient(derlLauncherClient &client) :
 pClient(client){
@@ -57,9 +57,10 @@ bool derlTaskProcessorLauncherClient::RunTask(){
 	derlTaskFileWrite::Ref taskWriteFile;
 	
 	{
-	std::lock_guard guard(pClient.GetMutex());
+	const std::lock_guard guard(pClient.GetMutex());
 	pBaseDir = pClient.GetPathDataDir();
 	pPartSize = pClient.GetPartSize();
+	pEnableDebugLog = pClient.GetEnableDebugLog();
 	
 	FindNextTaskFileLayout(taskFileLayout)
 	|| !pClient.GetFileLayout()
@@ -68,12 +69,6 @@ bool derlTaskProcessorLauncherClient::RunTask(){
 	|| FindNextTaskWriteFileBlock(taskWriteFile, taskWriteFileBlock);
 	}
 	
-	{
-	std::stringstream ss;
-	ss << "Next tasks: " << taskFileBlockHashes.get() << " " << taskWriteFile.get()
-		<< " " << taskFileLayout.get() << " " << taskDeleteFile.get() << " " << taskWriteFile.get();
-	pClient.GetLogger()->Log(denLogger::LogSeverity::info, ss.str());
-	}
 	if(taskFileLayout){
 		ProcessFileLayout(*taskFileLayout);
 		return true;
@@ -197,7 +192,7 @@ void derlTaskProcessorLauncherClient::ProcessFileBlockHashes(derlTaskFileBlockHa
 		status = derlTaskFileBlockHashes::Status::failure;
 	}
 	
-	std::lock_guard guard(pClient.GetMutex());
+	const std::lock_guard guard(pClient.GetMutex());
 	if(status == derlTaskFileBlockHashes::Status::success){
 		const derlFileLayout::Ref layout(pClient.GetFileLayout());
 		derlFile::Ref file;
@@ -240,7 +235,7 @@ void derlTaskProcessorLauncherClient::ProcessFileLayout(derlTaskFileLayout &task
 		status = derlTaskFileLayout::Status::failure;
 	}
 	
-	std::lock_guard guard(pClient.GetMutex());
+	const std::lock_guard guard(pClient.GetMutex());
 	task.SetStatus(status);
 	if(status == derlTaskFileLayout::Status::success){
 		task.SetLayout(layout);
@@ -273,7 +268,7 @@ void derlTaskProcessorLauncherClient::ProcessDeleteFile(derlTaskFileDelete &task
 		status = derlTaskFileDelete::Status::failure;
 	}
 	
-	std::lock_guard guard(pClient.GetMutex());
+	const std::lock_guard guard(pClient.GetMutex());
 	task.SetStatus(status);
 }
 
@@ -310,7 +305,7 @@ void derlTaskProcessorLauncherClient::ProcessWriteFileBlock(derlTaskFileWrite &t
 		status = derlTaskFileWriteBlock::Status::failure;
 	}
 	
-	std::lock_guard guard(pClient.GetMutex());
+	const std::lock_guard guard(pClient.GetMutex());
 	block.SetStatus(status);
 }
 

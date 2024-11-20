@@ -28,6 +28,7 @@
 #include <chrono>
 #include <fstream>
 #include <filesystem>
+#include <mutex>
 
 #include "../derlFile.h"
 #include "../derlFileLayout.h"
@@ -48,11 +49,13 @@ public:
 	
 	/** \brief List directory entries. */
 	typedef std::vector<DirectoryEntry> ListDirEntries;
+	std::mutex pMutex;
 	
 	
 protected:
 	bool pExit;
-	std::chrono::milliseconds pNoTaskDelay;
+	std::chrono::milliseconds pNoTaskDelay, pNoTaskTimeout;
+	std::chrono::steady_clock::time_point pNoTaskTimeoutBegin;
 	std::filesystem::path pBaseDir, pFilePath;
 	uint64_t pPartSize;
 	std::fstream pFileStream;
@@ -167,12 +170,6 @@ public:
 	
 	/** \brief Set logger. */
 	void SetLogger(const denLogger::Ref &logger);
-	
-	/** \brief Debug logging is enabled. */
-	inline bool GetEnableDebugLog() const{ return pEnableDebugLog; }
-	
-	/** \brief Set if debug logging is enabled. */
-	void SetEnableDebugLog(bool enable);
 	
 	/** \brief Log exception. */
 	void LogException(const std::string &functionName, const std::exception &exception,

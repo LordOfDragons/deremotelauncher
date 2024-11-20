@@ -70,6 +70,10 @@ public:
 	};
 	
 	
+protected:
+	std::string pLogClassName;
+	
+	
 private:
 	friend class derlRemoteClientConnection;
 	
@@ -86,10 +90,11 @@ private:
 	
 	derlTaskFileLayout::Ref pTaskFileLayoutServer, pTaskFileLayoutClient;
 	derlTaskSyncClient::Ref pTaskSyncClient;
-	std::mutex pMutex;
 	
 	derlTaskProcessorRemoteClient::Ref pTaskProcessor;
 	std::unique_ptr<std::thread> pThreadTaskProcessor;
+	
+	std::mutex pMutex;
 	
 	
 public:
@@ -141,7 +146,7 @@ public:
 	/** \brief Part size. */
 	int GetPartSize() const;
 	
-	/** \brief Mutex. */
+	/** \brief Mutex for accessing client members. */
 	inline std::mutex &GetMutex(){ return pMutex; }
 	
 	
@@ -151,6 +156,12 @@ public:
 	
 	/** \brief Set logger or nullptr to clear. */
 	void SetLogger(const denLogger::Ref &logger);
+	
+	/** \brief Debug logging is enabled. */
+	bool GetEnableDebugLog() const;
+	
+	/** \brief Set if debug logging is enabled. */
+	void SetEnableDebugLog(bool enable);
 	
 	
 	
@@ -173,12 +184,12 @@ public:
 	/**
 	 * \brief Start task processors.
 	 * 
-	 * Default implementation starts running a single derlTaskProcessorLauncherClient instance in a thread.
-	 * Overwrite method to start any number of task processors instead.
+	 * Default implementation starts running a single derlTaskProcessorLauncherClient
+	 * instance in a thread. Overwrite method to start any number of task processors instead.
 	 * 
 	 * This method has to be safe being called multiple times.
 	 * 
-	 * \note User has to call this method after creating the launcher client before connecting.
+	 * \note Called automatically once connection is established and client is accepted.
 	 */
 	virtual void StartTaskProcessors();
 	
@@ -190,7 +201,7 @@ public:
 	 * 
 	 * This method has to be safe being called multiple times.
 	 * 
-	 * \note Method is called by class destructor. User can also call it earlier.
+	 * \note Method is called if disconnected or by class destructor. User can also call it earlier.
 	 */
 	virtual void StopTaskProcessors();
 	
@@ -205,6 +216,9 @@ public:
 	
 	/** \brief Disconnect from remote connection if connected. */
 	void Disconnect();
+	
+	/** \brief Client is connected. */
+	bool GetConnected();
 	
 	
 	/**
@@ -226,6 +240,19 @@ public:
 	
 	/** \brief Finish pending connection operations. */
 	void FinishPendingOperations();
+	
+	
+	
+	/** \brief Log exception. */
+	void LogException(const std::string &functionName, const std::exception &exception,
+		const std::string &message);
+	
+	/** \brief Log message. */
+	virtual void Log(denLogger::LogSeverity severity, const std::string &functionName,
+		const std::string &message);
+	
+	/** \brief Debug log message only printed if debugging is enabled. */
+	void LogDebug(const std::string &functionName, const std::string &message);
 	/*@}*/
 	
 	

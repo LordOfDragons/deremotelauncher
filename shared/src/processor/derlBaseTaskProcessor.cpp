@@ -40,7 +40,8 @@
 
 derlBaseTaskProcessor::derlBaseTaskProcessor() :
 pExit(false),
-pNoTaskDelay(500),
+pNoTaskDelay(1000),
+pNoTaskTimeout(3000),
 pFileHashReadSize(1024L * 8L),
 pLogClassName("derlBaseTaskProcessor"),
 pEnableDebugLog(false){
@@ -58,12 +59,28 @@ void derlBaseTaskProcessor::SetPartSize(uint64_t size){
 }
 
 void derlBaseTaskProcessor::Exit(){
+	const std::lock_guard guard(pMutex);
 	pExit = true;
 }
 
 void derlBaseTaskProcessor::Run(){
-	while(!pExit){
-		if(!RunTask()){
+	pNoTaskTimeoutBegin = std::chrono::steady_clock::now();
+	
+	while(true){
+		{
+		const std::lock_guard guard(pMutex);
+		if(pExit){
+			break;
+		}
+		}
+		
+		if(RunTask()){
+			pNoTaskTimeoutBegin = std::chrono::steady_clock::now();
+			continue;
+		}
+		
+		if(std::chrono::duration_cast<std::chrono::milliseconds>(
+		std::chrono::steady_clock::now() - pNoTaskTimeoutBegin) > pNoTaskTimeout){
 			std::this_thread::sleep_for(pNoTaskDelay);
 		}
 	}
@@ -264,10 +281,6 @@ void derlBaseTaskProcessor::SetLogClassName(const std::string &name){
 
 void derlBaseTaskProcessor::SetLogger(const denLogger::Ref &logger){
 	pLogger = logger;
-}
-
-void derlBaseTaskProcessor::SetEnableDebugLog(bool enable){
-	pEnableDebugLog = enable;
 }
 
 void derlBaseTaskProcessor::LogException(const std::string &functionName,

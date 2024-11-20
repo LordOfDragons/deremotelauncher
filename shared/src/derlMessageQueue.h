@@ -66,6 +66,12 @@ public:
 	/** \brief Add message to queue. */
 	void Add(const denMessage::Ref &message);
 	
+	/**
+	 * \brief Pop message from queue.
+	 * \returns true if successful or false if queue is empty.
+	 */
+	bool Pop(denMessage::Ref &message);
+	
 	/** \brief Pop all messages from queue adding them to messages. */
 	void PopAll(Messages &messages);
 	/*@}*/

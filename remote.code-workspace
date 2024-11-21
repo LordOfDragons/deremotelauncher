@@ -2,6 +2,9 @@
 	"folders": [
 		{
 			"path": "shared/src"
+		},
+		{
+			"path": "testing/src"
 		}
 	],
 	"settings": {

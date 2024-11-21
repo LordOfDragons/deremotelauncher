@@ -1,0 +1,3 @@
+SConscript(dirs='client', variant_dir='client/build', duplicate=0)
+SConscript(dirs='server', variant_dir='server/build', duplicate=0)
+Default(['client', 'server'])

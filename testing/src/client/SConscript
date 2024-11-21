@@ -1,0 +1,56 @@
+env = Environment(CPPPATH='.', LIBPATH='.')
+
+env.Append(CPPPATH=['#sdk/deremotelauncher/include'])
+env.Append(LIBPATH=['#sdk/deremotelauncher/lib'])
+env.Append(LIBS=['deremotelauncher'])
+
+env.Append(CPPPATH=['#sdk/denetwork/include'])
+env.Append(LIBPATH=['#sdk/denetwork/lib'])
+env.Append(LIBS=['denetwork'])
+
+if True:
+	env.Append(SANITIZE_FLAGS = [
+		'-fsanitize=address',
+		'-fsanitize-address-use-after-scope',
+		'-fsanitize=pointer-compare',
+		'-fsanitize=pointer-subtract'])
+	env.Append(SANITIZE_FLAGS = [
+		'-fsanitize=leak'])
+	env.Append(SANITIZE_FLAGS = [
+		'-fsanitize=undefined',
+		'-fsanitize=shift',
+		'-fsanitize=shift-exponent',
+		'-fsanitize=shift-base',
+		'-fsanitize=integer-divide-by-zero',
+		'-fsanitize=unreachable',
+		'-fsanitize=vla-bound',
+		'-fsanitize=null',
+		'-fsanitize=return',
+		'-fsanitize=signed-integer-overflow',
+		'-fsanitize=bounds',
+		'-fsanitize=bounds-strict',
+		'-fsanitize=alignment',
+		'-fsanitize=object-size',
+		'-fsanitize=float-divide-by-zero',
+		'-fsanitize=float-cast-overflow',
+		'-fsanitize=nonnull-attribute',
+		'-fsanitize=returns-nonnull-attribute',
+		'-fsanitize=bool',
+		'-fsanitize=enum',
+		'-fsanitize=vptr',
+		'-fsanitize=pointer-overflow',
+		'-fsanitize=builtin'])
+	
+	if False:
+		env['SANITIZE_FLAGS'].remove('-fsanitize=leak')
+		env['SANITIZE_FLAGS'].remove('-fsanitize=address')
+		env['SANITIZE_FLAGS'].remove('-fsanitize=pointer-compare')
+		env['SANITIZE_FLAGS'].remove('-fsanitize=pointer-subtract')
+		env.Append(SANITIZE_FLAGS = ['-fsanitize=thread'])
+	
+	env.Append(CPPFLAGS = env['SANITIZE_FLAGS'])
+	env.Append(LINKFLAGS = env['SANITIZE_FLAGS'])
+
+sources = [
+	'main.cpp']
+env.Program('client', sources)

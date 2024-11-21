@@ -189,7 +189,7 @@ private:
 	void pProcessRequestLayout(Lock &lockClient);
 	void pProcessRequestFileBlockHashes(Lock &lockClient, denMessageReader &reader);
 	void pProcessRequestDeleteFile(denMessageReader &reader);
-	void pProcessRequestWriteFile(denMessageReader &reader);
+	void pProcessRequestWriteFile(Lock &lockClient, denMessageReader &reader);
 	void pProcessSendFileData(denMessageReader &reader);
 	void pProcessRequestFinishWriteFile(Lock &lockClient, denMessageReader &reader);
 	void pProcessStartApplication(denMessageReader &reader);
@@ -200,6 +200,7 @@ private:
 	void pSendResponseFileBlockHashes(const derlFile &file);
 	void pSendResponsesDeleteFile(const derlTaskFileDelete::List &tasks);
 	void pSendResponseWriteFiles(const derlTaskFileWrite::List &task);
+	void pSendResponseWriteFile(const std::string &path);
 	void pSendFileDataReceivedBatch(const std::string &path, const derlTaskFileWriteBlock::List &blocks);
 	void pSendFileDataReceivedFinished(const std::string &path, const derlTaskFileWriteBlock::List &blocks);
 	void pSendResponseFinishWriteFile(const derlTaskFileWrite::Ref &task);

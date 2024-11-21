@@ -128,6 +128,13 @@ public:
 	void CalcFileBlockHashes(derlFileBlock::List &blocks, const std::string &path, uint64_t blockSize);
 	
 	/**
+	 * \brief Truncate file.
+	 * 
+	 * Default implementation opens and closes an std::filestream to truncate file.
+	 */
+	virtual void TruncateFile(const std::string &path);
+	
+	/**
 	 * \brief Open file for reading or writing.
 	 * 
 	 * Default implementation opens an std::filestream for reading/writing binary data.

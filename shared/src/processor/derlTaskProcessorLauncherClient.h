@@ -94,6 +94,12 @@ public:
 	bool FindNextTaskDelete(derlTaskFileDelete::Ref &task) const;
 	
 	/**
+	 * \brief Find next write file task.
+	 * \returns true if task is found otherwise false.
+	 */
+	bool FindNextTaskWriteFile(derlTaskFileWrite::Ref &task) const;
+	
+	/**
 	 * \brief Find next write file block task.
 	 * \returns true if task is found otherwise false.
 	 */
@@ -109,6 +115,9 @@ public:
 	
 	/** \brief Process task delete file. */
 	virtual void ProcessDeleteFile(derlTaskFileDelete &task);
+	
+	/** \brief Process task write file. */
+	virtual void ProcessWriteFile(derlTaskFileWrite &task);
 	
 	/** \brief Process task write file block. */
 	virtual void ProcessWriteFileBlock(derlTaskFileWrite &task, derlTaskFileWriteBlock &block);

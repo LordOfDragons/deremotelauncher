@@ -51,6 +51,7 @@ public:
 	enum class Status{
 		pending,
 		preparing,
+		prepared,
 		processing,
 		finishing,
 		success,
@@ -65,6 +66,7 @@ private:
 	uint64_t pBlockSize;
 	int pBlockCount;
 	derlTaskFileWriteBlock::List pBlocks;
+	bool pTruncate;
 	
 	
 public:
@@ -103,6 +105,10 @@ public:
 	/** \brief Blocks. */
 	inline const derlTaskFileWriteBlock::List &GetBlocks() const{ return pBlocks; }
 	inline derlTaskFileWriteBlock::List &GetBlocks(){ return pBlocks; }
+	
+	/** \brief Truncate file. */
+	inline bool GetTruncate() const{ return pTruncate; }
+	void SetTruncate(bool truncate);
 	/*@}*/
 };
 

@@ -33,7 +33,8 @@ pPath(path),
 pStatus(Status::pending),
 pFileSize(0L),
 pBlockSize(0L),
-pBlockCount(0){
+pBlockCount(0),
+pTruncate(false){
 }
 
 derlTaskFileWrite::~derlTaskFileWrite(){
@@ -57,4 +58,8 @@ void derlTaskFileWrite::SetBlockSize(uint64_t blockSize){
 
 void derlTaskFileWrite::SetBlockCount(int blockCount){
 	pBlockCount = blockCount;
+}
+
+void derlTaskFileWrite::SetTruncate(bool truncate){
+	pTruncate = truncate;
 }

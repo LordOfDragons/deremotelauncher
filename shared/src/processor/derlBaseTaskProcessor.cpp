@@ -198,6 +198,32 @@ const std::string &path, uint64_t blockSize){
 	}
 }
 
+void derlBaseTaskProcessor::TruncateFile(const std::string &path){
+	CloseFile();
+	pFilePath = pBaseDir / path;
+	
+	try{
+		if(pFilePath.has_parent_path()){
+			std::filesystem::create_directories(pFilePath.parent_path());
+		}
+		
+		pFileStream.open(pFilePath, pFileStream.binary | pFileStream.out | pFileStream.trunc);
+		if(pFileStream.fail()){
+			throw std::runtime_error(std::strerror(errno));
+		}
+		
+	}catch(const std::exception &e){
+		LogException("TruncateFile", e, path);
+		throw;
+		
+	}catch(...){
+		Log(denLogger::LogSeverity::error, "TruncateFile", path);
+		throw;
+	}
+	
+	CloseFile();
+}
+
 void derlBaseTaskProcessor::OpenFile(const std::string &path, bool write){
 	CloseFile();
 	pFilePath = pBaseDir / path;
@@ -207,7 +233,24 @@ void derlBaseTaskProcessor::OpenFile(const std::string &path, bool write){
 			std::filesystem::create_directories(pFilePath.parent_path());
 		}
 		
-		pFileStream.open(pFilePath, pFileStream.binary | (write ? pFileStream.out : pFileStream.in));
+		std::ios_base::openmode openmode = pFileStream.binary;
+		if(write){
+			// std streams are stupid as hell. if you use std::ios_base::app then the data is
+			// always appended and never overwritten which is not helping at all.
+			//
+			// if you use just std::ios_base::out then the file is destroyed before writing
+			// which is again not helping at all.
+			//
+			// so the only working solution is to use std::ios_base::in together with
+			// std::ios_base::out which is stupid. we want to overwrite the file not reading
+			// from it. but anyways... at last it works
+			openmode |= pFileStream.in | pFileStream.out;
+			
+		}else{
+			openmode |= pFileStream.in;
+		}
+		
+		pFileStream.open(pFilePath, openmode);
 		if(pFileStream.fail()){
 			throw std::runtime_error(std::strerror(errno));
 		}

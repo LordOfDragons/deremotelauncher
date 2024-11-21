@@ -45,8 +45,10 @@ public:
 	/** \brief Status. */
 	enum class Status{
 		pending,
-		preparing,
-		processing,
+		prepareTasksHashing,
+		processHashing,
+		prepareTasksWriting,
+		processWriting,
 		success,
 		failure
 	};

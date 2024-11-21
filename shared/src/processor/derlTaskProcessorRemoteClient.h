@@ -105,6 +105,10 @@ protected:
 	void AddFileDeleteTasks(derlTaskSyncClient &task, const derlFileLayout &layoutServer,
 		const derlFileLayout &layoutClient);
 	
+	/** Compare file layouts and add write file block hash tasks. */
+	void AddFileBlockHashTasks(derlTaskSyncClient &task, const derlFileLayout &layoutServer,
+		const derlFileLayout &layoutClient);
+	
 	/** Compare file layouts and add write file tasks. */
 	void AddFileWriteTasks(derlTaskSyncClient &task, const derlFileLayout &layoutServer,
 		const derlFileLayout &layoutClient);

@@ -99,19 +99,9 @@ void derlRemoteClientConnection::SetLogger(const denLogger::Ref &logger){
 }
 
 void derlRemoteClientConnection::ConnectionClosed(){
-	if(!pClient){
-		return;
+	if(pClient){
+		pClient->OnConnectionClosed();
 	}
-	
-	/*
-	pClient->StopTaskProcessors();
-	
-	pCountInProgressBatches = 0;
-	pCountInProgressBlocks = 0;
-	pCountInProgressFiles = 0;
-	*/
-	
-	pClient->OnConnectionClosed();
 }
 
 void derlRemoteClientConnection::MessageProgress(size_t bytesReceived){
@@ -486,7 +476,7 @@ void derlRemoteClientConnection::pMessageReceivedConnect(denMessage &message){
 			}
 			
 			pClient->OnConnectionEstablished();
-			pClient->StartTaskProcessors();
+			pClient->pInternalStartTaskProcessors();
 			return;
 		}
 	}

@@ -84,7 +84,6 @@ private:
 	std::filesystem::path pPathDataDir;
 	SynchronizeStatus pSynchronizeStatus;
 	std::string pSynchronizeDetails;
-	bool pRunning;
 	
 	derlFileLayout::Ref pFileLayoutServer, pFileLayoutClient;
 	
@@ -93,6 +92,7 @@ private:
 	
 	derlTaskProcessorRemoteClient::Ref pTaskProcessor;
 	std::unique_ptr<std::thread> pThreadTaskProcessor;
+	bool pTaskProcessorsRunning;
 	
 	std::mutex pMutex;
 	
@@ -220,6 +220,9 @@ public:
 	/** \brief Client is connected. */
 	bool GetConnected();
 	
+	/** \brief Client is disconnected. */
+	bool GetDisconnected();
+	
 	
 	/**
 	 * \brief Update launcher client.
@@ -279,6 +282,7 @@ public:
 	
 private:
 	void pProcessTaskSyncClient(derlTaskSyncClient &task);
+	void pInternalStartTaskProcessors();
 };
 
 #endif

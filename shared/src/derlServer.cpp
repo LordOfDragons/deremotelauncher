@@ -34,11 +34,11 @@
 /////////////////////
 
 derlServer::derlServer() :
-pServer(std::make_unique<derlServerServer>(*this)){
+pServer(std::make_unique<derlServerServer>(*this)),
+pTaskProcessorsRunning(false){
 }
 
 derlServer::~derlServer(){
-	StopTaskProcessors();
 }
 
 
@@ -98,13 +98,36 @@ void derlServer::ListenOn(const std::string &address){
 		throw std::invalid_argument("data directory path is empty");
 	}
 	
-	const std::lock_guard guard(derlGlobal::mutexNetwork);
-	pServer->ListenOn(address);
+	StartTaskProcessors();
+	pTaskProcessorsRunning = true;
+	
+	try{
+		const std::lock_guard guard(derlGlobal::mutexNetwork);
+		pServer->ListenOn(address);
+		
+	}catch(...){
+		StopTaskProcessors();
+		pTaskProcessorsRunning = false;
+		throw;
+	}
 }
 
 void derlServer::StopListening(){
 	const std::lock_guard guard(derlGlobal::mutexNetwork);
 	pServer->StopListening();
+}
+
+void derlServer::WaitAllClientsDisconnected(){
+	std::chrono::steady_clock::time_point last(std::chrono::steady_clock::now());
+	while(!pClients.empty()){
+		std::chrono::steady_clock::time_point now(std::chrono::steady_clock::now());
+		const int64_t elapsed_us = std::chrono::duration_cast<std::chrono::microseconds>(now - last).count();
+		
+		if(elapsed_us > 10){
+			last = now;
+			Update((float)elapsed_us / 1e6f);
+		}
+	}
 }
 
 void derlServer::Update(float elapsed){
@@ -116,14 +139,21 @@ void derlServer::Update(float elapsed){
 	derlRemoteClient::List closed;
 	derlRemoteClient::List::const_iterator iter;
 	for(iter=pClients.cbegin(); iter!=pClients.cend(); iter++){
-		(*iter)->Update(elapsed);
-		if(!(*iter)->GetConnected()){
+		derlRemoteClient &client = **iter;
+		client.Update(elapsed);
+		if(client.GetDisconnected()){
+			client.StopTaskProcessors();
 			closed.push_back(*iter);
 		}
 	}
 	
 	for(iter=closed.cbegin(); iter!=closed.cend(); iter++){
 		pClients.erase(std::find(pClients.cbegin(), pClients.cend(), *iter));
+	}
+	
+	if(pTaskProcessorsRunning && pClients.empty() && pServer->IsListening()){
+		StopTaskProcessors();
+		pTaskProcessorsRunning = false;
 	}
 }
 

@@ -78,6 +78,7 @@ private:
 	
 	derlTaskProcessorLauncherClient::Ref pTaskProcessor;
 	std::unique_ptr<std::thread> pThreadTaskProcessor;
+	bool pTaskProcessorsRunning;
 	
 	
 public:

@@ -35,11 +35,11 @@
 derlLauncherClient::derlLauncherClient() :
 pLogClassName("derlLauncherClient"),
 pConnection(std::make_unique<derlLauncherClientConnection>(*this)),
-pName("Client"){
+pName("Client"),
+pTaskProcessorsRunning(false){
 }
 
 derlLauncherClient::~derlLauncherClient(){
-	StopTaskProcessors();
 }
 
 
@@ -135,8 +135,18 @@ void derlLauncherClient::ConnectTo(const std::string &address){
 		throw std::invalid_argument("data directory path is empty");
 	}
 	
-	const std::lock_guard guard(derlGlobal::mutexNetwork);
-	pConnection->ConnectTo(address);
+	StartTaskProcessors();
+	pTaskProcessorsRunning = true;
+	
+	try{
+		const std::lock_guard guard(derlGlobal::mutexNetwork);
+		pConnection->ConnectTo(address);
+		
+	}catch(...){
+		StopTaskProcessors();
+		pTaskProcessorsRunning = false;
+		throw;
+	}
 }
 
 void derlLauncherClient::Disconnect(){
@@ -150,6 +160,12 @@ void derlLauncherClient::Update(float elapsed){
 	{
 	const std::lock_guard guard(derlGlobal::mutexNetwork);
 	pConnection->Update(elapsed);
+	}
+	
+	if(pTaskProcessorsRunning
+	&& pConnection->GetConnectionState() == denConnection::ConnectionState::disconnected){
+		StopTaskProcessors();
+		pTaskProcessorsRunning = false;
 	}
 }
 

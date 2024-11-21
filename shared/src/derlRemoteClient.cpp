@@ -38,11 +38,11 @@ derlRemoteClient::derlRemoteClient(derlServer &server,
 pLogClassName("derlRemoteClient"),
 pServer(server),
 pConnection(connection),
-pSynchronizeStatus(SynchronizeStatus::pending){
+pSynchronizeStatus(SynchronizeStatus::pending),
+pTaskProcessorsRunning(false){
 }
 
 derlRemoteClient::~derlRemoteClient(){
-	StopTaskProcessors();
 	pConnection->SetClient(nullptr);
 }
 
@@ -171,11 +171,23 @@ bool derlRemoteClient::GetConnected(){
 	return pConnection->GetConnected();
 }
 
+bool derlRemoteClient::GetDisconnected(){
+	return pConnection->GetConnectionState() == denConnection::ConnectionState::disconnected;
+}
+
 void derlRemoteClient::Update(float elapsed){
 	pConnection->SendQueuedMessages();
 	
+	{
 	const std::lock_guard guard(derlGlobal::mutexNetwork);
 	pConnection->Update(elapsed);
+	}
+	
+	if(pTaskProcessorsRunning
+	&& pConnection->GetConnectionState() == denConnection::ConnectionState::disconnected){
+		StopTaskProcessors();
+		pTaskProcessorsRunning = false;
+	}
 }
 
 void derlRemoteClient::ProcessReceivedMessages(){
@@ -282,4 +294,9 @@ void derlRemoteClient::pProcessTaskSyncClient(derlTaskSyncClient &task){
 		pSynchronizeDetails = "Synchronize...";
 		break;
 	}
+}
+
+void derlRemoteClient::pInternalStartTaskProcessors(){
+	StartTaskProcessors();
+	pTaskProcessorsRunning = true;
 }

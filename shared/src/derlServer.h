@@ -58,6 +58,7 @@ private:
 	
 	derlTaskProcessorServer::Ref pTaskProcessor;
 	std::unique_ptr<std::thread> pThreadTaskProcessor;
+	bool pTaskProcessorsRunning;
 	
 	derlRemoteClient::List pClients;
 	
@@ -155,6 +156,13 @@ public:
 	/** \brief Stop listening. */
 	void StopListening();
 	
+	/**
+	 * \brief Wait for all clients to have disconnected.
+	 * 
+	 * For use after calling StopListening(). Waits for all clients to have disconnected
+	 * calling Update() until this happens.
+	 */
+	void WaitAllClientsDisconnected();
 	
 	
 	/**

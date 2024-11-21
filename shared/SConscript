@@ -73,7 +73,7 @@ if env['with_debug'] and env['with_sanitize']:
 		'-fsanitize=pointer-overflow',
 		'-fsanitize=builtin'])
 	
-	if True:
+	if env['with_sanitize_threads']:
 		env['SANITIZE_FLAGS'].remove('-fsanitize=leak')
 		env['SANITIZE_FLAGS'].remove('-fsanitize=address')
 		env['SANITIZE_FLAGS'].remove('-fsanitize=pointer-compare')

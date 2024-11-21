@@ -244,7 +244,15 @@ void derlBaseTaskProcessor::OpenFile(const std::string &path, bool write){
 			// so the only working solution is to use std::ios_base::in together with
 			// std::ios_base::out which is stupid. we want to overwrite the file not reading
 			// from it. but anyways... at last it works
-			openmode |= pFileStream.in | pFileStream.out;
+			//
+			// just to add insult to injury... if the file does not exist std::ios_base::in
+			// causes the open to fail. why so damn complicated?!
+			if(std::filesystem::exists(pFilePath)){
+				openmode |= pFileStream.in | pFileStream.out;
+				
+			}else{
+				openmode |= pFileStream.out;
+			}
 			
 		}else{
 			openmode |= pFileStream.in;

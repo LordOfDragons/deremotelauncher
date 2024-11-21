@@ -54,8 +54,10 @@ public:
 		prepared,
 		processing,
 		finishing,
+		validating,
 		success,
-		failure
+		failure,
+		validationFailed
 	};
 	
 	
@@ -67,6 +69,7 @@ private:
 	int pBlockCount;
 	derlTaskFileWriteBlock::List pBlocks;
 	bool pTruncate;
+	std::string pHash;
 	
 	
 public:
@@ -109,6 +112,10 @@ public:
 	/** \brief Truncate file. */
 	inline bool GetTruncate() const{ return pTruncate; }
 	void SetTruncate(bool truncate);
+	
+	/** \brief File hash. */
+	inline const std::string &GetHash() const{ return pHash; }
+	void SetHash(const std::string &hash);
 	/*@}*/
 };
 

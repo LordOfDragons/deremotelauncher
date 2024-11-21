@@ -63,3 +63,7 @@ void derlTaskFileWrite::SetBlockCount(int blockCount){
 void derlTaskFileWrite::SetTruncate(bool truncate){
 	pTruncate = truncate;
 }
+
+void derlTaskFileWrite::SetHash(const std::string &hash){
+	pHash = hash;
+}

@@ -77,6 +77,13 @@ void derlFileLayout::RemoveFile(const std::string &path){
 	pFiles.erase(iter);
 }
 
+void derlFileLayout::RemoveFileIfPresent(const std::string &path){
+	derlFile::Map::iterator iter(pFiles.find(path));
+	if(iter != pFiles.end()){
+		pFiles.erase(iter);
+	}
+}
+
 void derlFileLayout::RemoveAllFiles(){
 	pFiles.clear();
 }

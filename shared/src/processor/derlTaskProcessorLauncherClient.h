@@ -105,6 +105,12 @@ public:
 	 */
 	bool FindNextTaskWriteFileBlock(derlTaskFileWrite::Ref &task, derlTaskFileWriteBlock::Ref &block) const;
 	
+	/**
+	 * \brief Find next finish write file task.
+	 * \returns true if task is found otherwise false.
+	 */
+	bool FindNextTaskFinishWriteFile(derlTaskFileWrite::Ref &task) const;
+	
 	
 	
 	/** \brief Process task file layout. */
@@ -121,6 +127,9 @@ public:
 	
 	/** \brief Process task write file block. */
 	virtual void ProcessWriteFileBlock(derlTaskFileWrite &task, derlTaskFileWriteBlock &block);
+	
+	/** \brief Process task finish write file. */
+	virtual void ProcessFinishWriteFile(derlTaskFileWrite &task);
 	
 	
 	

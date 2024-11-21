@@ -81,6 +81,9 @@ public:
 	/** \brief Remove file. */
 	void RemoveFile(const std::string &path);
 	
+	/** \brief Remove file if present. */
+	void RemoveFileIfPresent(const std::string &path);
+	
 	/** \brief Remove all files. */
 	void RemoveAllFiles();
 	/*@}*/

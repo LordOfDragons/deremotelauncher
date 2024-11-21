@@ -36,6 +36,7 @@ derlLauncherClient::derlLauncherClient() :
 pLogClassName("derlLauncherClient"),
 pConnection(std::make_unique<derlLauncherClientConnection>(*this)),
 pName("Client"),
+pDirtyFileLayout(false),
 pTaskProcessorsRunning(false){
 }
 
@@ -64,10 +65,15 @@ int derlLauncherClient::GetPartSize() const{
 
 void derlLauncherClient::SetFileLayout(const derlFileLayout::Ref &layout){
 	pFileLayout = layout;
+	pDirtyFileLayout = false;
 }
 
 void derlLauncherClient::SetTaskFileLayout(const derlTaskFileLayout::Ref &task){
 	pTaskFileLayout = task;
+}
+
+void derlLauncherClient::SetDirtyFileLayout(bool dirty){
+	pDirtyFileLayout = dirty;
 }
 
 denConnection::ConnectionState derlLauncherClient::GetConnectionState() const{

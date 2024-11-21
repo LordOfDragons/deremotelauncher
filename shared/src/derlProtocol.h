@@ -109,7 +109,8 @@ namespace derlProtocol{
 	 */
 	enum class FinishWriteFileResult{
 		success = 0,
-		failure = 1
+		failure = 1,
+		validationFailed = 2
 	};
 	
 	/**

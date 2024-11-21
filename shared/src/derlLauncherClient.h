@@ -68,6 +68,7 @@ private:
 	std::filesystem::path pPathDataDir;
 	
 	derlFileLayout::Ref pFileLayout;
+	bool pDirtyFileLayout;
 	
 	std::mutex pMutex;
 	
@@ -126,6 +127,10 @@ public:
 	/** \brief File layout task. */
 	inline const derlTaskFileLayout::Ref &GetTaskFileLayout() const{ return pTaskFileLayout; }
 	void SetTaskFileLayout(const derlTaskFileLayout::Ref &task);
+	
+	/** \brief File layout is dirty. */
+	inline bool GetDirtyFileLayout() const{ return pDirtyFileLayout; }
+	void SetDirtyFileLayout(bool dirty);
 	
 	/** \brief Delete file tasks. */
 	inline const derlTaskFileDelete::Map &GetTasksDeleteFile() const{ return pTaskDeleteFiles; }

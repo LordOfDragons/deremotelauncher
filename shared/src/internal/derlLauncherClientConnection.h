@@ -191,7 +191,7 @@ private:
 	void pProcessRequestDeleteFile(denMessageReader &reader);
 	void pProcessRequestWriteFile(Lock &lockClient, denMessageReader &reader);
 	void pProcessSendFileData(denMessageReader &reader);
-	void pProcessRequestFinishWriteFile(Lock &lockClient, denMessageReader &reader);
+	void pProcessRequestFinishWriteFile(denMessageReader &reader);
 	void pProcessStartApplication(denMessageReader &reader);
 	void pProcessStopApplication(denMessageReader &reader);
 	
@@ -203,7 +203,7 @@ private:
 	void pSendResponseWriteFile(const std::string &path);
 	void pSendFileDataReceivedBatch(const std::string &path, const derlTaskFileWriteBlock::List &blocks);
 	void pSendFileDataReceivedFinished(const std::string &path, const derlTaskFileWriteBlock::List &blocks);
-	void pSendResponseFinishWriteFile(const derlTaskFileWrite::Ref &task);
+	void pSendResponseFinishWriteFiles(const derlTaskFileWrite::List &task);
 };
 
 #endif

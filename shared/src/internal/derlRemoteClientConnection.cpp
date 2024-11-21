@@ -1043,11 +1043,19 @@ void derlRemoteClientConnection::pSendRequestsFinishWriteFile(const derlTaskFile
 	for(iter=tasks.cbegin(); iter!=tasks.cend(); iter++){
 		const derlTaskFileWrite &task = **iter;
 		
+		const derlFile::Ref file(pClient->GetFileLayoutServer()->GetFileAt(task.GetPath()));
+		if(!file){
+			std::stringstream ss;
+			ss << "File missing in layout: " << task.GetPath();
+			throw std::runtime_error(ss.str());
+		}
+		
 		const denMessage::Ref message(denMessage::Pool().Get());
 		{
 			denMessageWriter writer(message->Item());
 			writer.WriteByte((uint8_t)derlProtocol::MessageCodes::requestFinishWriteFile);
 			writer.WriteString16(task.GetPath());
+			writer.WriteString8(file->GetHash());
 			
 			std::stringstream log;
 			log << "Request finish write file: " << task.GetPath();

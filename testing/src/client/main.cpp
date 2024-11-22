@@ -50,7 +50,7 @@ public:
 		SetName("Test Client");
 		SetPathDataDir(std::filesystem::path(argv[1]));
 		
-		ConnectTo("localhost");
+		ConnectTo(argv[2]);
 		
 		std::unique_lock guard(GetMutex());
 		std::chrono::steady_clock::time_point last(std::chrono::steady_clock::now());

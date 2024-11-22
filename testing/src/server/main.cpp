@@ -127,7 +127,7 @@ public:
 		SetLogger(std::make_shared<Logger>());
 		SetPathDataDir(std::filesystem::path(argv[1]));
 		
-		ListenOn("localhost");
+		ListenOn(argv[2]);
 		
 		std::unique_lock guard(GetMutex());
 		std::chrono::steady_clock::time_point last(std::chrono::steady_clock::now());

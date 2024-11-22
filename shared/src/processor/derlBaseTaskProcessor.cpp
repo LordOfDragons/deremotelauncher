@@ -74,17 +74,25 @@ void derlBaseTaskProcessor::Run(){
 		}
 		}
 		
+		// const std::chrono::steady_clock::time_point tts(std::chrono::steady_clock::now());
 		if(RunTask()){
+				// std::stringstream ss;
+				// ss << "task time true " << std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::steady_clock::now() - tts).count();
+				// GetLogger()->Log(denLogger::LogSeverity::info, ss.str());
 			pNoTaskTimeoutBegin = std::chrono::steady_clock::now();
 			continue;
 		}
+				// std::stringstream ss;
+				// ss << "task time false " << std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::steady_clock::now() - tts).count();
+				// GetLogger()->Log(denLogger::LogSeverity::info, ss.str());
 		
 		if(std::chrono::duration_cast<std::chrono::milliseconds>(
 		std::chrono::steady_clock::now() - pNoTaskTimeoutBegin) > pNoTaskTimeout){
+			// GetLogger()->Log(denLogger::LogSeverity::info, "sleeping...");
 			std::this_thread::sleep_for(pNoTaskDelay);
 			
 		}else{
-			std::this_thread::yield();
+			// std::this_thread::yield();
 		}
 	}
 }

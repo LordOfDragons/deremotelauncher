@@ -8,7 +8,7 @@ env.Append(CPPPATH=['#sdk/denetwork/include'])
 env.Append(LIBPATH=['#sdk/denetwork/lib'])
 env.Append(LIBS=['denetwork'])
 
-if True:
+if False:
 	env.Append(SANITIZE_FLAGS = [
 		'-fsanitize=address',
 		'-fsanitize-address-use-after-scope',

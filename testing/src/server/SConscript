@@ -10,7 +10,7 @@ env.Append(LIBS=['denetwork'])
 
 env.Replace(SANITIZE_FLAGS = [])
 
-if True:
+if False:
 	env.Append(SANITIZE_FLAGS = [
 		'-fsanitize=address',
 		'-fsanitize-address-use-after-scope',

@@ -177,6 +177,7 @@ bool derlRemoteClient::GetDisconnected(){
 
 void derlRemoteClient::Update(float elapsed){
 	pConnection->SendQueuedMessages();
+	pConnection->ProcessReceivedMessages();
 	
 	{
 	const std::lock_guard guard(derlGlobal::mutexNetwork);

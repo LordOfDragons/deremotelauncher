@@ -162,6 +162,7 @@ void derlLauncherClient::Disconnect(){
 
 void derlLauncherClient::Update(float elapsed){
 	pConnection->SendQueuedMessages();
+	ProcessReceivedMessages();
 	
 	{
 	const std::lock_guard guard(derlGlobal::mutexNetwork);

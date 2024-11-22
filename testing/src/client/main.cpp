@@ -45,7 +45,7 @@ public:
 	
 	Client() = default;
 	int Run(int argc, char *argv[]){
-		//SetEnableDebugLog(true);
+		// SetEnableDebugLog(true);
 		SetLogger(std::make_shared<Logger>());
 		SetName("Test Client");
 		SetPathDataDir(std::filesystem::path(argv[1]));
@@ -58,9 +58,9 @@ public:
 			std::chrono::steady_clock::time_point now(std::chrono::steady_clock::now());
 			const int64_t elapsed_us = std::chrono::duration_cast<std::chrono::microseconds>(now - last).count();
 			
-			if(elapsed_us < 10){
-				continue;
-			}
+			// if(elapsed_us < 10){
+			// 	continue;
+			// }
 			
 			last = now;
 			guard.unlock();

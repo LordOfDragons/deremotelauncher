@@ -55,9 +55,9 @@ pBatchSize(10),
 pEnableDebugLog(false),
 pStateRun(std::make_shared<denState>(false)),
 pValueRunStatus(std::make_shared<denValueInt>(denValueIntegerFormat::uint8)),
-pMaxInProgressFiles(1),
-pMaxInProgressBlocks(1),
-pMaxInProgressBatches(2),
+pMaxInProgressFiles(3), //1
+pMaxInProgressBlocks(3), //1
+pMaxInProgressBatches(5), //2
 pCountInProgressFiles(0),
 pCountInProgressBlocks(0),
 pCountInProgressBatches(0)
@@ -340,7 +340,6 @@ void derlRemoteClientConnection::FinishPendingOperations(){
 							}
 							
 							try{
-								
 								pSendSendFileData(*task, block);
 								
 								if(claimBlockCount){
@@ -982,6 +981,11 @@ void derlRemoteClientConnection::pSendRequestsWriteFile(const derlTaskFileWrite:
 }
 
 void derlRemoteClientConnection::pSendSendFileData(const derlTaskFileWrite &task, derlTaskFileWriteBlock &block){
+	const int partCount = block.GetPartCount();
+	if(block.GetNextPartIndex() == partCount){
+		return;
+	}
+	
 	if(pEnableDebugLog){
 		std::stringstream log;
 		log << "Send file data: " << task.GetPath() << " block " << block.GetIndex()
@@ -990,13 +994,12 @@ void derlRemoteClientConnection::pSendSendFileData(const derlTaskFileWrite &task
 		LogDebug("pSendSendFileData", log.str());
 	}
 	
-	const std::lock_guard guard(derlGlobal::mutexNetwork);
-	
 	const uint64_t blockSize = block.GetSize();
 	const uint8_t * const blockData = (const uint8_t *)block.GetData().c_str();
-	const int partCount = block.GetPartCount();
 	const int lastIndex = partCount - 1;
 	int i, batchCounter = 0;
+	
+	const std::lock_guard guard(derlGlobal::mutexNetwork);
 	
 	for(i=block.GetNextPartIndex(); i<partCount; i++, batchCounter++){
 		if(batchCounter == pBatchSize){

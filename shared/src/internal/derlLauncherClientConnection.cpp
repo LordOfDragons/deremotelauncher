@@ -152,7 +152,7 @@ void derlLauncherClientConnection::SendQueuedMessages(){
 void derlLauncherClientConnection::ProcessReceivedMessages(){
 	derlMessageQueue::Messages messages;
 	{
-	std::lock_guard guard(derlGlobal::mutexNetwork);
+	const std::lock_guard guard(derlGlobal::mutexNetwork);
 	pQueueReceived.PopAll(messages);
 	}
 	

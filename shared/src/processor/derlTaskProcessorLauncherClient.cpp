@@ -48,7 +48,7 @@ derlTaskProcessorLauncherClient::~derlTaskProcessorLauncherClient(){
 ///////////////
 
 bool derlTaskProcessorLauncherClient::RunTask(){
-	pClient.ProcessReceivedMessages();
+	// pClient.ProcessReceivedMessages();
 	pClient.FinishPendingOperations();
 	
 	derlTaskFileBlockHashes::Ref taskFileBlockHashes;
@@ -57,11 +57,17 @@ bool derlTaskProcessorLauncherClient::RunTask(){
 	derlTaskFileDelete::Ref taskDeleteFile;
 	derlTaskFileWrite::Ref taskWriteFile, taskWriteFileBlock, taskFinishWriteFile;
 	
+	bool hasPendingTasks = false;
 	{
 	const std::lock_guard guard(pClient.GetMutex());
 	pBaseDir = pClient.GetPathDataDir();
 	pPartSize = pClient.GetPartSize();
 	pEnableDebugLog = pClient.GetEnableDebugLog();
+	
+	hasPendingTasks = pClient.GetTaskFileLayout()
+		|| !pClient.GetTasksFileBlockHashes().empty()
+		|| !pClient.GetTasksDeleteFile().empty()
+		|| !pClient.GetTasksWriteFile().empty();
 	
 	FindNextTaskFileLayout(taskFileLayout)
 	|| !pClient.GetFileLayout()
@@ -97,7 +103,7 @@ bool derlTaskProcessorLauncherClient::RunTask(){
 		return true;
 		
 	}else{
-		return false;
+		return hasPendingTasks;
 	}
 }
 

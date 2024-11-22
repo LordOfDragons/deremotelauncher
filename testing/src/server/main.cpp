@@ -46,12 +46,13 @@ public:
 	
 	State state;
 	std::chrono::steady_clock::time_point timerBegin;
+	std::chrono::steady_clock::time_point syncStartTime;
 	
 	Client(derlServer &server, const derlRemoteClientConnection::Ref &connection) :
 	derlRemoteClient(server, connection),
 	state(State::connecting)
 	{
-		//SetEnableDebugLog(true);
+		// SetEnableDebugLog(true);
 		SetLogger(std::make_shared<Logger>());
 	}
 	
@@ -93,7 +94,9 @@ public:
 	}
 	
 	void OnSynchronizeBegin() override{
+		const std::lock_guard guard(GetMutex());
 		std::cout << "[" << GetName() << "] OnSynchronizeBegin" << std::endl;
+		syncStartTime = std::chrono::steady_clock::now();
 	}
 	
 	void OnSynchronizeUpdate() override{
@@ -105,8 +108,11 @@ public:
 	
 	void OnSynchronizeFinished() override{
 		const std::lock_guard guard(GetMutex());
+		const int64_t syncElapsed = std::chrono::duration_cast<std::chrono::milliseconds>(
+			std::chrono::steady_clock::now() - timerBegin).count();
 		std::cout << "[" << GetName() << "] OnSynchronizeFinished["
-			<< (int)GetSynchronizeStatus() << "]: " << GetSynchronizeDetails() << std::endl;
+			<< (int)GetSynchronizeStatus() << "]: " << GetSynchronizeDetails()
+			<< " elapsed " << syncElapsed << "ms" << std::endl;
 		timerBegin = std::chrono::steady_clock::now();
 		state = State::delay;
 	}
@@ -115,6 +121,7 @@ public:
 class Server : public derlServer{
 public:
 	bool exit = false;
+	
 	Server() = default;
 	int Run(int argc, char *argv[]){
 		SetLogger(std::make_shared<Logger>());
@@ -128,9 +135,9 @@ public:
 			std::chrono::steady_clock::time_point now(std::chrono::steady_clock::now());
 			const int64_t elapsed_us = std::chrono::duration_cast<std::chrono::microseconds>(now - last).count();
 			
-			if(elapsed_us < 10){
-				continue;;
-			}
+			// if(elapsed_us < 10){
+			// 	continue;
+			// }
 			
 			last = now;
 			const std::size_t clientCount = GetClients().size();

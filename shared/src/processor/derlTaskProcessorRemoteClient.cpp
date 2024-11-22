@@ -45,20 +45,21 @@ pClient(client){
 ///////////////
 
 bool derlTaskProcessorRemoteClient::RunTask(){
-	pClient.ProcessReceivedMessages();
+	// pClient.ProcessReceivedMessages();
 	pClient.FinishPendingOperations();
 	
 	derlTaskFileLayout::Ref taskLayoutServer;
 	derlTaskSyncClient::Ref taskSyncClient;
 	derlTaskFileWrite::Ref taskReadFileBlocks;
-	bool fastReturn = false;
 	
+	bool hasPendingTasks = false;
 	{
 	const std::lock_guard guard(pClient.GetMutex());
 	pBaseDir = pClient.GetPathDataDir();
 	pPartSize = pClient.GetPartSize();
 	pEnableDebugLog = pClient.GetEnableDebugLog();
-	fastReturn = pClient.GetTaskSyncClient() != nullptr;
+	
+	hasPendingTasks = pClient.GetTaskSyncClient() != nullptr;
 	
 	FindNextTaskLayoutServer(taskLayoutServer)
 	|| !pClient.GetFileLayoutServer()
@@ -80,7 +81,7 @@ bool derlTaskProcessorRemoteClient::RunTask(){
 		return true;
 		
 	}else{
-		return fastReturn;
+		return hasPendingTasks;
 	}
 }
 

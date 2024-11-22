@@ -82,6 +82,9 @@ void derlBaseTaskProcessor::Run(){
 		if(std::chrono::duration_cast<std::chrono::milliseconds>(
 		std::chrono::steady_clock::now() - pNoTaskTimeoutBegin) > pNoTaskTimeout){
 			std::this_thread::sleep_for(pNoTaskDelay);
+			
+		}else{
+			std::this_thread::yield();
 		}
 	}
 }

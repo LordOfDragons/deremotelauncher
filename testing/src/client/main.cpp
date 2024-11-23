@@ -5,9 +5,13 @@
 #include <chrono>
 
 class Logger : public denLogger{
+private:
+	std::mutex pMutex;
+	
 public:
 	Logger() = default;
 	void Log(LogSeverity severity, const std::string &message) override{
+		const std::lock_guard guard(pMutex);
 		switch(severity){
 		case LogSeverity::debug:
 			std::cout << "[DD] ";
@@ -40,19 +44,21 @@ public:
 		connected
 	};
 	
-	bool exit = false;
-	State state = State::connecting;
+	std::atomic<bool> exit = false;
+	std::atomic<State> state = State::connecting;
 	
 	Client() = default;
 	int Run(int argc, char *argv[]){
-		// SetEnableDebugLog(true);
+		#ifdef ENABLE_CLIENT_DEBUG
+		SetEnableDebugLog(true);
+		#endif
+		
 		SetLogger(std::make_shared<Logger>());
 		SetName("Test Client");
 		SetPathDataDir(std::filesystem::path(argv[1]));
 		
 		ConnectTo(argv[2]);
 		
-		std::unique_lock guard(GetMutex());
 		std::chrono::steady_clock::time_point last(std::chrono::steady_clock::now());
 		while(!exit){
 			std::chrono::steady_clock::time_point now(std::chrono::steady_clock::now());
@@ -63,9 +69,7 @@ public:
 			// }
 			
 			last = now;
-			guard.unlock();
 			Update((float)elapsed_us / 1e6f);
-			guard.lock();
 			
 			switch(state){
 			case State::connected:
@@ -79,19 +83,16 @@ public:
 	}
 	
 	void OnConnectionEstablished() override{
-		const std::lock_guard guard(GetMutex());
 		std::cout << "OnConnectionEstablished" << std::endl;
 		state = State::connected;
 	}
 	
 	void OnConnectionFailed(denConnection::ConnectionFailedReason reason) override{
-		const std::lock_guard guard(GetMutex());
 		std::cout << "OnConnectionFailed: reason=" << (int)reason << std::endl;
 		exit = 1;
 	}
 	
 	void OnConnectionClosed() override{
-		const std::lock_guard guard(GetMutex());
 		std::cout << "OnConnectionClosed" << std::endl;
 		exit = 1;
 	}

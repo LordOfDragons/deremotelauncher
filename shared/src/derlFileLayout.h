@@ -26,6 +26,7 @@
 #define _DERLFILELAYOUT_H_
 
 #include <memory>
+#include <mutex>
 
 #include "derlFile.h"
 
@@ -44,6 +45,7 @@ public:
 	
 private:
 	derlFile::Map pFiles;
+	std::mutex pMutex;
 	
 	
 public:
@@ -75,8 +77,20 @@ public:
 	/** \brief File with path or nullptr. */
 	derlFile::Ref GetFileAt(const std::string &path) const;
 	
+	/** \brief File with path or nullptr while locking mutex. */
+	derlFile::Ref GetFileAtSync(const std::string &path);
+	
+	/** \brief Set file with path. */
+	void SetFileAt(const std::string &path, const derlFile::Ref &file);
+	
+	/** \brief Set file with path while locking mutex. */
+	void SetFileAtSync(const std::string &path, const derlFile::Ref &file);
+	
 	/** \brief Add file. */
 	void AddFile(const derlFile::Ref &file);
+	
+	/** \brief Add file while locking mutex. */
+	void AddFileSync(const derlFile::Ref &file);
 	
 	/** \brief Remove file. */
 	void RemoveFile(const std::string &path);
@@ -84,8 +98,14 @@ public:
 	/** \brief Remove file if present. */
 	void RemoveFileIfPresent(const std::string &path);
 	
+	/** \brief Remove file if present while locking mutex. */
+	void RemoveFileIfPresentSync(const std::string &path);
+	
 	/** \brief Remove all files. */
 	void RemoveAllFiles();
+	
+	/** \brief Mutex */
+	inline std::mutex &GetMutex(){ return pMutex; }
 	/*@}*/
 	
 	

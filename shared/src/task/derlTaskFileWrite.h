@@ -25,10 +25,8 @@
 #ifndef _DERLTASKFILEWRITE_H_
 #define _DERLTASKFILEWRITE_H_
 
-#include <memory>
-#include <string>
-#include <vector>
-#include <unordered_map>
+#include <mutex>
+#include <atomic>
 
 #include "derlTaskFileWriteBlock.h"
 
@@ -36,7 +34,7 @@
 /**
  * \brief File write task.
  */
-class derlTaskFileWrite{
+class derlTaskFileWrite : public derlBaseTask{
 public:
 	/** \brief Reference type. */
 	typedef std::shared_ptr<derlTaskFileWrite> Ref;
@@ -51,10 +49,8 @@ public:
 	enum class Status{
 		pending,
 		preparing,
-		prepared,
 		processing,
 		finishing,
-		validating,
 		success,
 		failure,
 		validationFailed
@@ -63,13 +59,14 @@ public:
 	
 private:
 	const std::string pPath;
-	Status pStatus;
+	std::atomic<Status> pStatus;
 	uint64_t pFileSize;
 	uint64_t pBlockSize;
 	int pBlockCount;
 	derlTaskFileWriteBlock::List pBlocks;
 	bool pTruncate;
 	std::string pHash;
+	std::mutex pMutex;
 	
 	
 public:
@@ -77,9 +74,6 @@ public:
 	/*@{*/
 	/** \brief Create task. */
 	derlTaskFileWrite(const std::string &path);
-	
-	/** \brief Clean up task. */
-	~derlTaskFileWrite() noexcept;
 	/*@}*/
 	
 	
@@ -105,10 +99,6 @@ public:
 	inline int GetBlockCount() const{ return pBlockCount; }
 	void SetBlockCount(int blockCount);
 	
-	/** \brief Blocks. */
-	inline const derlTaskFileWriteBlock::List &GetBlocks() const{ return pBlocks; }
-	inline derlTaskFileWriteBlock::List &GetBlocks(){ return pBlocks; }
-	
 	/** \brief Truncate file. */
 	inline bool GetTruncate() const{ return pTruncate; }
 	void SetTruncate(bool truncate);
@@ -116,6 +106,16 @@ public:
 	/** \brief File hash. */
 	inline const std::string &GetHash() const{ return pHash; }
 	void SetHash(const std::string &hash);
+	
+	/**
+	 * \brief Blocks.
+	 * 
+	 * Access with mutex locked.
+	 */
+	inline derlTaskFileWriteBlock::List &GetBlocks(){ return pBlocks; }
+	
+	/** \brief Mutex. */
+	inline std::mutex &GetMutex(){ return pMutex; }
 	/*@}*/
 };
 

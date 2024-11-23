@@ -22,6 +22,7 @@
  * SOFTWARE.
  */
 
+#include <algorithm>
 #include <stdexcept>
 
 #include "derlLauncherClient.h"
@@ -63,17 +64,49 @@ int derlLauncherClient::GetPartSize() const{
 	return pConnection->GetPartSize();
 }
 
-void derlLauncherClient::SetFileLayout(const derlFileLayout::Ref &layout){
-	pFileLayout = layout;
-	pDirtyFileLayout = false;
+derlFileLayout::Ref derlLauncherClient::GetFileLayoutSync(){
+	const std::lock_guard guard(pMutex);
+	return pFileLayout;
 }
 
-void derlLauncherClient::SetTaskFileLayout(const derlTaskFileLayout::Ref &task){
-	pTaskFileLayout = task;
+void derlLauncherClient::SetFileLayoutSync(const derlFileLayout::Ref &layout){
+	const std::lock_guard guard(pMutex);
+	pNextFileLayout = layout;
 }
 
-void derlLauncherClient::SetDirtyFileLayout(bool dirty){
+void derlLauncherClient::SetDirtyFileLayoutSync(bool dirty){
+	const std::lock_guard guard(pMutex);
 	pDirtyFileLayout = dirty;
+}
+
+void derlLauncherClient::RemovePendingTaskWithType(derlBaseTask::Type type){
+	const std::lock_guard guard(pMutexPendingTasks);
+	derlBaseTask::Queue filtered;
+	for(const derlBaseTask::Ref &task : pPendingTasks){
+		if(task->GetType() != type){
+			filtered.push_back(task);
+		}
+	}
+	pPendingTasks.swap(filtered);
+}
+
+bool derlLauncherClient::HasPendingTasksWithType(derlBaseTask::Type type){
+	return std::find_if(pPendingTasks.cbegin(), pPendingTasks.cend(),
+		[type](const derlBaseTask::Ref &task){
+			return task->GetType() == type;
+		}) != pPendingTasks.cend();
+}
+
+void derlLauncherClient::AddPendingTaskSync(const derlBaseTask::Ref &task){
+	{
+	const std::lock_guard guard(pMutexPendingTasks);
+	pPendingTasks.push_back(task);
+	}
+	NotifyPendingTaskAdded();
+}
+
+void derlLauncherClient::NotifyPendingTaskAdded(){
+	pConditionPendingTasks.notify_all();
 }
 
 denConnection::ConnectionState derlLauncherClient::GetConnectionState() const{
@@ -126,6 +159,8 @@ void derlLauncherClient::StopTaskProcessors(){
 		pTaskProcessor->Exit();
 	}
 	
+	NotifyPendingTaskAdded();
+	
 	if(pThreadTaskProcessor){
 		Log(denLogger::LogSeverity::info, "StopTaskProcessors", "Join task processor thread");
 		pThreadTaskProcessor->join();
@@ -161,8 +196,10 @@ void derlLauncherClient::Disconnect(){
 }
 
 void derlLauncherClient::Update(float elapsed){
+	UpdateLayoutChanged();
+	
 	pConnection->SendQueuedMessages();
-	ProcessReceivedMessages();
+	pConnection->ProcessReceivedMessages();
 	
 	{
 	const std::lock_guard guard(derlGlobal::mutexNetwork);
@@ -176,12 +213,27 @@ void derlLauncherClient::Update(float elapsed){
 	}
 }
 
-void derlLauncherClient::ProcessReceivedMessages(){
-	pConnection->ProcessReceivedMessages();
-}
-
-void derlLauncherClient::FinishPendingOperations(){
-	pConnection->FinishPendingOperations();
+void derlLauncherClient::UpdateLayoutChanged(){
+	bool notifyLayoutChanged = false;
+	
+	{
+	const std::lock_guard guard(pMutex);
+	if(pDirtyFileLayout && pFileLayout){
+		Log(denLogger::LogSeverity::info, "Update", "File layout dirty, dropped.");
+		pNextFileLayout = nullptr;
+		pDirtyFileLayout = false;
+	}
+	
+	if(pNextFileLayout != pFileLayout){
+		pFileLayout = pNextFileLayout;
+		pDirtyFileLayout = false;
+		notifyLayoutChanged = true;
+	}
+	}
+	
+	if(notifyLayoutChanged){
+		pConnection->OnFileLayoutChanged();
+	}
 }
 
 void derlLauncherClient::LogException(const std::string &functionName,

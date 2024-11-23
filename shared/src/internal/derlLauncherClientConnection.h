@@ -72,6 +72,8 @@ private:
 	const denValueInt::Ref pValueRunStatus;
 	
 	bool pPendingRequestLayout;
+	derlTaskFileWrite::Map pWriteFileTasks;
+	derlTaskFileWriteBlock::List pWriteFileBlocks;
 	
 	derlMessageQueue pQueueReceived, pQueueSend;
 	
@@ -165,8 +167,8 @@ public:
 	/** \brief Process received messages. */
 	void ProcessReceivedMessages();
 	
-	/** \brief Process finished pending operations. */
-	void FinishPendingOperations();
+	/** \brief File layout changed. */
+	void OnFileLayoutChanged();
 	
 	/** \brief Log exception. */
 	void LogException(const std::string &functionName, const std::exception &exception,
@@ -178,32 +180,31 @@ public:
 	
 	/** \brief Debug log message only printed if debugging is enabled. */
 	void LogDebug(const std::string &functionName, const std::string &message);
+	
+	void SendResponseFileBlockHashes(const std::string &path, uint32_t blockSize);
+	void SendFailResponseFileBlockHashes(const derlFile &file);
+	void SendResponseDeleteFile(const derlTaskFileDelete &task);
+	void SendFileDataReceivedBatch(const derlTaskFileWriteBlock &block);
+	void SendFileDataReceivedFinished(const derlTaskFileWriteBlock &block);
+	void SendResponseWriteFile(const derlTaskFileWrite &task);
+	void SendFailResponseWriteFile(const std::string &path);
+	void SendResponseFinishWriteFile(const derlTaskFileWrite &task);
 	/*@}*/
 	
 	
 private:
 	void pMessageReceivedConnect(denMessage &message);
 	
-	void pFinishFileBlockHashes(Lock &lockClient, derlTaskFileBlockHashes &task);
-	
-	void pProcessRequestLayout(Lock &lockClient);
-	void pProcessRequestFileBlockHashes(Lock &lockClient, denMessageReader &reader);
+	void pProcessRequestLayout();
+	void pProcessRequestFileBlockHashes(denMessageReader &reader);
 	void pProcessRequestDeleteFile(denMessageReader &reader);
-	void pProcessRequestWriteFile(Lock &lockClient, denMessageReader &reader);
+	void pProcessRequestWriteFile(denMessageReader &reader);
 	void pProcessSendFileData(denMessageReader &reader);
 	void pProcessRequestFinishWriteFile(denMessageReader &reader);
 	void pProcessStartApplication(denMessageReader &reader);
 	void pProcessStopApplication(denMessageReader &reader);
 	
 	void pSendResponseFileLayout(const derlFileLayout &layout);
-	void pSendResponseFileBlockHashes(const std::string &path, uint32_t blockSize);
-	void pSendResponseFileBlockHashes(const derlFile &file);
-	void pSendResponsesDeleteFile(const derlTaskFileDelete::List &tasks);
-	void pSendResponseWriteFiles(const derlTaskFileWrite::List &task);
-	void pSendResponseWriteFile(const std::string &path);
-	void pSendFileDataReceivedBatch(const std::string &path, const derlTaskFileWriteBlock::List &blocks);
-	void pSendFileDataReceivedFinished(const std::string &path, const derlTaskFileWriteBlock::List &blocks);
-	void pSendResponseFinishWriteFiles(const derlTaskFileWrite::List &task);
 };
 
 #endif

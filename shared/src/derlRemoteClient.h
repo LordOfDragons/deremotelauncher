@@ -29,6 +29,7 @@
 #include <vector>
 #include <mutex>
 #include <thread>
+#include <condition_variable>
 
 #include "derlFileLayout.h"
 #include "internal/derlRemoteClientConnection.h"
@@ -87,8 +88,11 @@ private:
 	
 	derlFileLayout::Ref pFileLayoutServer, pFileLayoutClient;
 	
-	derlTaskFileLayout::Ref pTaskFileLayoutServer, pTaskFileLayoutClient;
 	derlTaskSyncClient::Ref pTaskSyncClient;
+	
+	derlBaseTask::Queue pPendingTasks;
+	std::mutex pMutexPendingTasks;
+	std::condition_variable pConditionPendingTasks;
 	
 	derlTaskProcessorRemoteClient::Ref pTaskProcessor;
 	std::unique_ptr<std::thread> pThreadTaskProcessor;
@@ -120,25 +124,27 @@ public:
 	/** \brief Name identifying the client. */
 	const std::string &GetName() const;
 	
+	
+	
 	/** \brief Server file layout or nullptr. */
 	inline const derlFileLayout::Ref &GetFileLayoutServer() const{ return pFileLayoutServer; }
-	void SetFileLayoutServer( const derlFileLayout::Ref &layout );
+	
+	/** \brief Server file layout or nullptr while locking mutex. */
+	derlFileLayout::Ref GetFileLayoutServerSync();
+	
+	/** \brief Set server file layout. */
+	void SetFileLayoutServer(const derlFileLayout::Ref &layout);
 	
 	/** \brief Client file layout or nullptr. */
 	inline const derlFileLayout::Ref &GetFileLayoutClient() const{ return pFileLayoutClient; }
-	void SetFileLayoutClient( const derlFileLayout::Ref &layout );
 	
-	/** \brief Server file layout task. */
-	inline const derlTaskFileLayout::Ref &GetTaskFileLayoutServer() const{ return pTaskFileLayoutServer; }
-	void SetTaskFileLayoutServer(const derlTaskFileLayout::Ref &task);
+	/** \brief Client file layout or nullptr while locking mutex. */
+	derlFileLayout::Ref GetFileLayoutClientSync();
 	
-	/** \brief Client file layout task. */
-	inline const derlTaskFileLayout::Ref &GetTaskFileLayoutClient() const{ return pTaskFileLayoutClient; }
-	void SetTaskFileLayoutClient(const derlTaskFileLayout::Ref &task);
+	/** \brief Set client file layout. */
+	void SetFileLayoutClient(const derlFileLayout::Ref &layout);
 	
-	/** \brief Sync client task. */
-	inline const derlTaskSyncClient::Ref &GetTaskSyncClient() const{ return pTaskSyncClient; }
-	void SetTaskSyncClient(const derlTaskSyncClient::Ref &task);
+	
 	
 	/** \brief Path to data directory. */
 	inline const std::filesystem::path &GetPathDataDir() const{ return pPathDataDir; }
@@ -148,6 +154,36 @@ public:
 	
 	/** \brief Mutex for accessing client members. */
 	inline std::mutex &GetMutex(){ return pMutex; }
+	
+	
+	
+	/** \brief Sync client task. */
+	derlTaskSyncClient::Ref GetTaskSyncClient();
+	
+	
+	
+	/** \brief Pending tasks queue. */
+	inline derlBaseTask::Queue &GetPendingTasks(){ return pPendingTasks; }
+	inline std::mutex &GetMutexPendingTasks(){ return pMutexPendingTasks; }
+	inline std::condition_variable &GetConditionPendingTasks(){ return pConditionPendingTasks; }
+	
+	/**
+	 * \brief Remove all tasks of specific type.
+	 * \note Caller has to lock GetMutexPendingTasks().
+	 */
+	void RemovePendingTaskWithType(derlBaseTask::Type type);
+	
+	/**
+	 * \brief One or more pending tasks are present matching type.
+	 * \note Caller has to lock GetMutexPendingTasks().
+	 */
+	bool HasPendingTasksWithType(derlBaseTask::Type type);
+	
+	/** \brief Add pending task while holding mutex. */
+	void AddPendingTaskSync(const derlBaseTask::Ref &task);
+	
+	/** \brief Notify waiters a pending task has been added. */
+	void NotifyPendingTaskAdded();
 	
 	
 	
@@ -174,9 +210,7 @@ public:
 	/** \brief Set synchronize details for display. */
 	void SetSynchronizeDetails(const std::string &details);
 	
-	/**
-	 * \brief Synchronize client.
-	 */
+	/** \brief Synchronize client. */
 	virtual void Synchronize();
 	
 	

@@ -30,6 +30,7 @@
 #include "../derlFile.h"
 #include "../derlFileBlock.h"
 #include "../derlFileLayout.h"
+#include "../internal/derlLauncherClientConnection.h"
 
 
 // Class derlTaskProcessorLauncherClient
@@ -41,152 +42,115 @@ pClient(client)
 	pLogClassName = "derlTaskProcessorLauncherClient";
 }
 
-derlTaskProcessorLauncherClient::~derlTaskProcessorLauncherClient(){
-}
-
 // Management
 ///////////////
 
 bool derlTaskProcessorLauncherClient::RunTask(){
-	// pClient.ProcessReceivedMessages();
-	pClient.FinishPendingOperations();
-	
-	derlTaskFileBlockHashes::Ref taskFileBlockHashes;
-	derlTaskFileWriteBlock::Ref taskWriteFileBlockBlock;
-	derlTaskFileLayout::Ref taskFileLayout;
-	derlTaskFileDelete::Ref taskDeleteFile;
-	derlTaskFileWrite::Ref taskWriteFile, taskWriteFileBlock, taskFinishWriteFile;
-	
-	bool hasPendingTasks = false;
 	{
 	const std::lock_guard guard(pClient.GetMutex());
 	pBaseDir = pClient.GetPathDataDir();
 	pPartSize = pClient.GetPartSize();
 	pEnableDebugLog = pClient.GetEnableDebugLog();
-	
-	hasPendingTasks = pClient.GetTaskFileLayout()
-		|| !pClient.GetTasksFileBlockHashes().empty()
-		|| !pClient.GetTasksDeleteFile().empty()
-		|| !pClient.GetTasksWriteFile().empty();
-	
-	FindNextTaskFileLayout(taskFileLayout)
-	|| !pClient.GetFileLayout()
-	|| FindNextTaskFileBlockHashes(taskFileBlockHashes)
-	|| FindNextTaskDelete(taskDeleteFile)
-	|| FindNextTaskWriteFile(taskWriteFile)
-	|| FindNextTaskWriteFileBlock(taskWriteFileBlock, taskWriteFileBlockBlock)
-	|| FindNextTaskFinishWriteFile(taskFinishWriteFile);
+	pFileLayout = pClient.GetFileLayout();
 	}
 	
-	if(taskFileLayout){
-		ProcessFileLayout(*taskFileLayout);
-		return true;
-		
-	}else if(taskFileBlockHashes){
-		ProcessFileBlockHashes(*taskFileBlockHashes);
-		return true;
-		
-	}else if(taskDeleteFile){
-		ProcessDeleteFile(*taskDeleteFile);
-		return true;
-		
-	}else if(taskWriteFile){
-		ProcessWriteFile(*taskWriteFile);
-		return true;
-		
-	}else if(taskWriteFileBlock && taskWriteFileBlockBlock){
-		ProcessWriteFileBlock(*taskWriteFileBlock, *taskWriteFileBlockBlock);
-		return true;
-		
-	}else if(taskFinishWriteFile){
-		ProcessFinishWriteFile(*taskFinishWriteFile);
-		return true;
-		
-	}else{
-		return hasPendingTasks;
-	}
-}
-
-
-
-// Protected Functions
-////////////////////////
-
-bool derlTaskProcessorLauncherClient::FindNextTaskFileLayout(derlTaskFileLayout::Ref &task) const{
-	const derlTaskFileLayout::Ref checkTask(pClient.GetTaskFileLayout());
-	if(checkTask && checkTask->GetStatus() == derlTaskFileLayout::Status::pending){
-		task = checkTask;
-		task->SetStatus(derlTaskFileLayout::Status::processing);
-		return true;
-	}
-	return false;
-}
-
-bool derlTaskProcessorLauncherClient::FindNextTaskFileBlockHashes(derlTaskFileBlockHashes::Ref &task) const{
-	const derlTaskFileBlockHashes::Map &tasks = pClient.GetTasksFileBlockHashes();
-	derlTaskFileBlockHashes::Map::const_iterator iter;
-	for(iter = tasks.cbegin(); iter != tasks.cend(); iter++){
-		if(iter->second->GetStatus() != derlTaskFileBlockHashes::Status::pending){
-			continue;
-		}
-		
-		task = iter->second;
-		task->SetStatus(derlTaskFileBlockHashes::Status::processing);
-		return true;
+	derlBaseTask::Ref task;
+	if(!NextPendingTask(task)){
+		return false;
 	}
 	
-	return false;
-}
-
-bool derlTaskProcessorLauncherClient::FindNextTaskDelete(derlTaskFileDelete::Ref &task) const{
-	const derlTaskFileDelete::Map &tasks = pClient.GetTasksDeleteFile();
-	derlTaskFileDelete::Map::const_iterator iter;
-	for(iter = tasks.cbegin(); iter != tasks.cend(); iter++){
-		if(iter->second->GetStatus() != derlTaskFileDelete::Status::pending){
-			continue;
-		}
-		
-		task = iter->second;
-		task->SetStatus(derlTaskFileDelete::Status::processing);
-		return true;
-	}
+	bool returnValue = false;
 	
-	return false;
-}
-
-bool derlTaskProcessorLauncherClient::FindNextTaskWriteFile(derlTaskFileWrite::Ref &task) const{
-	const derlTaskFileWrite::Map &tasks = pClient.GetTasksWriteFile();
-	derlTaskFileWrite::Map::const_iterator iter;
-	for(iter = tasks.cbegin(); iter != tasks.cend(); iter++){
-		if(iter->second->GetStatus() == derlTaskFileWrite::Status::pending){
-			task = iter->second;
-			task->SetStatus(derlTaskFileWrite::Status::preparing);
-			return true;
-		}
-	}
-	
-	return false;
-}
-
-bool derlTaskProcessorLauncherClient::FindNextTaskWriteFileBlock(
-derlTaskFileWrite::Ref &task, derlTaskFileWriteBlock::Ref &block) const{
-	const derlTaskFileWrite::Map &tasks = pClient.GetTasksWriteFile();
-	derlTaskFileWrite::Map::const_iterator iter;
-	for(iter = tasks.cbegin(); iter != tasks.cend(); iter++){
-		if(iter->second->GetStatus() != derlTaskFileWrite::Status::processing){
-			continue;
-		}
+	switch(task->GetType()){
+	case derlBaseTask::Type::fileLayout:
+		ProcessFileLayout(static_cast<derlTaskFileLayout&>(*task));
+		returnValue = true;
+		break;
 		
-		const derlTaskFileWriteBlock::List &blocks = iter->second->GetBlocks();
-		derlTaskFileWriteBlock::List::const_iterator iterBlock;
-		for(iterBlock = blocks.cbegin(); iterBlock != blocks.cend(); iterBlock++){
-			if((*iterBlock)->GetStatus() != derlTaskFileWriteBlock::Status::dataReady){
-				continue;
-			}
+	case derlBaseTask::Type::fileBlockHashes:
+		ProcessFileBlockHashes(static_cast<derlTaskFileBlockHashes&>(*task));
+		returnValue = true;
+		break;
+		
+	case derlBaseTask::Type::fileDelete:
+		ProcessDeleteFile(static_cast<derlTaskFileDelete&>(*task));
+		returnValue = true;
+		break;
+		
+	case derlBaseTask::Type::fileWrite:{
+		derlTaskFileWrite &taskWrite = static_cast<derlTaskFileWrite&>(*task);
+		if(taskWrite.GetStatus() == derlTaskFileWrite::Status::pending){
+			ProcessWriteFile(taskWrite);
 			
-			task = iter->second;
-			block = *iterBlock;
-			block->SetStatus(derlTaskFileWriteBlock::Status::processing);
+		}else{ //derlTaskFileWrite::Status::finishing:
+			ProcessFinishWriteFile(taskWrite);
+		}
+		returnValue = true;
+		}break;
+		
+	case derlBaseTask::Type::fileWriteBlock:
+		ProcessWriteFileBlock(static_cast<derlTaskFileWriteBlock&>(*task));
+		returnValue = true;
+		break;
+		
+	default:
+		break;
+	}
+	
+	return returnValue;
+}
+
+bool derlTaskProcessorLauncherClient::NextPendingTask(derlBaseTask::Ref &task){
+	if(pExit){
+		return false;
+	}
+	
+	std::unique_lock guard(pClient.GetMutexPendingTasks());
+	derlBaseTask::Queue &tasks = pClient.GetPendingTasks();
+	if(tasks.empty()){
+		pClient.GetConditionPendingTasks().wait(guard);
+		if(tasks.empty() || pExit){
+			return false;
+		}
+	}
+	
+	derlBaseTask::Queue::const_iterator iter;
+	for(iter=tasks.cbegin(); iter!=tasks.cend(); iter++){
+		const derlBaseTask::Ref &pendingTask = *iter;
+		bool found = false;
+		
+		switch(pendingTask->GetType()){
+		case derlBaseTask::Type::fileLayout:
+			found = true;
+			break;
+			
+		case derlBaseTask::Type::fileBlockHashes:
+		case derlBaseTask::Type::fileDelete:
+		case derlBaseTask::Type::fileWriteBlock:
+			found = pFileLayout != nullptr;
+			break;
+			
+		case derlBaseTask::Type::fileWrite:
+			if(pFileLayout){
+				switch(std::static_pointer_cast<derlTaskFileWrite>(pendingTask)->GetStatus()){
+				case derlTaskFileWrite::Status::pending:
+				case derlTaskFileWrite::Status::finishing:
+					found = true;
+					break;
+					
+				default:
+					break;
+				}
+			}
+			break;
+			
+		default:
+			break;
+		}
+		
+		if(found){
+			task = pendingTask;
+			tasks.erase(iter);
 			return true;
 		}
 	}
@@ -195,125 +159,110 @@ derlTaskFileWrite::Ref &task, derlTaskFileWriteBlock::Ref &block) const{
 }
 
 void derlTaskProcessorLauncherClient::ProcessFileBlockHashes(derlTaskFileBlockHashes &task){
+	const uint64_t blockSize = task.GetBlockSize();
+	const std::string &path = task.GetPath();
+	
 	if(pEnableDebugLog){
 		std::stringstream ss;
-		ss << "Calculate block hashes size " << task.GetBlockSize() << " for " << task.GetPath();
+		ss << "Calculate block hashes size " << blockSize << " for " << path;
 		LogDebug("ProcessFileBlockHashes", ss.str());
 	}
 	
-	derlTaskFileBlockHashes::Status status;
-	derlFileBlock::List blocks;
-	
 	try{
-		CalcFileBlockHashes(blocks, task.GetPath(), task.GetBlockSize());
-		status = derlTaskFileBlockHashes::Status::success;
+		if(!pFileLayout){
+			throw std::runtime_error("Layout missing, internal error");
+		}
+		
+		derlFileBlock::List blocks;
+		CalcFileBlockHashes(blocks, path, blockSize);
+		
+		derlFile::Ref file;
+		{
+		const std::lock_guard guard(pFileLayout->GetMutex());
+		file = pFileLayout->GetFileAt(path);
+		if(!file){
+			throw std::runtime_error("File not found in layout");
+		}
+		
+		file = std::make_shared<derlFile>(*file);
+		file->SetBlockSize(blockSize);
+		file->SetBlocks(blocks);
+		pFileLayout->SetFileAt(path, file);
+		}
+		
+		task.SetStatus(derlTaskFileBlockHashes::Status::success);
+		pClient.GetConnection().SendFailResponseFileBlockHashes(*file);
 		
 	}catch(const std::exception &e){
 		std::stringstream ss;
-		ss << "Failed size " << task.GetBlockSize() << " for " << task.GetPath();
+		ss << "Failed size " << blockSize << " for " << path;
 		LogException("ProcessFileBlockHashes", e, ss.str());
-		status = derlTaskFileBlockHashes::Status::failure;
+		task.SetStatus(derlTaskFileBlockHashes::Status::failure);
+		pClient.GetConnection().SendFailResponseFileBlockHashes(path);
 		
 	}catch(...){
 		std::stringstream ss;
-		ss << "Failed size " << task.GetBlockSize() << " for " << task.GetPath();
+		ss << "Failed size " << blockSize << " for " << path;
 		Log(denLogger::LogSeverity::error, "ProcessFileBlockHashes", ss.str());
-		status = derlTaskFileBlockHashes::Status::failure;
+		task.SetStatus(derlTaskFileBlockHashes::Status::failure);
+		pClient.GetConnection().SendFailResponseFileBlockHashes(path);
 	}
-	
-	const std::lock_guard guard(pClient.GetMutex());
-	if(status == derlTaskFileBlockHashes::Status::success){
-		const derlFileLayout::Ref layout(pClient.GetFileLayout());
-		derlFile::Ref file;
-		
-		if(layout){
-			file = layout->GetFileAt(task.GetPath());
-		}
-		
-		if(file){
-			file->SetBlockSize(task.GetBlockSize());
-			file->SetBlocks(blocks);
-			
-		}else{
-			std::stringstream message;
-			message << "File not found in layout: " << task.GetPath();
-			Log(denLogger::LogSeverity::error, "ProcessFileBlockHashes", message.str());
-			status = derlTaskFileBlockHashes::Status::failure;
-		}
-	}
-	task.SetStatus(status);
-}
-
-bool derlTaskProcessorLauncherClient::FindNextTaskFinishWriteFile(derlTaskFileWrite::Ref &task) const{
-	const derlTaskFileWrite::Map &tasks = pClient.GetTasksWriteFile();
-	derlTaskFileWrite::Map::const_iterator iter;
-	for(iter = tasks.cbegin(); iter != tasks.cend(); iter++){
-		if(iter->second->GetStatus() == derlTaskFileWrite::Status::finishing){
-			task = iter->second;
-			task->SetStatus(derlTaskFileWrite::Status::validating);
-			return true;
-		}
-	}
-	
-	return false;
 }
 
 void derlTaskProcessorLauncherClient::ProcessFileLayout(derlTaskFileLayout &task){
 	LogDebug("ProcessFileLayout", "Build file layout");
 	
-	derlTaskFileLayout::Status status;
-	derlFileLayout::Ref layout;
-	
 	try{
-		layout = std::make_shared<derlFileLayout>();
+		const derlFileLayout::Ref layout(std::make_shared<derlFileLayout>());
 		CalcFileLayout(*layout, "");
-		status = derlTaskFileLayout::Status::success;
+		task.SetLayout(layout);
+		task.SetStatus(derlTaskFileLayout::Status::success);
+		pClient.SetFileLayoutSync(layout);
 		
 	}catch(const std::exception &e){
 		LogException("ProcessFileLayout", e, "Failed");
-		status = derlTaskFileLayout::Status::failure;
+		task.SetStatus(derlTaskFileLayout::Status::failure);
+		pClient.SetFileLayoutSync(nullptr);
 		
 	}catch(...){
 		Log(denLogger::LogSeverity::error, "ProcessFileLayout", "Failed");
-		status = derlTaskFileLayout::Status::failure;
-	}
-	
-	const std::lock_guard guard(pClient.GetMutex());
-	task.SetStatus(status);
-	if(status == derlTaskFileLayout::Status::success){
-		task.SetLayout(layout);
+		task.SetStatus(derlTaskFileLayout::Status::failure);
+		pClient.SetFileLayoutSync(nullptr);
 	}
 }
 
 void derlTaskProcessorLauncherClient::ProcessDeleteFile(derlTaskFileDelete &task){
+	const std::string &path = task.GetPath();
+	
 	if(pEnableDebugLog){
 		std::stringstream ss;
-		ss << "Delete file " << task.GetPath();
+		ss << "Delete file " << path;
 		LogDebug("ProcessDeleteFile", ss.str());
 	}
 	
-	derlTaskFileDelete::Status status;
-	
 	try{
 		DeleteFile(task);
-		status = derlTaskFileDelete::Status::success;
+		task.SetStatus(derlTaskFileDelete::Status::success);
+		pFileLayout->RemoveFileIfPresentSync(path);
 		
 	}catch(const std::exception &e){
 		std::stringstream ss;
 		ss << "Failed " << task.GetPath();
 		LogException("ProcessDeleteFile", e, ss.str());
-		status = derlTaskFileDelete::Status::failure;
+		task.SetStatus(derlTaskFileDelete::Status::failure);
+		pFileLayout->RemoveFileIfPresentSync(path);
+		pClient.SetDirtyFileLayoutSync(true);
 		
 	}catch(...){
 		std::stringstream ss;
 		ss << "Failed " << task.GetPath();
 		Log(denLogger::LogSeverity::error, "ProcessDeleteFile", ss.str());
-		status = derlTaskFileDelete::Status::failure;
+		task.SetStatus(derlTaskFileDelete::Status::failure);
+		pFileLayout->RemoveFileIfPresentSync(path);
+		pClient.SetDirtyFileLayoutSync(true);
 	}
 	
-	const std::lock_guard guard(pClient.GetMutex());
-	pClient.GetFileLayout()->RemoveFileIfPresent(task.GetPath());
-	task.SetStatus(status);
+	pClient.GetConnection().SendResponseDeleteFile(task);
 }
 
 void derlTaskProcessorLauncherClient::ProcessWriteFile(derlTaskFileWrite &task){
@@ -323,90 +272,89 @@ void derlTaskProcessorLauncherClient::ProcessWriteFile(derlTaskFileWrite &task){
 		LogDebug("ProcessWriteFile", ss.str());
 	}
 	
-	derlTaskFileWrite::Status status;
-	
 	try{
 		if(task.GetTruncate()){
 			TruncateFile(task.GetPath());
 		}
-		status = derlTaskFileWrite::Status::prepared;
+		task.SetStatus(derlTaskFileWrite::Status::processing);
 		
 	}catch(const std::exception &e){
 		std::stringstream ss;
 		ss << "Failed " << task.GetPath();
 		LogException("ProcessWriteFile", e, ss.str());
 		CloseFile();
-		status = derlTaskFileWrite::Status::failure;
+		task.SetStatus(derlTaskFileWrite::Status::failure);
+		pClient.SetDirtyFileLayoutSync(true);
 		
 	}catch(...){
 		std::stringstream ss;
 		ss << "Failed " << task.GetPath();
 		Log(denLogger::LogSeverity::error, "ProcessWriteFile", ss.str());
 		CloseFile();
-		status = derlTaskFileWrite::Status::failure;
+		task.SetStatus(derlTaskFileWrite::Status::failure);
+		pClient.SetDirtyFileLayoutSync(true);
 	}
 	
-	const std::lock_guard guard(pClient.GetMutex());
-	task.SetStatus(status);
+	pClient.GetConnection().SendResponseWriteFile(task);
 }
 
-void derlTaskProcessorLauncherClient::ProcessWriteFileBlock(derlTaskFileWrite &task,
-derlTaskFileWriteBlock &block){
+void derlTaskProcessorLauncherClient::ProcessWriteFileBlock(derlTaskFileWriteBlock &task){
+	const uint64_t blockSize = task.GetParentTask().GetBlockSize();
+	const std::string &path = task.GetParentTask().GetPath();
+	
 	if(pEnableDebugLog){
 		std::stringstream ss;
-		ss << "Write block size " << block.GetSize()
-			<< " index " << block.GetIndex() << " path " << task.GetPath();
+		ss << "Write block size " << task.GetSize()
+			<< " index " << task.GetIndex() << " path " << path;
 		LogDebug("ProcessWriteFileBlock", ss.str());
 	}
 	
-	derlTaskFileWriteBlock::Status status;
-	
 	try{
-		OpenFile(task.GetPath(), true);
-		WriteFile(block.GetData().c_str(), task.GetBlockSize() * block.GetIndex(), block.GetSize());
+		OpenFile(path, true);
+		WriteFile(task.GetData().c_str(), blockSize * task.GetIndex(), task.GetSize());
 		CloseFile();
-		status = derlTaskFileWriteBlock::Status::success;
+		task.SetStatus(derlTaskFileWriteBlock::Status::success);
 		
 	}catch(const std::exception &e){
 		std::stringstream ss;
-		ss << "Failed size " << block.GetSize()
-			<< " index " << block.GetIndex() << " path " << task.GetPath();
+		ss << "Failed size " << task.GetSize()
+			<< " index " << task.GetIndex() << " path " << path;
 		LogException("ProcessWriteFileBlock", e, ss.str());
 		CloseFile();
-		status = derlTaskFileWriteBlock::Status::failure;
+		task.SetStatus(derlTaskFileWriteBlock::Status::failure);
+		pClient.SetDirtyFileLayoutSync(true);
 		
 	}catch(...){
 		std::stringstream ss;
-		ss << "Failed size " << block.GetSize()
-			<< " index " << block.GetIndex() << " path " << task.GetPath();
+		ss << "Failed size " << task.GetSize()
+			<< " index " << task.GetIndex() << " path " << path;
 		Log(denLogger::LogSeverity::error, "ProcessWriteFileBlock", ss.str());
 		CloseFile();
-		status = derlTaskFileWriteBlock::Status::failure;
+		task.SetStatus(derlTaskFileWriteBlock::Status::failure);
+		pClient.SetDirtyFileLayoutSync(true);
 	}
 	
-	const std::lock_guard guard(pClient.GetMutex());
-	block.SetStatus(status);
+	pClient.GetConnection().SendFileDataReceivedFinished(task);
 }
 
 void derlTaskProcessorLauncherClient::ProcessFinishWriteFile(derlTaskFileWrite &task){
-	derlTaskFileWrite::Status status;
-	derlFile::Ref file;
-	
 	try{
-		file = std::make_shared<derlFile>(task.GetPath());
+		const derlFile::Ref file(std::make_shared<derlFile>(task.GetPath()));
 		file->SetSize(task.GetFileSize());
 		file->SetBlockSize(task.GetBlockSize());
 		CalcFileHash(*file);
 		CloseFile();
 		
 		if(file->GetHash() == task.GetHash()){
-			status = derlTaskFileWrite::Status::success;
+			task.SetStatus(derlTaskFileWrite::Status::success);
+			pFileLayout->AddFileSync(file);
 			
 		}else{
 			std::stringstream ss;
 			ss << "Finish write failed (hash mismatch) " << task.GetPath();
 			Log(denLogger::LogSeverity::error, "ProcessFinishWriteFile", ss.str());
-			status = derlTaskFileWrite::Status::validationFailed;
+			task.SetStatus(derlTaskFileWrite::Status::validationFailed);
+			pClient.SetDirtyFileLayoutSync(true);
 		}
 		
 	}catch(const std::exception &e){
@@ -414,23 +362,19 @@ void derlTaskProcessorLauncherClient::ProcessFinishWriteFile(derlTaskFileWrite &
 		ss << "Finish write failed " << task.GetPath();
 		LogException("ProcessFinishWriteFile", e, ss.str());
 		CloseFile();
-		status = derlTaskFileWrite::Status::failure;
-		file = nullptr;
+		task.SetStatus(derlTaskFileWrite::Status::failure);
+		pClient.SetDirtyFileLayoutSync(true);
 		
 	}catch(...){
 		std::stringstream ss;
 		ss << "Finish write failed " << task.GetPath();
 		Log(denLogger::LogSeverity::error, "ProcessFinishWriteFile", ss.str());
 		CloseFile();
-		status = derlTaskFileWrite::Status::failure;
-		file = nullptr;
+		task.SetStatus(derlTaskFileWrite::Status::failure);
+		pClient.SetDirtyFileLayoutSync(true);
 	}
 	
-	const std::lock_guard guard(pClient.GetMutex());
-	if(file){
-		pClient.GetFileLayout()->AddFile(file);
-	}
-	task.SetStatus(status);
+	pClient.GetConnection().SendResponseFinishWriteFile(task);
 }
 
 void derlTaskProcessorLauncherClient::DeleteFile(const derlTaskFileDelete &task){

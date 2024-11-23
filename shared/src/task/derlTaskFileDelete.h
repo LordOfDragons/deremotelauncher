@@ -25,16 +25,15 @@
 #ifndef _DERLTASKFILEDELETE_H_
 #define _DERLTASKFILEDELETE_H_
 
-#include <memory>
 #include <string>
-#include <vector>
-#include <unordered_map>
+
+#include "derlBaseTask.h"
 
 
 /**
  * \brief File delete task.
  */
-class derlTaskFileDelete{
+class derlTaskFileDelete : public derlBaseTask{
 public:
 	/** \brief Reference type. */
 	typedef std::shared_ptr<derlTaskFileDelete> Ref;
@@ -64,9 +63,6 @@ public:
 	/*@{*/
 	/** \brief Create task. */
 	derlTaskFileDelete(const std::string &path);
-	
-	/** \brief Clean up task. */
-	~derlTaskFileDelete() noexcept;
 	/*@}*/
 	
 	

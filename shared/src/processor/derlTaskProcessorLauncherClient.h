@@ -26,7 +26,7 @@
 #define _DERLTASKPROCESSORLAUNCHERCLIENT_H_
 
 #include "derlBaseTaskProcessor.h"
-
+#include "../derlFileLayout.h"
 #include "../task/derlTaskFileBlockHashes.h"
 #include "../task/derlTaskFileDelete.h"
 #include "../task/derlTaskFileWrite.h"
@@ -48,6 +48,7 @@ public:
 	
 protected:
 	derlLauncherClient &pClient;
+	derlFileLayout::Ref pFileLayout;
 	
 	
 public:
@@ -55,9 +56,6 @@ public:
 	/*@{*/
 	/** \brief Create processor. */
 	derlTaskProcessorLauncherClient(derlLauncherClient &client);
-	
-	/** \brief Clean up processor. */
-	virtual ~derlTaskProcessorLauncherClient() noexcept;
 	/*@}*/
 	
 	
@@ -76,40 +74,15 @@ public:
 	
 	
 	/**
-	 * \brief Find next file layout task.
-	 * \returns true if task is found otherwise false.
+	 * \brief Next pending tasks or nullptr.
+	 * 
+	 * If no task is pending waits on the client pending task condition. If the condition is
+	 * signled the next pending tasks is popped from the queue and stored in the task parameter
+	 * if present and true is returned. Otherwise the task parameter stays unchanged and false
+	 * is returned. If the condition is spuriously signled the task parameter stays unchanged
+	 * and false is returned.
 	 */
-	bool FindNextTaskFileLayout(derlTaskFileLayout::Ref &task) const;
-	
-	/**
-	 * \brief Find next file block hashes task.
-	 * \returns true if task is found otherwise false.
-	 */
-	bool FindNextTaskFileBlockHashes(derlTaskFileBlockHashes::Ref &task) const;
-	
-	/**
-	 * \brief Find next delete file task.
-	 * \returns true if task is found otherwise false.
-	 */
-	bool FindNextTaskDelete(derlTaskFileDelete::Ref &task) const;
-	
-	/**
-	 * \brief Find next write file task.
-	 * \returns true if task is found otherwise false.
-	 */
-	bool FindNextTaskWriteFile(derlTaskFileWrite::Ref &task) const;
-	
-	/**
-	 * \brief Find next write file block task.
-	 * \returns true if task is found otherwise false.
-	 */
-	bool FindNextTaskWriteFileBlock(derlTaskFileWrite::Ref &task, derlTaskFileWriteBlock::Ref &block) const;
-	
-	/**
-	 * \brief Find next finish write file task.
-	 * \returns true if task is found otherwise false.
-	 */
-	bool FindNextTaskFinishWriteFile(derlTaskFileWrite::Ref &task) const;
+	bool NextPendingTask(derlBaseTask::Ref &task);
 	
 	
 	
@@ -126,7 +99,7 @@ public:
 	virtual void ProcessWriteFile(derlTaskFileWrite &task);
 	
 	/** \brief Process task write file block. */
-	virtual void ProcessWriteFileBlock(derlTaskFileWrite &task, derlTaskFileWriteBlock &block);
+	virtual void ProcessWriteFileBlock(derlTaskFileWriteBlock &task);
 	
 	/** \brief Process task finish write file. */
 	virtual void ProcessFinishWriteFile(derlTaskFileWrite &task);

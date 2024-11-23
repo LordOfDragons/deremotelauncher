@@ -22,6 +22,7 @@
  * SOFTWARE.
  */
 
+#include <algorithm>
 #include <stdexcept>
 
 #include "derlRemoteClient.h"
@@ -54,28 +55,63 @@ const std::string &derlRemoteClient::GetName() const{
 	return pConnection->GetName();
 }
 
+derlFileLayout::Ref derlRemoteClient::GetFileLayoutServerSync(){
+	const std::lock_guard guard(pMutex);
+	return pFileLayoutServer;
+}
+
 void derlRemoteClient::SetFileLayoutServer(const derlFileLayout::Ref &layout){
+	const std::lock_guard guard(pMutex);
 	pFileLayoutServer = layout;
 }
 
+derlFileLayout::Ref derlRemoteClient::GetFileLayoutClientSync(){
+	const std::lock_guard guard(pMutex);
+	return pFileLayoutClient;
+}
+
 void derlRemoteClient::SetFileLayoutClient(const derlFileLayout::Ref &layout){
+	const std::lock_guard guard(pMutex);
 	pFileLayoutClient = layout;
-}
-
-void derlRemoteClient::SetTaskFileLayoutServer(const derlTaskFileLayout::Ref &task){
-	pTaskFileLayoutServer = task;
-}
-
-void derlRemoteClient::SetTaskFileLayoutClient(const derlTaskFileLayout::Ref &task){
-	pTaskFileLayoutClient = task;
-}
-
-void derlRemoteClient::SetTaskSyncClient(const derlTaskSyncClient::Ref &task){
-	pTaskSyncClient = task;
 }
 
 int derlRemoteClient::GetPartSize() const{
 	return pConnection->GetPartSize();
+}
+
+derlTaskSyncClient::Ref derlRemoteClient::GetTaskSyncClient(){
+	const std::lock_guard guard(pMutex);
+	return pTaskSyncClient;
+}
+
+void derlRemoteClient::RemovePendingTaskWithType(derlBaseTask::Type type){
+	const std::lock_guard guard(pMutexPendingTasks);
+	derlBaseTask::Queue filtered;
+	for(const derlBaseTask::Ref &task : pPendingTasks){
+		if(task->GetType() != type){
+			filtered.push_back(task);
+		}
+	}
+	pPendingTasks.swap(filtered);
+}
+
+bool derlRemoteClient::HasPendingTasksWithType(derlBaseTask::Type type){
+	return std::find_if(pPendingTasks.cbegin(), pPendingTasks.cend(),
+		[type](const derlBaseTask::Ref &task){
+			return task->GetType() == type;
+		}) != pPendingTasks.cend();
+}
+
+void derlRemoteClient::AddPendingTaskSync(const derlBaseTask::Ref &task){
+	{
+	const std::lock_guard guard(pMutexPendingTasks);
+	pPendingTasks.push_back(task);
+	}
+	NotifyPendingTaskAdded();
+}
+
+void derlRemoteClient::NotifyPendingTaskAdded(){
+	pConditionPendingTasks.notify_all();
 }
 
 const denLogger::Ref &derlRemoteClient::GetLogger() const{
@@ -111,7 +147,7 @@ void derlRemoteClient::Synchronize(){
 	pSynchronizeStatus = SynchronizeStatus::processing;
 	
 	pFileLayoutServer = nullptr;
-	if(/*!pFileLayoutServer &&*/ !pTaskFileLayoutServer){
+	if(!pTaskFileLayoutServer){
 		pTaskFileLayoutServer = std::make_shared<derlTaskFileLayout>();
 	}
 	

@@ -70,22 +70,15 @@ public:
 	
 	
 	/**
-	 * \brief Find next server file layout task.
-	 * \returns true if task is found otherwise false.
+	 * \brief Next pending tasks or nullptr.
+	 * 
+	 * If no task is pending waits on the client pending task condition. If the condition is
+	 * signled the next pending tasks is popped from the queue and stored in the task parameter
+	 * if present and true is returned. Otherwise the task parameter stays unchanged and false
+	 * is returned. If the condition is spuriously signled the task parameter stays unchanged
+	 * and false is returned.
 	 */
-	bool FindNextTaskLayoutServer(derlTaskFileLayout::Ref &task) const;
-	
-	/**
-	 * \brief Find next sync client task.
-	 * \returns true if task is found otherwise false.
-	 */
-	bool FindNextTaskSyncClient(derlTaskSyncClient::Ref &task) const;
-	
-	/**
-	 * \brief Find next read file blocks task.
-	 * \returns true if task is found otherwise false.
-	 */
-	bool FindNextTaskReadFileBlocks(derlTaskFileWrite::Ref &task) const;
+	bool NextPendingTask(derlBaseTask::Ref &task);
 	
 	
 	

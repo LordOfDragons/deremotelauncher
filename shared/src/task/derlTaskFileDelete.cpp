@@ -29,11 +29,9 @@
 /////////////////////////////
 
 derlTaskFileDelete::derlTaskFileDelete(const std::string &path) :
+derlBaseTask(Type::fileDelete),
 pPath(path),
 pStatus(Status::pending){
-}
-
-derlTaskFileDelete::~derlTaskFileDelete(){
 }
 
 

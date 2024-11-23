@@ -25,8 +25,9 @@
 #ifndef _DERLTASKSYNCCLIENT_H_
 #define _DERLTASKSYNCCLIENT_H_
 
-#include <memory>
 #include <string>
+
+#include "derlBaseTask.h"
 
 #include "derlTaskFileWrite.h"
 #include "derlTaskFileDelete.h"
@@ -37,7 +38,7 @@
 /**
  * \brief Synchronize client task.
  */
-class derlTaskSyncClient{
+class derlTaskSyncClient : public derlBaseTask{
 public:
 	/** \brief Reference type. */
 	typedef std::shared_ptr<derlTaskSyncClient> Ref;
@@ -67,9 +68,6 @@ public:
 	/*@{*/
 	/** \brief Create task. */
 	derlTaskSyncClient();
-	
-	/** \brief Clean up task. */
-	~derlTaskSyncClient() noexcept;
 	/*@}*/
 	
 	

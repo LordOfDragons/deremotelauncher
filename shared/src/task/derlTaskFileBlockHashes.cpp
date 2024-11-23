@@ -29,12 +29,10 @@
 //////////////////////////////////
 
 derlTaskFileBlockHashes::derlTaskFileBlockHashes(const std::string &path, uint64_t blockSize) :
+derlBaseTask(Type::fileBlockHashes),
 pPath(path),
 pStatus(Status::pending),
 pBlockSize(blockSize){
-}
-
-derlTaskFileBlockHashes::~derlTaskFileBlockHashes(){
 }
 
 

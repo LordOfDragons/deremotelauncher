@@ -62,10 +62,11 @@ private:
 public:
 	/** \name Constructors and Destructors */
 	/*@{*/
-	/**
-	 * \brief Create file.
-	 */
-	derlFile( const std::string &path );
+	/** \brief Create file. */
+	derlFile(const std::string &path);
+	
+	/** \brief Copy file. */
+	derlFile(const derlFile &file);
 	
 	/** \brief Clean up remote launcher support. */
 	~derlFile() noexcept;

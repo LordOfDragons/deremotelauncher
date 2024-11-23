@@ -29,10 +29,8 @@
 /////////////////////////////
 
 derlTaskSyncClient::derlTaskSyncClient() :
+derlBaseTask(Type::syncClient),
 pStatus(Status::pending){
-}
-
-derlTaskSyncClient::~derlTaskSyncClient(){
 }
 
 

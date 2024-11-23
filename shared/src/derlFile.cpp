@@ -38,6 +38,15 @@ pHasBlocks(false),
 pBlockSize(0){
 }
 
+derlFile::derlFile(const derlFile &file) :
+pPath(file.pPath),
+pSize(file.pSize),
+pHash(file.pHash),
+pBlocks(file.pBlocks),
+pHasBlocks(file.pHasBlocks),
+pBlockSize(file.pBlockSize){
+}
+
 derlFile::~derlFile(){
 }
 

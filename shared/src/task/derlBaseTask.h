@@ -22,66 +22,74 @@
  * SOFTWARE.
  */
 
-#ifndef _DERLTASKFILELAYOUT_H_
-#define _DERLTASKFILELAYOUT_H_
+#ifndef _DERLBASETASK_H_
+#define _DERLBASETASK_H_
 
-#include <string>
-
-#include "derlBaseTask.h"
-#include "../derlFileLayout.h"
+#include <memory>
+#include <vector>
+#include <queue>
+#include <unordered_map>
 
 
 /**
- * \brief File layout task.
+ * \brief Base class for tasks.
  */
-class derlTaskFileLayout : public derlBaseTask{
+class derlBaseTask{
 public:
 	/** \brief Reference type. */
-	typedef std::shared_ptr<derlTaskFileLayout> Ref;
+	typedef std::shared_ptr<derlBaseTask> Ref;
 	
-	/** \brief Status. */
-	enum class Status{
-		pending,
-		processing,
-		success,
-		failure
-	};
+	/** \brief Reference list. */
+	typedef std::vector<Ref> List;
 	
-	/** \brief Target */
-	enum class Target{
-		server,
-		client
+	/** \brief Reference map keyed by path. */
+	typedef std::unordered_map<std::string, Ref> Map;
+	
+	/** \brief Reference queue. */
+	typedef std::deque<Ref> Queue;
+	
+	/** \brief Task type. */
+	enum class Type{
+		/** \brief derlTaskSyncClient. */
+		syncClient,
+		
+		/** \brief derlTaskFileLayout. */
+		fileLayout,
+		
+		/** \brief derlTaskFileBlockHashes. */
+		fileBlockHashes,
+		
+		/** \brief derlTaskFileDelete. */
+		fileDelete,
+		
+		/** \brief derlTaskFileWrite. */
+		fileWrite,
+		
+		/** \brief derlTaskFileWriteBlock. */
+		fileWriteBlock
 	};
 	
 	
 private:
-	Status pStatus;
-	Target pTarget;
-	derlFileLayout::Ref pLayout;
+	const Type pType;
 	
 	
 public:
 	/** \name Constructors and Destructors */
 	/*@{*/
 	/** \brief Create task. */
-	derlTaskFileLayout();
+	derlBaseTask(Type type);
+	
+	/** \brief Clean up task. */
+	virtual ~derlBaseTask() = default;
 	/*@}*/
 	
 	
 	
 	/** \name Management */
 	/*@{*/
-	/** \brief Status. */
-	inline Status GetStatus() const{ return pStatus; }
-	void SetStatus(Status status);
-	
-	/** \brief Target. */
-	inline Target GetTarget() const{ return pTarget; }
-	void SetTarget(Target target);
-	
-	/** \brief Layout. */
-	inline const derlFileLayout::Ref &GetLayout() const{ return pLayout; }
-	void SetLayout(const derlFileLayout::Ref &layout);
+	/** \brief Type. */
+	inline Type GetType() const{ return pType; }
 	/*@}*/
 };
 

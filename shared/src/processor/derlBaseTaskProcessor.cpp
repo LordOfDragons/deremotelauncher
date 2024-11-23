@@ -59,7 +59,6 @@ void derlBaseTaskProcessor::SetPartSize(uint64_t size){
 }
 
 void derlBaseTaskProcessor::Exit(){
-	const std::lock_guard guard(pMutex);
 	pExit = true;
 }
 
@@ -67,18 +66,15 @@ void derlBaseTaskProcessor::Run(){
 	pNoTaskTimeoutBegin = std::chrono::steady_clock::now();
 	
 	while(true){
-		{
-		const std::lock_guard guard(pMutex);
 		if(pExit){
 			break;
 		}
-		}
 		
-		// const std::chrono::steady_clock::time_point tts(std::chrono::steady_clock::now());
+		const std::chrono::steady_clock::time_point tts(std::chrono::steady_clock::now());
 		if(RunTask()){
-				// std::stringstream ss;
-				// ss << "task time true " << std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::steady_clock::now() - tts).count();
-				// GetLogger()->Log(denLogger::LogSeverity::info, ss.str());
+				std::stringstream ss;
+				ss << "task time true " << std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::steady_clock::now() - tts).count();
+				GetLogger()->Log(denLogger::LogSeverity::info, ss.str());
 			pNoTaskTimeoutBegin = std::chrono::steady_clock::now();
 			continue;
 		}

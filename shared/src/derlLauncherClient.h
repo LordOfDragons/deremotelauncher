@@ -29,15 +29,14 @@
 #include <vector>
 #include <mutex>
 #include <thread>
+#include <condition_variable>
 #include <filesystem>
+
+#include <denetwork/denConnection.h>
 
 #include "derlFileLayout.h"
 #include "processor/derlTaskProcessorLauncherClient.h"
-#include "task/derlTaskFileWrite.h"
-#include "task/derlTaskFileDelete.h"
-#include "task/derlTaskFileBlockHashes.h"
-#include "task/derlTaskFileLayout.h"
-#include <denetwork/denConnection.h>
+#include "task/derlBaseTask.h"
 
 
 class derlLauncherClientConnection;
@@ -67,15 +66,14 @@ private:
 	std::string pName;
 	std::filesystem::path pPathDataDir;
 	
-	derlFileLayout::Ref pFileLayout;
+	derlFileLayout::Ref pFileLayout, pNextFileLayout;
 	bool pDirtyFileLayout;
 	
 	std::mutex pMutex;
 	
-	derlTaskFileLayout::Ref pTaskFileLayout;
-	derlTaskFileWrite::Map pTasksWriteFile;
-	derlTaskFileDelete::Map pTaskDeleteFiles;
-	derlTaskFileBlockHashes::Map pTasksFileBlockHashes;
+	derlBaseTask::Queue pPendingTasks;
+	std::mutex pMutexPendingTasks;
+	std::condition_variable pConditionPendingTasks;
 	
 	derlTaskProcessorLauncherClient::Ref pTaskProcessor;
 	std::unique_ptr<std::thread> pThreadTaskProcessor;
@@ -119,35 +117,65 @@ public:
 	
 	/** \brief Part size. */
 	int GetPartSize() const;
-		
+	
+	
+	
 	/** \brief File layout or nullptr. */
 	inline const derlFileLayout::Ref &GetFileLayout() const{ return pFileLayout; }
-	void SetFileLayout( const derlFileLayout::Ref &layout );
 	
-	/** \brief File layout task. */
-	inline const derlTaskFileLayout::Ref &GetTaskFileLayout() const{ return pTaskFileLayout; }
-	void SetTaskFileLayout(const derlTaskFileLayout::Ref &task);
+	/** \brief File layout or nullptr while locking muted. */
+	derlFileLayout::Ref GetFileLayoutSync();
 	
-	/** \brief File layout is dirty. */
-	inline bool GetDirtyFileLayout() const{ return pDirtyFileLayout; }
-	void SetDirtyFileLayout(bool dirty);
+	/**
+	 * \brief Set file layout while locking mutex.
+	 * 
+	 * Actual change happens during the next Update() call.
+	 */
+	void SetFileLayoutSync(const derlFileLayout::Ref &layout);
 	
-	/** \brief Delete file tasks. */
-	inline const derlTaskFileDelete::Map &GetTasksDeleteFile() const{ return pTaskDeleteFiles; }
-	inline derlTaskFileDelete::Map &GetTasksDeleteFile(){ return pTaskDeleteFiles; }
+	/**
+	 * \brief Set file layout dirty while locking mutex.
+	 * 
+	 * Actual change happens during the next Update() call.
+	 */
+	void SetDirtyFileLayoutSync(bool dirty);
 	
-	/** \brief Write file tasks. */
-	inline const derlTaskFileWrite::Map &GetTasksWriteFile() const{ return pTasksWriteFile; }
-	inline derlTaskFileWrite::Map &GetTasksWriteFile(){ return pTasksWriteFile; }
 	
-	/** \brief File block hashes tasks. */
-	inline const derlTaskFileBlockHashes::Map &GetTasksFileBlockHashes() const{ return pTasksFileBlockHashes; }
-	inline derlTaskFileBlockHashes::Map &GetTasksFileBlockHashes(){ return pTasksFileBlockHashes; }
 	
 	/** \brief Mutex for accessing client members. */
 	inline std::mutex &GetMutex(){ return pMutex; }
 	
 	
+	
+	/** \brief Pending tasks queue. */
+	inline derlBaseTask::Queue &GetPendingTasks(){ return pPendingTasks; }
+	inline std::mutex &GetMutexPendingTasks(){ return pMutexPendingTasks; }
+	inline std::condition_variable &GetConditionPendingTasks(){ return pConditionPendingTasks; }
+	
+	/**
+	 * \brief Remove all tasks of specific type.
+	 * \note Caller has to lock GetMutexPendingTasks().
+	 */
+	void RemovePendingTaskWithType(derlBaseTask::Type type);
+	
+	/**
+	 * \brief One or more pending tasks are present matching type.
+	 * \note Caller has to lock GetMutexPendingTasks().
+	 */
+	bool HasPendingTasksWithType(derlBaseTask::Type type);
+	
+	/** \brief Add pending task while holding mutex. */
+	void AddPendingTaskSync(const derlBaseTask::Ref &task);
+	
+	/** \brief Notify waiters a pending task has been added. */
+	void NotifyPendingTaskAdded();
+	
+	/**
+	 * \brief Connection.
+	 * \warning For internal use only.
+	 */
+	inline derlLauncherClientConnection &GetConnection(){ return *pConnection; }
+	inline const derlLauncherClientConnection &GetConnection() const{ return *pConnection; }
 	
 	/** \brief Connection state. */
 	denConnection::ConnectionState GetConnectionState() const;
@@ -227,11 +255,8 @@ public:
 	 */
 	void Update(float elapsed);
 	
-	/** \brief Process received messages. */
-	void ProcessReceivedMessages();
-	
-	/** \brief Finish pending connection operations. */
-	void FinishPendingOperations();
+	/** \brief Apply layout change if pending. */
+	void UpdateLayoutChanged();
 	
 	
 	

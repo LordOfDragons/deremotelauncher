@@ -1,3 +1,76 @@
-SConscript(dirs='client', variant_dir='client/build', duplicate=0)
-SConscript(dirs='server', variant_dir='server/build', duplicate=0)
+global_env = Environment(CPPPATH='.', LIBPATH='.')
+
+params = Variables(['custom.py'], ARGUMENTS)
+params.Add(BoolVariable('with_sanitize', 'Enable sanitizing', False))
+params.Add(BoolVariable('with_sanitize_threads', 'Enable thread sanitizing', False))
+params.Add(BoolVariable('with_client_debug', 'Enable client debug', False))
+params.Add(PathVariable('denetwork_includes', help='Path to DENetwork headers', default=None))
+params.Add(PathVariable('denetwork_libraries', help='Path to DENetwork libraries', default=None))
+params.Update(global_env)
+
+# determine sanitize flags to use
+global_env.Replace(SANITIZE_FLAGS = [])
+
+if global_env['with_sanitize']:
+	global_env.Append(SANITIZE_FLAGS = [
+		'-fsanitize=address',
+		'-fsanitize-address-use-after-scope',
+		'-fsanitize=pointer-compare',
+		'-fsanitize=pointer-subtract'])
+	global_env.Append(SANITIZE_FLAGS = [
+		'-fsanitize=leak'])
+	global_env.Append(SANITIZE_FLAGS = [
+		'-fsanitize=undefined',
+		'-fsanitize=shift',
+		'-fsanitize=shift-exponent',
+		'-fsanitize=shift-base',
+		'-fsanitize=integer-divide-by-zero',
+		'-fsanitize=unreachable',
+		'-fsanitize=vla-bound',
+		'-fsanitize=null',
+		'-fsanitize=return',
+		'-fsanitize=signed-integer-overflow',
+		'-fsanitize=bounds',
+		'-fsanitize=bounds-strict',
+		'-fsanitize=alignment',
+		'-fsanitize=object-size',
+		'-fsanitize=float-divide-by-zero',
+		'-fsanitize=float-cast-overflow',
+		'-fsanitize=nonnull-attribute',
+		'-fsanitize=returns-nonnull-attribute',
+		'-fsanitize=bool',
+		'-fsanitize=enum',
+		'-fsanitize=vptr',
+		'-fsanitize=pointer-overflow',
+		'-fsanitize=builtin'])
+	
+	if global_env['with_sanitize_threads']:
+		global_env['SANITIZE_FLAGS'].remove('-fsanitize=leak')
+		global_env['SANITIZE_FLAGS'].remove('-fsanitize=address')
+		global_env['SANITIZE_FLAGS'].remove('-fsanitize=pointer-compare')
+		global_env['SANITIZE_FLAGS'].remove('-fsanitize=pointer-subtract')
+		global_env.Append(SANITIZE_FLAGS = ['-fsanitize=thread'])
+
+global_env.Append(CPPFLAGS = global_env['SANITIZE_FLAGS'])
+global_env.Append(LINKFLAGS = global_env['SANITIZE_FLAGS'])
+
+global_env.Append(CPPFLAGS = ['-g', '-fno-omit-frame-pointer'])
+
+if global_env['with_client_debug']:
+	global_env.Append(CPPFLAGS = ['-DENABLE_CLIENT_DEBUG'])
+
+global_env.Append(CPPPATH=['#sdk/deremotelauncher/include'])
+global_env.Append(LIBPATH=['#sdk/deremotelauncher/lib'])
+global_env.Append(LIBS=['deremotelauncher'])
+
+if 'denetwork_includes' in global_env and global_env['denetwork_includes']:
+	global_env.Append(CPPPATH = [global_env['denetwork_includes']])
+
+if 'denetwork_libraries' in global_env and global_env['denetwork_libraries']:
+	global_env.Append(LIBPATH = [global_env['denetwork_libraries']])
+
+global_env.Append(LIBS=['denetwork'])
+
+SConscript(dirs='client', variant_dir='client/build', duplicate=0, exports='global_env')
+SConscript(dirs='server', variant_dir='server/build', duplicate=0, exports='global_env')
 Default(['client', 'server'])

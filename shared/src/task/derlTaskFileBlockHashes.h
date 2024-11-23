@@ -25,16 +25,15 @@
 #ifndef _DERLTASKFILEBLOCKHASHES_H_
 #define _DERLTASKFILEBLOCKHASHES_H_
 
-#include <memory>
 #include <string>
-#include <vector>
-#include <unordered_map>
+
+#include "derlBaseTask.h"
 
 
 /**
  * \brief File operation.
  */
-class derlTaskFileBlockHashes{
+class derlTaskFileBlockHashes : public derlBaseTask{
 public:
 	/** \brief Reference type. */
 	typedef std::shared_ptr<derlTaskFileBlockHashes> Ref;
@@ -65,9 +64,6 @@ public:
 	/*@{*/
 	/** \brief Create task. */
 	derlTaskFileBlockHashes(const std::string &path, uint64_t blockSize);
-	
-	/** \brief Clean up task. */
-	~derlTaskFileBlockHashes() noexcept;
 	/*@}*/
 	
 	

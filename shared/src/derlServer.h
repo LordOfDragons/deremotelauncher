@@ -30,6 +30,7 @@
 #include <mutex>
 #include <thread>
 #include <filesystem>
+#include <atomic>
 
 #include "derlRemoteClient.h"
 #include "internal/derlRemoteClientConnection.h"

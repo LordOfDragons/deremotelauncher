@@ -25,17 +25,18 @@
 #ifndef _DERLTASKFILEWRITEBLOCK_H_
 #define _DERLTASKFILEWRITEBLOCK_H_
 
-#include <memory>
 #include <string>
-#include <vector>
+
+#include "derlBaseTask.h"
 
 class derlFileBlock;
+class derlTaskFileWrite;
 
 
 /**
  * \brief File write task block.
  */
-class derlTaskFileWriteBlock{
+class derlTaskFileWriteBlock : public derlBaseTask{
 public:
 	/** \brief Reference type. */
 	typedef std::shared_ptr<derlTaskFileWriteBlock> Ref;
@@ -55,32 +56,33 @@ public:
 	
 	
 private:
+	derlTaskFileWrite &pParentTask;
 	Status pStatus;
 	int pIndex;
 	uint64_t pSize;
 	std::string pData;
 	int pNextPartIndex;
 	int pPartCount;
-	int pBatchesFinished;
 	
 	
 public:
 	/** \name Constructors and Destructors */
 	/*@{*/
 	/** \brief Create task. */
-	derlTaskFileWriteBlock(int index, uint64_t size);
+	derlTaskFileWriteBlock(derlTaskFileWrite &parentTask, int index, uint64_t size);
 	
 	/** \brief Create task. */
-	derlTaskFileWriteBlock(int index, uint64_t size, const std::string &data);
-	
-	/** \brief Clean up task. */
-	~derlTaskFileWriteBlock() noexcept;
+	derlTaskFileWriteBlock(derlTaskFileWrite &parentTask, int index, uint64_t size,
+		const std::string &data);
 	/*@}*/
 	
 	
 	
 	/** \name Management */
 	/*@{*/
+	/** \brief Parent task. */
+	inline derlTaskFileWrite &GetParentTask() const{ return pParentTask; }
+	
 	/** \brief Status. */
 	inline Status GetStatus() const{ return pStatus; }
 	void SetStatus(Status status);
@@ -106,10 +108,6 @@ public:
 	
 	/** \brief Part data pointer. */
 	uint8_t *PartDataPointer(int partSize, int indexPart) const;
-	
-	/** \brief Batch finished count. */
-	inline int GetBatchesFinished() const{ return pBatchesFinished; }
-	void SetBatchesFinished(int count);
 	/*@}*/
 };
 

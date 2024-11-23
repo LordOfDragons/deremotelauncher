@@ -6,9 +6,13 @@
 #include <chrono>
 
 class Logger : public denLogger{
+private:
+	std::mutex pMutex;
+	
 public:
 	Logger() = default;
 	void Log(LogSeverity severity, const std::string &message) override{
+		const std::lock_guard guard(pMutex);
 		switch(severity){
 		case LogSeverity::debug:
 			std::cout << "[DD] ";
@@ -44,39 +48,39 @@ public:
 		disconnecting
 	};
 	
-	State state;
-	std::chrono::steady_clock::time_point timerBegin;
-	std::chrono::steady_clock::time_point syncStartTime;
+	std::atomic<State> state;
+	std::atomic<std::chrono::steady_clock::time_point> timerBegin;
+	std::atomic<std::chrono::steady_clock::time_point> syncStartTime;
 	
 	Client(derlServer &server, const derlRemoteClientConnection::Ref &connection) :
 	derlRemoteClient(server, connection),
 	state(State::connecting)
 	{
-		// SetEnableDebugLog(true);
+		#ifdef ENABLE_CLIENT_DEBUG
+		SetEnableDebugLog(true);
+		#endif
+		
 		SetLogger(std::make_shared<Logger>());
 	}
 	
 	void Update(float elapsed) override{
 		derlRemoteClient::Update(elapsed);
 		
-		std::unique_lock guard(GetMutex());
 		switch(state){
 		case State::connected:
 			if(std::chrono::duration_cast<std::chrono::milliseconds>(
-			std::chrono::steady_clock::now() - timerBegin).count() >= 1000){
+			std::chrono::steady_clock::now() - timerBegin.load()).count() >= 1000){
 				std::cout << "[" << GetName() << "] Timeout => synchronize" << std::endl;
 				state = State::synchronize;
-				guard.unlock();
 				Synchronize();
 			}
 			break;
 			
 		case State::delay:
 			if(std::chrono::duration_cast<std::chrono::milliseconds>(
-			std::chrono::steady_clock::now() - timerBegin).count() >= 1000){
+			std::chrono::steady_clock::now() - timerBegin.load()).count() >= 1000){
 				std::cout << "[" << GetName() << "] Timeout => disconnect" << std::endl;
 				state = State::disconnecting;
-				guard.unlock();
 				Disconnect();
 			}
 			break;
@@ -94,7 +98,6 @@ public:
 	}
 	
 	void OnSynchronizeBegin() override{
-		const std::lock_guard guard(GetMutex());
 		std::cout << "[" << GetName() << "] OnSynchronizeBegin" << std::endl;
 		syncStartTime = std::chrono::steady_clock::now();
 	}
@@ -107,9 +110,8 @@ public:
 	}
 	
 	void OnSynchronizeFinished() override{
-		const std::lock_guard guard(GetMutex());
 		const int64_t syncElapsed = std::chrono::duration_cast<std::chrono::milliseconds>(
-			std::chrono::steady_clock::now() - timerBegin).count();
+			std::chrono::steady_clock::now() - timerBegin.load()).count();
 		std::cout << "[" << GetName() << "] OnSynchronizeFinished["
 			<< (int)GetSynchronizeStatus() << "]: " << GetSynchronizeDetails()
 			<< " elapsed " << syncElapsed << "ms" << std::endl;

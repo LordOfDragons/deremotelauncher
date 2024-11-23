@@ -29,15 +29,13 @@
 ////////////////////////////
 
 derlTaskFileWrite::derlTaskFileWrite(const std::string &path) :
+derlBaseTask(Type::fileWrite),
 pPath(path),
 pStatus(Status::pending),
 pFileSize(0L),
 pBlockSize(0L),
 pBlockCount(0),
 pTruncate(false){
-}
-
-derlTaskFileWrite::~derlTaskFileWrite(){
 }
 
 

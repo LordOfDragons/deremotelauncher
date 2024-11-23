@@ -56,6 +56,20 @@ derlFile::Ref derlFileLayout::GetFileAt(const std::string &path) const{
 	return iter != pFiles.cend() ? iter->second : nullptr;
 }
 
+derlFile::Ref derlFileLayout::GetFileAtSync(const std::string &path){
+	const std::lock_guard guard(pMutex);
+	return GetFileAt(path);
+}
+
+void derlFileLayout::SetFileAt(const std::string &path, const derlFile::Ref &file){
+	pFiles[path] = file;
+}
+
+void derlFileLayout::SetFileAtSync(const std::string &path, const derlFile::Ref &file){
+	const std::lock_guard guard(pMutex);
+	SetFileAt(path, file);
+}
+
 derlFileLayout::ListPath derlFileLayout::GetAllPath() const{
 	derlFile::Map::const_iterator iter;
 	ListPath list;
@@ -77,11 +91,21 @@ void derlFileLayout::RemoveFile(const std::string &path){
 	pFiles.erase(iter);
 }
 
+void derlFileLayout::AddFileSync(const derlFile::Ref &file){
+	const std::lock_guard guard(pMutex);
+	AddFile(file);
+}
+
 void derlFileLayout::RemoveFileIfPresent(const std::string &path){
 	derlFile::Map::iterator iter(pFiles.find(path));
 	if(iter != pFiles.end()){
 		pFiles.erase(iter);
 	}
+}
+
+void derlFileLayout::RemoveFileIfPresentSync(const std::string &path){
+	const std::lock_guard guard(pMutex);
+	RemoveFileIfPresent(path);
 }
 
 void derlFileLayout::RemoveAllFiles(){

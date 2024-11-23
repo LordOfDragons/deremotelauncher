@@ -29,27 +29,27 @@
 // Class derlTaskFileWriteBlock
 /////////////////////////////////
 
-derlTaskFileWriteBlock::derlTaskFileWriteBlock(int index, uint64_t size) :
+derlTaskFileWriteBlock::derlTaskFileWriteBlock(derlTaskFileWrite &parentTask,
+	int index, uint64_t size) :
+derlBaseTask(Type::fileWriteBlock),
+pParentTask(parentTask),
 pStatus(Status::pending),
 pIndex(index),
 pSize(size),
 pNextPartIndex(0),
-pPartCount(0),
-pBatchesFinished(0){
+pPartCount(0){
 }
 
-derlTaskFileWriteBlock::derlTaskFileWriteBlock(
+derlTaskFileWriteBlock::derlTaskFileWriteBlock(derlTaskFileWrite &parentTask,
 	int index, uint64_t size, const std::string &data) :
+derlBaseTask(Type::fileWriteBlock),
+pParentTask(parentTask),
 pStatus(Status::pending),
 pIndex(index),
 pSize(size),
 pData(data),
 pNextPartIndex(0),
-pPartCount(0),
-pBatchesFinished(0){
-}
-
-derlTaskFileWriteBlock::~derlTaskFileWriteBlock(){
+pPartCount(0){
 }
 
 
@@ -74,8 +74,4 @@ void derlTaskFileWriteBlock::CalcPartCount(int partSize){
 
 uint8_t *derlTaskFileWriteBlock::PartDataPointer(int partSize, int indexPart) const{
 	return (uint8_t*)pData.c_str() + (uint64_t)partSize * indexPart;
-}
-
-void derlTaskFileWriteBlock::SetBatchesFinished(int count){
-	pBatchesFinished = count;
 }

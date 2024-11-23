@@ -29,10 +29,9 @@
 /////////////////////////////
 
 derlTaskFileLayout::derlTaskFileLayout() :
-pStatus(Status::pending){
-}
-
-derlTaskFileLayout::~derlTaskFileLayout(){
+derlBaseTask(Type::fileLayout),
+pStatus(Status::pending),
+pTarget(Target::client){
 }
 
 
@@ -41,6 +40,10 @@ derlTaskFileLayout::~derlTaskFileLayout(){
 
 void derlTaskFileLayout::SetStatus(Status status){
 	pStatus = status;
+}
+
+void derlTaskFileLayout::SetTarget(Target target){
+	pTarget = target;
 }
 
 void derlTaskFileLayout::SetLayout(const derlFileLayout::Ref &layout){

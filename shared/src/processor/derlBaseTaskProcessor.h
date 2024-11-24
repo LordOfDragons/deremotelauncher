@@ -53,8 +53,6 @@ public:
 	
 protected:
 	std::atomic<bool> pExit;
-	std::chrono::milliseconds pNoTaskDelay, pNoTaskTimeout;
-	std::chrono::steady_clock::time_point pNoTaskTimeoutBegin;
 	std::filesystem::path pBaseDir, pFilePath;
 	uint64_t pPartSize;
 	std::fstream pFileStream;
@@ -96,11 +94,8 @@ public:
 	/** \brief Process tasks until Exit() is called. */
 	void Run();
 	
-	/**
-	 * \brief Process one task if possible.
-	 * \returns true if task is run or false otherwise.
-	 */
-	virtual bool RunTask() = 0;
+	/** \brief Process one task if possible. */
+	virtual void RunTask() = 0;
 	
 	
 	

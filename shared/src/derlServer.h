@@ -34,7 +34,6 @@
 
 #include "derlRemoteClient.h"
 #include "internal/derlRemoteClientConnection.h"
-#include "processor/derlTaskProcessorServer.h"
 #include <denetwork/denConnection.h>
 
 class derlServerServer;
@@ -56,10 +55,6 @@ private:
 	std::unique_ptr<derlServerServer> pServer;
 	
 	std::filesystem::path pPathDataDir;
-	
-	derlTaskProcessorServer::Ref pTaskProcessor;
-	std::unique_ptr<std::thread> pThreadTaskProcessor;
-	bool pTaskProcessorsRunning;
 	
 	derlRemoteClient::List pClients;
 	
@@ -108,39 +103,6 @@ public:
 	
 	/** \brief Create client for connection. */
 	virtual derlRemoteClient::Ref CreateClient(const derlRemoteClientConnection::Ref &connection);
-	
-	
-	
-	/**
-	 * \brief Start task processors.
-	 * 
-	 * Default implementation starts running a single derlTaskProcessorLauncherClient instance in a thread.
-	 * Overwrite method to start any number of task processors instead.
-	 * 
-	 * This method has to be safe being called multiple times.
-	 * 
-	 * \note User has to call this method after creating the launcher client before connecting.
-	 */
-	virtual void StartTaskProcessors();
-	
-	/**
-	 * \brief Stop task processors.
-	 * 
-	 * Default implementation stops running the single derlTaskProcessorLauncherClient instance if running.
-	 * Overwrite method to stop all task processors started by StartTaskProcessors().
-	 * 
-	 * This method has to be safe being called multiple times.
-	 * 
-	 * \note Method is called by class destructor. User can also call it earlier.
-	 */
-	virtual void StopTaskProcessors();
-	
-	/**
-	 * \brief Task processor or nullptr.
-	 * 
-	 * Valid if StartTaskProcessors() has been called and subclass did not overwrite it.
-	 */
-	inline const derlTaskProcessorServer::Ref &GetTaskProcessor() const{ return pTaskProcessor; }
 	
 	
 	

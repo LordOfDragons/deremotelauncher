@@ -61,11 +61,8 @@ public:
 	/** \brief Client. */
 	inline derlRemoteClient &GetClient() const{ return pClient; }
 	
-	/**
-	 * \brief Process one task if possible.
-	 * \returns true if task is run or false otherwise.
-	 */
-	bool RunTask() override;
+	/** \brief Process one task if possible. */
+	void RunTask() override;
 	
 	
 	

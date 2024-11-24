@@ -45,10 +45,10 @@ pClient(client)
 // Management
 ///////////////
 
-bool derlTaskProcessorLauncherClient::RunTask(){
+void derlTaskProcessorLauncherClient::RunTask(){
 	derlBaseTask::Ref task;
 	if(!NextPendingTask(task)){
-		return false;
+		return;
 	}
 	
 	{
@@ -58,22 +58,17 @@ bool derlTaskProcessorLauncherClient::RunTask(){
 	pEnableDebugLog = pClient.GetEnableDebugLog();
 	}
 	
-	bool returnValue = false;
-	
 	switch(task->GetType()){
 	case derlBaseTask::Type::fileLayout:
 		ProcessFileLayout(*std::static_pointer_cast<derlTaskFileLayout>(task));
-		returnValue = true;
 		break;
 		
 	case derlBaseTask::Type::fileBlockHashes:
 		ProcessFileBlockHashes(*std::static_pointer_cast<derlTaskFileBlockHashes>(task));
-		returnValue = true;
 		break;
 		
 	case derlBaseTask::Type::fileDelete:
 		ProcessDeleteFile(*std::static_pointer_cast<derlTaskFileDelete>(task));
-		returnValue = true;
 		break;
 		
 	case derlBaseTask::Type::fileWrite:{
@@ -84,19 +79,15 @@ bool derlTaskProcessorLauncherClient::RunTask(){
 		}else{ //derlTaskFileWrite::Status::finishing:
 			ProcessFinishWriteFile(taskWrite);
 		}
-		returnValue = true;
 		}break;
 		
 	case derlBaseTask::Type::fileWriteBlock:
 		ProcessWriteFileBlock(*std::static_pointer_cast<derlTaskFileWriteBlock>(task));
-		returnValue = true;
 		break;
 		
 	default:
 		break;
 	}
-	
-	return returnValue;
 }
 
 bool derlTaskProcessorLauncherClient::NextPendingTask(derlBaseTask::Ref &task){

@@ -44,10 +44,10 @@ pClient(client){
 // Management
 ///////////////
 
-bool derlTaskProcessorRemoteClient::RunTask(){
+void derlTaskProcessorRemoteClient::RunTask(){
 	derlBaseTask::Ref task;
 	if(!NextPendingTask(task)){
-		return false;
+		return;
 	}
 	
 	{
@@ -57,38 +57,28 @@ bool derlTaskProcessorRemoteClient::RunTask(){
 	pEnableDebugLog = pClient.GetEnableDebugLog();
 	}
 	
-	bool returnValue = false;
-	
 	switch(task->GetType()){
-	case derlBaseTask::Type::fileLayout:{
+	case derlBaseTask::Type::fileLayout:
 		ProcessFileLayoutServer(static_cast<derlTaskFileLayout&>(*task));
-		returnValue = true;
-		}break;
+		break;
 		
 	case derlBaseTask::Type::fileWriteBlock:
 		ProcessReadFileBlock(static_cast<derlTaskFileWriteBlock&>(*task));
-		returnValue = true;
 		break;
 		
 	case derlBaseTask::Type::syncClient:{
 		derlTaskSyncClient &taskSync = static_cast<derlTaskSyncClient&>(*task);
-		
 		if(taskSync.GetStatus() == derlTaskSyncClient::Status::pending){
 			ProcessPrepareHashing(taskSync);
-			returnValue = true;
 		}
-		
 		if(taskSync.GetStatus() == derlTaskSyncClient::Status::prepareTasksWriting){
 			ProcessPrepareWriting(taskSync);
-			returnValue = true;
 		}
 		}break;
 		
 	default:
 		break;
 	}
-	
-	return returnValue;
 }
 
 bool derlTaskProcessorRemoteClient::NextPendingTask(derlBaseTask::Ref &task){

@@ -34,8 +34,7 @@
 /////////////////////
 
 derlServer::derlServer() :
-pServer(std::make_unique<derlServerServer>(*this)),
-pTaskProcessorsRunning(false){
+pServer(std::make_unique<derlServerServer>(*this)){
 }
 
 derlServer::~derlServer(){
@@ -59,38 +58,10 @@ const denLogger::Ref &derlServer::GetLogger() const{
 
 void derlServer::SetLogger(const denLogger::Ref &logger){
 	pServer->SetLogger(logger);
-	if(pTaskProcessor){
-		pTaskProcessor->SetLogger(logger);
-	}
 }
 
 derlRemoteClient::Ref derlServer::CreateClient(const derlRemoteClientConnection::Ref &connection){
 	return std::make_shared<derlRemoteClient>(*this, connection);
-}
-
-void derlServer::StartTaskProcessors(){
-	if(!pTaskProcessor){
-		pTaskProcessor = std::make_shared<derlTaskProcessorServer>(*this);
-		pTaskProcessor->SetLogger(GetLogger());
-	}
-	
-	if(!pThreadTaskProcessor){
-		pThreadTaskProcessor = std::make_unique<std::thread>([](derlTaskProcessorServer &processor){
-			processor.Run();
-		}, std::ref(*pTaskProcessor));
-	}
-}
-
-void derlServer::StopTaskProcessors(){
-	if(pTaskProcessor){
-		pTaskProcessor->Exit();
-	}
-	
-	if(pThreadTaskProcessor){
-		pThreadTaskProcessor->join();
-		pThreadTaskProcessor = nullptr;
-	}
-	pTaskProcessor = nullptr;
 }
 
 void derlServer::ListenOn(const std::string &address){
@@ -98,18 +69,8 @@ void derlServer::ListenOn(const std::string &address){
 		throw std::invalid_argument("data directory path is empty");
 	}
 	
-	StartTaskProcessors();
-	pTaskProcessorsRunning = true;
-	
-	try{
-		const std::lock_guard guard(derlGlobal::mutexNetwork);
-		pServer->ListenOn(address);
-		
-	}catch(...){
-		StopTaskProcessors();
-		pTaskProcessorsRunning = false;
-		throw;
-	}
+	const std::lock_guard guard(derlGlobal::mutexNetwork);
+	pServer->ListenOn(address);
 }
 
 void derlServer::StopListening(){
@@ -149,11 +110,6 @@ void derlServer::Update(float elapsed){
 	
 	for(iter=closed.cbegin(); iter!=closed.cend(); iter++){
 		pClients.erase(std::find(pClients.cbegin(), pClients.cend(), *iter));
-	}
-	
-	if(pTaskProcessorsRunning && pClients.empty() && pServer->IsListening()){
-		StopTaskProcessors();
-		pTaskProcessorsRunning = false;
 	}
 }
 

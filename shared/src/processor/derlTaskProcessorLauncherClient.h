@@ -26,7 +26,6 @@
 #define _DERLTASKPROCESSORLAUNCHERCLIENT_H_
 
 #include "derlBaseTaskProcessor.h"
-#include "../derlFileLayout.h"
 #include "../task/derlTaskFileBlockHashes.h"
 #include "../task/derlTaskFileDelete.h"
 #include "../task/derlTaskFileWrite.h"
@@ -48,7 +47,6 @@ public:
 	
 protected:
 	derlLauncherClient &pClient;
-	derlFileLayout::Ref pFileLayout;
 	
 	
 public:

@@ -26,6 +26,7 @@
 #define _DERLTASKFILEWRITEBLOCK_H_
 
 #include <string>
+#include <atomic>
 
 #include "derlBaseTask.h"
 
@@ -49,7 +50,6 @@ public:
 		pending,
 		readingData,
 		dataReady,
-		processing,
 		success,
 		failure
 	};
@@ -57,7 +57,7 @@ public:
 	
 private:
 	derlTaskFileWrite &pParentTask;
-	Status pStatus;
+	std::atomic<Status> pStatus;
 	int pIndex;
 	uint64_t pSize;
 	std::string pData;

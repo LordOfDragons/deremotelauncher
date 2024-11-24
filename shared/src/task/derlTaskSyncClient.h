@@ -26,9 +26,12 @@
 #define _DERLTASKSYNCCLIENT_H_
 
 #include <string>
+#include <mutex>
+#include <atomic>
 
 #include "derlBaseTask.h"
 
+#include "derlTaskFileLayout.h"
 #include "derlTaskFileWrite.h"
 #include "derlTaskFileDelete.h"
 #include "derlTaskFileBlockHashes.h"
@@ -56,11 +59,14 @@ public:
 	
 	
 private:
-	Status pStatus;
+	std::atomic<Status> pStatus;
 	std::string pError;
+	derlTaskFileLayout::Ref pTaskFileLayoutServer, pTaskFileLayoutClient;
+	
 	derlTaskFileWrite::Map pTasksWriteFile;
 	derlTaskFileDelete::Map pTaskDeleteFiles;
 	derlTaskFileBlockHashes::Map pTasksFileBlockHashes;
+	std::mutex pMutex;
 	
 	
 public:
@@ -82,6 +88,14 @@ public:
 	inline const std::string &GetError() const{ return pError; }
 	void SetError(const std::string &error);
 	
+	/** \brief Server file layout task or nullptr. */
+	inline const derlTaskFileLayout::Ref &GetTaskFileLayoutServer() const{ return pTaskFileLayoutServer; }
+	void SetTaskFileLayoutServer(const derlTaskFileLayout::Ref &task);
+	
+	/** \brief Client file layout task or nullptr. */
+	inline const derlTaskFileLayout::Ref &GetTaskFileLayoutClient() const{ return pTaskFileLayoutClient; }
+	void SetTaskFileLayoutClient(const derlTaskFileLayout::Ref &task);
+	
 	/** \brief Delete file tasks. */
 	inline const derlTaskFileDelete::Map &GetTasksDeleteFile() const{ return pTaskDeleteFiles; }
 	inline derlTaskFileDelete::Map &GetTasksDeleteFile(){ return pTaskDeleteFiles; }
@@ -93,6 +107,9 @@ public:
 	/** \brief File block hashes tasks. */
 	inline const derlTaskFileBlockHashes::Map &GetTasksFileBlockHashes() const{ return pTasksFileBlockHashes; }
 	inline derlTaskFileBlockHashes::Map &GetTasksFileBlockHashes(){ return pTasksFileBlockHashes; }
+	
+	/** \brief Mutex. */
+	inline std::mutex &GetMutex(){ return pMutex; }
 	/*@}*/
 };
 

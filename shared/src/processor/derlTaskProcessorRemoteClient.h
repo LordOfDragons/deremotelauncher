@@ -82,11 +82,14 @@ public:
 	
 	
 	
-	/** \brief Process task sync client. */
-	virtual void ProcessSyncClient(derlTaskSyncClient &task);
+	/** \brief Process prepare hashing. */
+	virtual void ProcessPrepareHashing(derlTaskSyncClient &task);
 	
-	/** \brief Process task file write. */
-	virtual void ProcessReadFileBlocks(derlTaskFileWrite &task);
+	/** \brief Process prepare writing. */
+	virtual void ProcessPrepareWriting(derlTaskSyncClient &task);
+	
+	/** \brief Process task read file block. */
+	virtual void ProcessReadFileBlock(derlTaskFileWriteBlock &task);
 	
 	/** \brief Process task file layout server. */
 	virtual void ProcessFileLayoutServer(derlTaskFileLayout &task);
@@ -94,13 +97,15 @@ public:
 	
 	
 protected:
+	typedef std::unique_lock<std::mutex> LockMutex;
+	
 	/** Compare file layouts and add delete file tasks. */
-	void AddFileDeleteTasks(derlTaskSyncClient &task, const derlFileLayout &layoutServer,
-		const derlFileLayout &layoutClient);
+	void AddFileDeleteTasks(derlTaskSyncClient &task,
+		const derlFileLayout &layoutServer, const derlFileLayout &layoutClient);
 	
 	/** Compare file layouts and add write file block hash tasks. */
-	void AddFileBlockHashTasks(derlTaskSyncClient &task, const derlFileLayout &layoutServer,
-		const derlFileLayout &layoutClient);
+	void AddFileBlockHashTasks(derlTaskSyncClient &task,
+		const derlFileLayout &layoutServer, const derlFileLayout &layoutClient);
 	
 	/** Compare file layouts and add write file tasks. */
 	void AddFileWriteTasks(derlTaskSyncClient &task, const derlFileLayout &layoutServer,

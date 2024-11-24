@@ -165,8 +165,15 @@ public:
 	/** \brief Process received messages. */
 	void ProcessReceivedMessages();
 	
-	/** \brief Process finished pending operations. */
-	void FinishPendingOperations();
+	/** \brief Send next write requests if possible. */
+	void SendNextWriteRequests(derlTaskSyncClient &taskSync);
+	
+	/**
+	 * \brief Send next write requests if possible.
+	 * 
+	 * Same as SendNextWriteRequests but wrapped in try-catch failing synchronize on catch.
+	 */
+	void SendNextWriteRequestsFailSync(derlTaskSyncClient &taskSync);
 	
 	/** \brief Log exception. */
 	void LogException(const std::string &functionName, const std::exception &exception,
@@ -178,6 +185,10 @@ public:
 	
 	/** \brief Debug log message only printed if debugging is enabled. */
 	void LogDebug(const std::string &functionName, const std::string &message);
+	
+	void SendRequestLayout();
+	void SendRequestFileBlockHashes(const derlTaskFileBlockHashes &task);
+	void SendRequestDeleteFile(const derlTaskFileDelete &task);
 	/*@}*/
 	
 	
@@ -192,17 +203,16 @@ private:
 	void pProcessFileDataReceived(denMessageReader &reader);
 	void pProcessResponseFinishWriteFile(denMessageReader &reader);
 	
-	void pSendRequestLayout();
-	void pSendRequestFileBlockHashes(const std::string &path, uint32_t blockSize);
-	void pSendRequestsDeleteFile(const derlTaskFileDelete::List &tasks);
-	void pSendRequestsWriteFile(const derlTaskFileWrite::List &tasks);
-	void pSendSendFileData(const derlTaskFileWrite &task, derlTaskFileWriteBlock &block);
-	void pSendRequestsFinishWriteFile(const derlTaskFileWrite::List &tasks);
+	void pSendRequestWriteFile(const derlTaskFileWrite &task);
+	void pSendSendFileData(derlTaskFileWriteBlock &block);
+	void pSendRequestFinishWriteFile(const derlTaskFileWrite &task);
 	void pSendStartApplication(const derlRunParameters &parameters);
 	void pSendStopApplication(derlProtocol::StopApplicationMode mode);
 	
 	derlTaskSyncClient::Ref pGetSyncTask(const std::string &functionName,
 		derlTaskSyncClient::Status status);
+	void pCheckFinishedHashes(const derlTaskSyncClient::Ref &task);
+	void pCheckFinishedWrite(const derlTaskSyncClient::Ref &task);
 };
 
 #endif

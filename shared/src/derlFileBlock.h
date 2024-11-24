@@ -53,13 +53,11 @@ private:
 public:
 	/** \name Constructors and Destructors */
 	/*@{*/
-	/**
-	 * \brief Create file block.
-	 */
+	/** \brief Create file block. */
 	derlFileBlock(uint64_t offset, uint64_t size);
 	
-	/** \brief Clean up remote launcher support. */
-	~derlFileBlock() noexcept;
+	/** \brief Copy file block. */
+	derlFileBlock(const derlFileBlock &block);
 	/*@}*/
 	
 	

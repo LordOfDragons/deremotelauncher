@@ -47,16 +47,9 @@ public:
 		failure
 	};
 	
-	/** \brief Target */
-	enum class Target{
-		server,
-		client
-	};
-	
 	
 private:
 	Status pStatus;
-	Target pTarget;
 	derlFileLayout::Ref pLayout;
 	
 	
@@ -74,10 +67,6 @@ public:
 	/** \brief Status. */
 	inline Status GetStatus() const{ return pStatus; }
 	void SetStatus(Status status);
-	
-	/** \brief Target. */
-	inline Target GetTarget() const{ return pTarget; }
-	void SetTarget(Target target);
 	
 	/** \brief Layout. */
 	inline const derlFileLayout::Ref &GetLayout() const{ return pLayout; }

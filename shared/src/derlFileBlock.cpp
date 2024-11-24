@@ -33,7 +33,10 @@ pOffset(offset),
 pSize(size){
 }
 
-derlFileBlock::~derlFileBlock(){
+derlFileBlock::derlFileBlock(const derlFileBlock &block) :
+pOffset(block.pOffset),
+pSize(block.pSize),
+pHash(block.pHash){
 }
 
 
@@ -43,7 +46,3 @@ derlFileBlock::~derlFileBlock(){
 void derlFileBlock::SetHash(const std::string &hash){
 	pHash = hash;
 }
-
-
-// Private Functions
-//////////////////////

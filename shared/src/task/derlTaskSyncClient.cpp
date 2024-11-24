@@ -30,7 +30,11 @@
 
 derlTaskSyncClient::derlTaskSyncClient() :
 derlBaseTask(Type::syncClient),
-pStatus(Status::pending){
+pStatus(Status::pending),
+pTaskFileLayoutServer(std::make_shared<derlTaskFileLayout>()),
+pTaskFileLayoutClient(std::make_shared<derlTaskFileLayout>())
+{
+	pTaskFileLayoutClient->SetLayout(std::make_shared<derlFileLayout>());
 }
 
 
@@ -43,4 +47,12 @@ void derlTaskSyncClient::SetStatus(Status status){
 
 void derlTaskSyncClient::SetError(const std::string &error){
 	pError = error;
+}
+
+void derlTaskSyncClient::SetTaskFileLayoutServer(const derlTaskFileLayout::Ref &task){
+	pTaskFileLayoutServer = task;
+}
+
+void derlTaskSyncClient::SetTaskFileLayoutClient(const derlTaskFileLayout::Ref &task){
+	pTaskFileLayoutClient = task;
 }

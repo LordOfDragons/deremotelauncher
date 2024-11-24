@@ -134,35 +134,42 @@ void derlRemoteClient::SetEnableDebugLog(bool enable){
 	pConnection->SetEnableDebugLog(enable);
 }
 
-void derlRemoteClient::SetSynchronizeDetails(const std::string &details){
+void derlRemoteClient::SetSynchronizeStatus(SynchronizeStatus status, const std::string & details){
+	const std::lock_guard guard(pMutex);
+	pSynchronizeStatus = status;
 	pSynchronizeDetails = details;
 }
 
 void derlRemoteClient::Synchronize(){
 	{
 	const std::lock_guard guard(pMutex);
-	pPathDataDir = GetServer().GetPathDataDir();
-	
-	pSynchronizeDetails.clear();
-	pSynchronizeStatus = SynchronizeStatus::processing;
-	
-	pFileLayoutServer = nullptr;
-	if(!pTaskFileLayoutServer){
-		pTaskFileLayoutServer = std::make_shared<derlTaskFileLayout>();
-	}
-	
-	if(!pFileLayoutClient && !pTaskFileLayoutClient){
-		pTaskFileLayoutClient = std::make_shared<derlTaskFileLayout>();
-	}
-	
 	if(pTaskSyncClient && pTaskSyncClient->GetStatus() == derlTaskSyncClient::Status::failure){
 		pTaskSyncClient = nullptr;
 	}
 	
-	if(!pTaskSyncClient){
-		pTaskSyncClient = std::make_shared<derlTaskSyncClient>();
+	if(pTaskSyncClient){
+		return;
+	}
+	
+	pPathDataDir = GetServer().GetPathDataDir();
+	
+	pSynchronizeDetails.clear();
+	pSynchronizeStatus = SynchronizeStatus::processing;
+	pSynchronizeDetails = "Scanning file systems...";
+	
+	pFileLayoutServer = nullptr;
+	pFileLayoutClient = nullptr;
+	
+	pTaskSyncClient = std::make_shared<derlTaskSyncClient>();
+	
+	{
+	const std::lock_guard guardPending(pMutexPendingTasks);
+	pPendingTasks.push_back(pTaskSyncClient->GetTaskFileLayoutServer());
 	}
 	}
+	
+	pConnection->SendRequestLayout();
+	NotifyPendingTaskAdded();
 	
 	OnSynchronizeBegin();
 }
@@ -187,6 +194,8 @@ void derlRemoteClient::StopTaskProcessors(){
 		Log(denLogger::LogSeverity::info, "StopTaskProcessors", "Exit task processor");
 		pTaskProcessor->Exit();
 	}
+	
+	NotifyPendingTaskAdded();
 	
 	if(pThreadTaskProcessor){
 		Log(denLogger::LogSeverity::info, "StopTaskProcessors", "Join task processor thread");
@@ -227,36 +236,56 @@ void derlRemoteClient::Update(float elapsed){
 	}
 }
 
-void derlRemoteClient::ProcessReceivedMessages(){
-	pConnection->ProcessReceivedMessages();
-}
-
-void derlRemoteClient::FinishPendingOperations(){
-	pConnection->FinishPendingOperations();
-	
-	bool sendEventSyncUpdate = false;
-	bool sendEventSyncEnd = false;
-	
+void derlRemoteClient::FailSynchronization(const std::string &error){
 	{
 	const std::lock_guard guard(pMutex);
-	if(pTaskSyncClient){
-		pProcessTaskSyncClient(*pTaskSyncClient);
+	if(!pTaskSyncClient){
+		return;
+	}
+	
+	{
+	const std::lock_guard guard2(pTaskSyncClient->GetMutex());
+	pTaskSyncClient->SetStatus(derlTaskSyncClient::Status::failure);
+	
+	if(pTaskSyncClient->GetError().empty()){
+		pSynchronizeDetails = "Synchronize failed.";
 		
-		if(pTaskSyncClient){
-			sendEventSyncUpdate = true;
-			
-		}else{
-			sendEventSyncEnd = true;
-		}
+	}else{
+		pSynchronizeDetails = pTaskSyncClient->GetError();
 	}
 	}
 	
-	if(sendEventSyncUpdate){
-		OnSynchronizeUpdate();
-		
-	}else if(sendEventSyncEnd){
-		OnSynchronizeFinished();
+	pSynchronizeStatus = SynchronizeStatus::failed;
+	pTaskSyncClient = nullptr;
 	}
+	
+	{
+	const std::lock_guard guard(pMutexPendingTasks);
+	pPendingTasks.clear();
+	}
+	
+	OnSynchronizeFinished();
+}
+
+void derlRemoteClient::FailSynchronization(){
+	FailSynchronization("Synchronize client failed: unknown error");
+}
+
+void derlRemoteClient::SucceedSynchronization(){
+	{
+	const std::lock_guard guard(pMutex);
+	if(!pTaskSyncClient){
+		return;
+	}
+	
+	pTaskSyncClient->SetStatus(derlTaskSyncClient::Status::success);
+	
+	pSynchronizeDetails = "Synchronized.";
+	pSynchronizeStatus = SynchronizeStatus::ready;
+	pTaskSyncClient = nullptr;
+	}
+	
+	OnSynchronizeFinished();
 }
 
 void derlRemoteClient::LogException(const std::string &functionName,
@@ -303,35 +332,6 @@ void derlRemoteClient::OnSynchronizeFinished(){
 
 // Private Functions
 //////////////////////
-
-void derlRemoteClient::pProcessTaskSyncClient(derlTaskSyncClient &task){
-	if(!pFileLayoutServer || !pFileLayoutClient){
-		pSynchronizeDetails = "Scanning file systems...";
-	}
-	
-	switch(task.GetStatus()){
-	case derlTaskSyncClient::Status::success:
-		pSynchronizeDetails = "Synchronized.";
-		pSynchronizeStatus = SynchronizeStatus::ready;
-		pTaskSyncClient = nullptr;
-		break;
-		
-	case derlTaskSyncClient::Status::failure:
-		if(task.GetError().empty()){
-			pSynchronizeDetails = "Synchronize failed.";
-			
-		}else{
-			pSynchronizeDetails = task.GetError();
-		}
-		pSynchronizeStatus = SynchronizeStatus::failed;
-		pTaskSyncClient = nullptr;
-		break;
-		
-	default:
-		pSynchronizeDetails = "Synchronize...";
-		break;
-	}
-}
 
 void derlRemoteClient::pInternalStartTaskProcessors(){
 	StartTaskProcessors();

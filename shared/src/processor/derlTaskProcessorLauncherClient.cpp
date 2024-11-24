@@ -46,39 +46,38 @@ pClient(client)
 ///////////////
 
 bool derlTaskProcessorLauncherClient::RunTask(){
+	derlBaseTask::Ref task;
+	if(!NextPendingTask(task)){
+		return false;
+	}
+	
 	{
 	const std::lock_guard guard(pClient.GetMutex());
 	pBaseDir = pClient.GetPathDataDir();
 	pPartSize = pClient.GetPartSize();
 	pEnableDebugLog = pClient.GetEnableDebugLog();
-	pFileLayout = pClient.GetFileLayout();
-	}
-	
-	derlBaseTask::Ref task;
-	if(!NextPendingTask(task)){
-		return false;
 	}
 	
 	bool returnValue = false;
 	
 	switch(task->GetType()){
 	case derlBaseTask::Type::fileLayout:
-		ProcessFileLayout(static_cast<derlTaskFileLayout&>(*task));
+		ProcessFileLayout(*std::static_pointer_cast<derlTaskFileLayout>(task));
 		returnValue = true;
 		break;
 		
 	case derlBaseTask::Type::fileBlockHashes:
-		ProcessFileBlockHashes(static_cast<derlTaskFileBlockHashes&>(*task));
+		ProcessFileBlockHashes(*std::static_pointer_cast<derlTaskFileBlockHashes>(task));
 		returnValue = true;
 		break;
 		
 	case derlBaseTask::Type::fileDelete:
-		ProcessDeleteFile(static_cast<derlTaskFileDelete&>(*task));
+		ProcessDeleteFile(*std::static_pointer_cast<derlTaskFileDelete>(task));
 		returnValue = true;
 		break;
 		
 	case derlBaseTask::Type::fileWrite:{
-		derlTaskFileWrite &taskWrite = static_cast<derlTaskFileWrite&>(*task);
+		derlTaskFileWrite &taskWrite = *std::static_pointer_cast<derlTaskFileWrite>(task);
 		if(taskWrite.GetStatus() == derlTaskFileWrite::Status::pending){
 			ProcessWriteFile(taskWrite);
 			
@@ -89,7 +88,7 @@ bool derlTaskProcessorLauncherClient::RunTask(){
 		}break;
 		
 	case derlBaseTask::Type::fileWriteBlock:
-		ProcessWriteFileBlock(static_cast<derlTaskFileWriteBlock&>(*task));
+		ProcessWriteFileBlock(*std::static_pointer_cast<derlTaskFileWriteBlock>(task));
 		returnValue = true;
 		break;
 		
@@ -114,7 +113,9 @@ bool derlTaskProcessorLauncherClient::NextPendingTask(derlBaseTask::Ref &task){
 		}
 	}
 	
+	const derlFileLayout::Ref layout(pClient.GetFileLayout());
 	derlBaseTask::Queue::const_iterator iter;
+	
 	for(iter=tasks.cbegin(); iter!=tasks.cend(); iter++){
 		const derlBaseTask::Ref &pendingTask = *iter;
 		bool found = false;
@@ -127,11 +128,11 @@ bool derlTaskProcessorLauncherClient::NextPendingTask(derlBaseTask::Ref &task){
 		case derlBaseTask::Type::fileBlockHashes:
 		case derlBaseTask::Type::fileDelete:
 		case derlBaseTask::Type::fileWriteBlock:
-			found = pFileLayout != nullptr;
+			found = layout != nullptr;
 			break;
 			
 		case derlBaseTask::Type::fileWrite:
-			if(pFileLayout){
+			if(layout){
 				switch(std::static_pointer_cast<derlTaskFileWrite>(pendingTask)->GetStatus()){
 				case derlTaskFileWrite::Status::pending:
 				case derlTaskFileWrite::Status::finishing:
@@ -168,8 +169,10 @@ void derlTaskProcessorLauncherClient::ProcessFileBlockHashes(derlTaskFileBlockHa
 		LogDebug("ProcessFileBlockHashes", ss.str());
 	}
 	
+	const derlFileLayout::Ref layout(pClient.GetFileLayout());
+	
 	try{
-		if(!pFileLayout){
+		if(!layout){
 			throw std::runtime_error("Layout missing, internal error");
 		}
 		
@@ -178,8 +181,8 @@ void derlTaskProcessorLauncherClient::ProcessFileBlockHashes(derlTaskFileBlockHa
 		
 		derlFile::Ref file;
 		{
-		const std::lock_guard guard(pFileLayout->GetMutex());
-		file = pFileLayout->GetFileAt(path);
+		const std::lock_guard guard(layout->GetMutex());
+		file = layout->GetFileAt(path);
 		if(!file){
 			throw std::runtime_error("File not found in layout");
 		}
@@ -187,7 +190,7 @@ void derlTaskProcessorLauncherClient::ProcessFileBlockHashes(derlTaskFileBlockHa
 		file = std::make_shared<derlFile>(*file);
 		file->SetBlockSize(blockSize);
 		file->SetBlocks(blocks);
-		pFileLayout->SetFileAt(path, file);
+		layout->SetFileAt(path, file);
 		}
 		
 		task.SetStatus(derlTaskFileBlockHashes::Status::success);
@@ -240,17 +243,25 @@ void derlTaskProcessorLauncherClient::ProcessDeleteFile(derlTaskFileDelete &task
 		LogDebug("ProcessDeleteFile", ss.str());
 	}
 	
+	const derlFileLayout::Ref layout(pClient.GetFileLayout());
+	
 	try{
+		if(!layout){
+			throw std::runtime_error("Layout missing, internal error");
+		}
+		
 		DeleteFile(task);
 		task.SetStatus(derlTaskFileDelete::Status::success);
-		pFileLayout->RemoveFileIfPresentSync(path);
+		layout->RemoveFileIfPresentSync(path);
 		
 	}catch(const std::exception &e){
 		std::stringstream ss;
 		ss << "Failed " << task.GetPath();
 		LogException("ProcessDeleteFile", e, ss.str());
 		task.SetStatus(derlTaskFileDelete::Status::failure);
-		pFileLayout->RemoveFileIfPresentSync(path);
+		if(layout){
+			layout->RemoveFileIfPresentSync(path);
+		}
 		pClient.SetDirtyFileLayoutSync(true);
 		
 	}catch(...){
@@ -258,7 +269,9 @@ void derlTaskProcessorLauncherClient::ProcessDeleteFile(derlTaskFileDelete &task
 		ss << "Failed " << task.GetPath();
 		Log(denLogger::LogSeverity::error, "ProcessDeleteFile", ss.str());
 		task.SetStatus(derlTaskFileDelete::Status::failure);
-		pFileLayout->RemoveFileIfPresentSync(path);
+		if(layout){
+			layout->RemoveFileIfPresentSync(path);
+		}
 		pClient.SetDirtyFileLayoutSync(true);
 	}
 	
@@ -347,7 +360,12 @@ void derlTaskProcessorLauncherClient::ProcessFinishWriteFile(derlTaskFileWrite &
 		
 		if(file->GetHash() == task.GetHash()){
 			task.SetStatus(derlTaskFileWrite::Status::success);
-			pFileLayout->AddFileSync(file);
+			
+			const derlFileLayout::Ref layout(pClient.GetFileLayout());
+			if(!layout){
+				throw std::runtime_error("Layout missing, internal error");
+			}
+			layout->AddFileSync(file);
 			
 		}else{
 			std::stringstream ss;

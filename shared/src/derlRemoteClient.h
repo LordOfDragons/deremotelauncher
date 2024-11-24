@@ -121,6 +121,13 @@ public:
 	inline derlServer &GetServer(){ return pServer; }
 	inline const derlServer &GetServer() const{ return pServer; }
 	
+	/**
+	 * \brief Connection.
+	 * \warning For internal use only.
+	 */
+	inline derlRemoteClientConnection &GetConnection(){ return *pConnection; }
+	inline const derlRemoteClientConnection &GetConnection() const{ return *pConnection; }
+	
 	/** \brief Name identifying the client. */
 	const std::string &GetName() const;
 	
@@ -201,14 +208,20 @@ public:
 	
 	
 	
-	/** \brief Synchronize status. */
+	/**
+	 * \brief Synchronize status.
+	 * \note Lock mutex while calling this function.
+	 */
 	inline SynchronizeStatus GetSynchronizeStatus() const{ return pSynchronizeStatus; }
 	
-	/** \brief Last synchronize details for display. */
+	/**
+	 * \brief Last synchronize details for display.
+	 * \note Lock mutex while calling this function.
+	 */
 	inline const std::string &GetSynchronizeDetails() const{ return pSynchronizeDetails; }
 	
-	/** \brief Set synchronize details for display. */
-	void SetSynchronizeDetails(const std::string &details);
+	/** \brief Set synchronize status and details for display while locking mutex. */
+	void SetSynchronizeStatus(SynchronizeStatus status, const std::string &details);
 	
 	/** \brief Synchronize client. */
 	virtual void Synchronize();
@@ -272,12 +285,12 @@ public:
 	 */
 	virtual void Update(float elapsed);
 	
-	/** \brief Process received messages. */
-	void ProcessReceivedMessages();
+	/** \brief Fail synchonization. */
+	void FailSynchronization(const std::string &error);
+	void FailSynchronization();
 	
-	/** \brief Finish pending connection operations. */
-	void FinishPendingOperations();
-	
+	/** \brief Succeed synchonization. */
+	void SucceedSynchronization();
 	
 	
 	/** \brief Log exception. */
@@ -315,7 +328,6 @@ public:
 	
 	
 private:
-	void pProcessTaskSyncClient(derlTaskSyncClient &task);
 	void pInternalStartTaskProcessors();
 };
 

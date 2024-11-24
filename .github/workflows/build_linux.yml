@@ -34,8 +34,8 @@ jobs:
         run: |
           scons -j 14 \
             version=${{ inputs.releaseVersion }} \
-            denetwork_includes='`realpath denetworkcpp-unix-x64-nightly/include`' \
-            denetwork_libraries='`realpath denetworkcpp-unix-x64-nightly/lib`' \
+            denetwork_includes="`realpath denetworkcpp-unix-x64-nightly/include`" \
+            denetwork_libraries="`realpath denetworkcpp-unix-x64-nightly/lib`" \
             build archive
       
       - name: Move Artifacts

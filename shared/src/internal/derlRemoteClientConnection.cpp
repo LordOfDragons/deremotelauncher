@@ -588,9 +588,9 @@ void derlRemoteClientConnection::pProcessResponseFileBlockHashes(denMessageReade
 	}
 	
 	if(finished){
-		std::stringstream log;
-		log << "Block hashes received: " << path;
-		Log(denLogger::LogSeverity::info, "ProcessResponseFileBlockHashes", log.str());
+		std::stringstream ss;
+		ss << "Block hashes received: " << path;
+		Log(denLogger::LogSeverity::info, "ProcessResponseFileBlockHashes", ss.str());
 		
 		pCheckFinishedHashes(taskSync);
 	}
@@ -614,14 +614,6 @@ void derlRemoteClientConnection::pProcessResponseDeleteFile(denMessageReader &re
 	if(iterDelete == tasksDelete.cend()){
 		std::stringstream log;
 		log << "Delete file response received with invalid path: " << path;
-		Log(denLogger::LogSeverity::warning, "pProcessResponseDeleteFile", log.str());
-		return;
-	}
-	
-	derlTaskFileDelete &taskDelete = *iterDelete->second;
-	if(taskDelete.GetStatus() != derlTaskFileDelete::Status::processing){
-		std::stringstream log;
-		log << "Delete file response received but it is not processing: " << path;
 		Log(denLogger::LogSeverity::warning, "pProcessResponseDeleteFile", log.str());
 		return;
 	}
@@ -990,6 +982,8 @@ void derlRemoteClientConnection::pCheckFinishedHashes(const derlTaskSyncClient::
 	if(!task->GetTasksFileBlockHashes().empty()){
 		return;
 	}
+	
+	task->SetStatus(derlTaskSyncClient::Status::prepareTasksWriting);
 	}
 	
 	pClient->AddPendingTaskSync(task);

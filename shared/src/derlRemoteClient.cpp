@@ -174,6 +174,43 @@ void derlRemoteClient::Synchronize(){
 	OnSynchronizeBegin();
 }
 
+derlRemoteClient::RunStatus derlRemoteClient::GetRunStatus() const{
+	const std::lock_guard guard(derlGlobal::mutexNetwork);
+	switch((derlProtocol::RunStateStatus)pConnection->GetValueRunStatus()->GetValue()){
+	case derlProtocol::RunStateStatus::running:
+		return RunStatus::running;
+		
+	case derlProtocol::RunStateStatus::stopped:
+	default:
+		return RunStatus::stopped;
+	}
+}
+
+void derlRemoteClient::SetRunStatus(RunStatus status){
+	const std::lock_guard guard(derlGlobal::mutexNetwork);
+	switch(status){
+	case RunStatus::running:
+		pConnection->GetValueRunStatus()->SetValue((uint64_t)derlProtocol::RunStateStatus::running);
+		break;
+		
+	case RunStatus::stopped:
+	default:
+		pConnection->GetValueRunStatus()->SetValue((uint64_t)derlProtocol::RunStateStatus::stopped);
+	}
+}
+
+void derlRemoteClient::StartApplication(const derlRunParameters &params){
+	pConnection->SendStartApplication(params);
+}
+
+void derlRemoteClient::StopApplication(){
+	pConnection->SendStopApplication(derlProtocol::StopApplicationMode::requestClose);
+}
+
+void derlRemoteClient::KillApplication(){
+	pConnection->SendStopApplication(derlProtocol::StopApplicationMode::killProcess);
+}
+
 void derlRemoteClient::StartTaskProcessors(){
 	if(!pTaskProcessor){
 		Log(denLogger::LogSeverity::info, "StartTaskProcessors", "Create task processor");
@@ -328,6 +365,9 @@ void derlRemoteClient::OnSynchronizeUpdate(){
 }
 
 void derlRemoteClient::OnSynchronizeFinished(){
+}
+
+void derlRemoteClient::OnRunStatusChanged(){
 }
 
 // Private Functions

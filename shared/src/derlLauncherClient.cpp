@@ -27,6 +27,7 @@
 
 #include "derlLauncherClient.h"
 #include "derlGlobal.h"
+#include "derlProtocol.h"
 #include "internal/derlLauncherClientConnection.h"
 
 
@@ -136,7 +137,30 @@ void derlLauncherClient::SetEnableDebugLog(bool enable){
 	pConnection->SetEnableDebugLog(enable);
 }
 
+derlLauncherClient::RunStatus derlLauncherClient::GetRunStatus() const{
+	const std::lock_guard guard(derlGlobal::mutexNetwork);
+	switch((derlProtocol::RunStateStatus)pConnection->GetValueRunStatus()->GetValue()){
+	case derlProtocol::RunStateStatus::running:
+		return RunStatus::running;
+		
+	case derlProtocol::RunStateStatus::stopped:
+	default:
+		return RunStatus::stopped;
+	}
+}
 
+void derlLauncherClient::SetRunStatus(RunStatus status){
+	const std::lock_guard guard(derlGlobal::mutexNetwork);
+	switch(status){
+	case RunStatus::running:
+		pConnection->GetValueRunStatus()->SetValue((uint64_t)derlProtocol::RunStateStatus::running);
+		break;
+		
+	case RunStatus::stopped:
+	default:
+		pConnection->GetValueRunStatus()->SetValue((uint64_t)derlProtocol::RunStateStatus::stopped);
+	}
+}
 
 void derlLauncherClient::StartTaskProcessors(){
 	if(!pTaskProcessor){

@@ -70,6 +70,12 @@ public:
 		failed
 	};
 	
+	/** \brief Run state status. */
+	enum class RunStatus{
+		stopped = 0,
+		running = 1
+	};
+	
 	
 protected:
 	std::string pLogClassName;
@@ -228,6 +234,42 @@ public:
 	
 	
 	
+	/** \brief Run status. */
+	RunStatus GetRunStatus() const;
+	
+	/** \brief Set run status. */
+	void SetRunStatus(RunStatus status);
+	
+	/**
+	 * \brief Start application.
+	 * 
+	 * Send start application request to client. Monitor GetRunStatus() or listen to
+	 * the OnRunStatusChanged() event to know when the application is running.
+	 * In case of error logs will be send but no explicit error condition is send.
+	 */
+	void StartApplication(const derlRunParameters &params);
+	
+	/**
+	 * \brief Stop application.
+	 * 
+	 * Send stop application request to client to gracefully stop application.
+	 * Monitor GetRunStatus() or listen to the OnRunStatusChanged() event to know when
+	 * the application is stopped. In case of error logs will be send but no explicit
+	 * error condition is send.
+	 */
+	void StopApplication();
+	
+	/**
+	 * \brief Kill application.
+	 * 
+	 * Send stop application request to client to kill application. Monitor GetRunStatus()
+	 * or listen to the OnRunStatusChanged() event to know when the application is stopped.
+	 * In case of error logs will be send but no explicit error condition is send.
+	 */
+	void KillApplication();
+	
+	
+	
 	/**
 	 * \brief Start task processors.
 	 * 
@@ -323,6 +365,9 @@ public:
 	
 	/** \brief Synchronize finished. */
 	virtual void OnSynchronizeFinished();
+	
+	/** \brief Run status changed. */
+	virtual void OnRunStatusChanged();
 	/*@}*/
 	
 	

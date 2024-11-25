@@ -96,6 +96,18 @@ public:
 		std::cout << "OnConnectionClosed" << std::endl;
 		exit = 1;
 	}
+	
+	void StartApplication(const derlRunParameters &params) override{
+		std::cout << "StartApplication" << std::endl;
+	}
+	
+	void StopApplication() override{
+		std::cout << "StopApplication" << std::endl;
+	}
+	
+	void KillApplication() override{
+		std::cout << "KillApplication" << std::endl;
+	}
 };
 
 int main(int argc, char *argv[]){

@@ -69,18 +69,6 @@ void derlLauncherClientConnection::SetEnableDebugLog(bool enable){
 	pEnableDebugLog = enable;
 }
 
-void derlLauncherClientConnection::SetRunStatus(RunStatus status){
-	switch(status){
-	case RunStatus::running:
-		pValueRunStatus->SetValue((uint64_t)derlProtocol::RunStateStatus::running);
-		break;
-		
-	case RunStatus::stopped:
-	default:
-		pValueRunStatus->SetValue((uint64_t)derlProtocol::RunStateStatus::stopped);
-	}
-}
-
 void derlLauncherClientConnection::SetLogger(const denLogger::Ref &logger){
 	denConnection::SetLogger(logger);
 	pStateRun->SetLogger(logger);
@@ -696,22 +684,29 @@ void derlLauncherClientConnection::pProcessRequestFinishWriteFile(denMessageRead
 }
 
 void derlLauncherClientConnection::pProcessStartApplication(denMessageReader &reader){
-	derlRunParameters runParams;
-	runParams.SetGameConfig(reader.ReadString16());
-	runParams.SetProfileName(reader.ReadString8());
-	runParams.SetArguments(reader.ReadString16());
+	derlRunParameters params;
+	params.SetGameConfig(reader.ReadString16());
+	params.SetProfileName(reader.ReadString8());
+	params.SetArguments(reader.ReadString16());
 	
 	Log(denLogger::LogSeverity::info, "pProcessStartApplication", "Start application request received");
-	
-	// TODO
+	pClient.StartApplication(params);
 }
 
 void derlLauncherClientConnection::pProcessStopApplication(denMessageReader &reader){
 	const derlProtocol::StopApplicationMode mode = (derlProtocol::StopApplicationMode)reader.ReadByte();
 	
-	Log(denLogger::LogSeverity::info, "pProcessStopApplication", "Stop application request received");
-	
-	(void)mode;
+	switch(mode){
+	case derlProtocol::StopApplicationMode::requestClose:
+		Log(denLogger::LogSeverity::info, "pProcessStopApplication", "Stop application request received => stop");
+		pClient.StopApplication();
+		break;
+		
+	case derlProtocol::StopApplicationMode::killProcess:
+		Log(denLogger::LogSeverity::info, "pProcessStopApplication", "Stop application request received => kill");
+		pClient.KillApplication();
+		break;
+	}
 }
 
 void derlLauncherClientConnection::pSendResponseFileLayout(const derlFileLayout &layout){

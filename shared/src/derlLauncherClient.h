@@ -35,6 +35,7 @@
 #include <denetwork/denConnection.h>
 
 #include "derlFileLayout.h"
+#include "derlRunParameters.h"
 #include "processor/derlTaskProcessorLauncherClient.h"
 #include "task/derlBaseTask.h"
 
@@ -52,6 +53,12 @@ class derlLauncherClient{
 public:
 	/** \brief Reference type. */
 	typedef std::shared_ptr<derlLauncherClient> Ref;
+	
+	/** \brief Run state status. */
+	enum class RunStatus{
+		stopped = 0,
+		running = 1
+	};
 	
 	
 protected:
@@ -258,6 +265,52 @@ public:
 	/** \brief Apply layout change if pending. */
 	void UpdateLayoutChanged();
 	
+	
+	
+	/** \brief Run status. */
+	RunStatus GetRunStatus() const;
+	
+	/** \brief Set run status. */
+	void SetRunStatus(RunStatus status);
+	
+	/**
+	 * \brief Start application.
+	 * 
+	 * Called if start application request has been received. Subclass has to begin the
+	 * process of starting the application if the application is not yet running or in
+	 * progress of starting. The application has to return immediately from this function.
+	 * The starting and running process has to be done outside this function. Subclass
+	 * has to call SetRunStatus() to change the run status to running once the application
+	 * is up and running. Failure to run the application has to he send as logs to the
+	 * server. No error is expected to be thrown.
+	 */
+	virtual void StartApplication(const derlRunParameters &params) = 0;
+	
+	/**
+	 * \brief Stop application.
+	 * 
+	 * Called if stop application request has been received. Subclass has to begin the
+	 * process of stopping the application grafecully if the application is running or
+	 * in the progress of starting. The application has to return immediately from this
+	 * function. The stopping process has to be done outside this function. Subclass has
+	 * to call SetRunStatus() to change the run status to stopped once the appliaction
+	 * has been stopped. Failure to stop the application has to he send as logs to the
+	 * server. No error is expected to be thrown.
+	 */
+	virtual void StopApplication() = 0;
+	
+	/**
+	 * \brief Kill application.
+	 * 
+	 * Called if stop application request has been received with the kill flag set.
+	 * Subclass has to begin the process of killing the application if the application
+	 * is running or in the progress of starting. The application has to return
+	 * immediately from this function. The killing process has to be done outside this
+	 * function. Subclass has to call SetRunStatus() to change the run status to stopped
+	 * once the appliaction has been killed. Failure to kill the application has to he
+	 * send as logs to the server. No error is expected to be thrown.
+	 */
+	virtual void KillApplication() = 0;
 	
 	
 	/** \brief Log exception. */

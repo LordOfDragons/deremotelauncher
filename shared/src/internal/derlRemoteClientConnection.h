@@ -58,12 +58,17 @@ public:
 	/** \brief Shared pointer. */
 	typedef std::shared_ptr<derlRemoteClientConnection> Ref;
 	
-	/** \brief Run state status. */
-	enum class RunStatus{
-		stopped = 0,
-		running = 1
+	/** \brief Run state. */
+	class StateRun : public denState{
+	private:
+		derlRemoteClientConnection &pConnection;
+		
+	public:
+		const denValueInt::Ref valueRunStatus;
+		
+		StateRun(derlRemoteClientConnection &connection);
+		void RemoteValueChanged(denValue &value) override;
 	};
-	
 	
 	
 private:
@@ -76,8 +81,7 @@ private:
 	int pBatchSize;
 	bool pEnableDebugLog;
 	
-	const denState::Ref pStateRun;
-	const denValueInt::Ref pValueRunStatus;
+	const std::shared_ptr<StateRun> pStateRun;
 	
 	int pMaxInProgressFiles;
 	int pMaxInProgressBlocks;
@@ -133,8 +137,8 @@ public:
 	void SetEnableDebugLog(bool enable);
 	
 	
-	/** \brief Get run status. */
-	RunStatus GetRunStatus() const;
+	/** \brief Run status network vaue. */
+	const denValueInt::Ref &GetValueRunStatus() const;
 	
 	
 	/** \brief Set logger or nullptr to clear. */
@@ -189,6 +193,8 @@ public:
 	void SendRequestLayout();
 	void SendRequestFileBlockHashes(const derlTaskFileBlockHashes &task);
 	void SendRequestDeleteFile(const derlTaskFileDelete &task);
+	void SendStartApplication(const derlRunParameters &parameters);
+	void SendStopApplication(derlProtocol::StopApplicationMode mode);
 	/*@}*/
 	
 	
@@ -206,8 +212,6 @@ private:
 	void pSendRequestWriteFile(const derlTaskFileWrite &task);
 	void pSendSendFileData(derlTaskFileWriteBlock &block);
 	void pSendRequestFinishWriteFile(const derlTaskFileWrite &task);
-	void pSendStartApplication(const derlRunParameters &parameters);
-	void pSendStopApplication(derlProtocol::StopApplicationMode mode);
 	
 	derlTaskSyncClient::Ref pGetSyncTask(const std::string &functionName,
 		derlTaskSyncClient::Status status);

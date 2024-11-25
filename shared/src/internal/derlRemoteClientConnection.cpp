@@ -42,6 +42,30 @@
 #define DERL_MAX_INT ((int)0x7fffffff)
 
 
+// Class derlRemoteClientConnection::StateRun
+///////////////////////////////////////////////
+
+derlRemoteClientConnection::StateRun::StateRun(derlRemoteClientConnection &connection) :
+denState(false),
+pConnection(connection),
+valueRunStatus(std::make_shared<denValueInt>(denValueIntegerFormat::uint8))
+{
+	valueRunStatus->SetValue((uint64_t)derlProtocol::RunStateStatus::stopped);
+	AddValue(valueRunStatus);
+}
+
+void derlRemoteClientConnection::StateRun::RemoteValueChanged(denValue &value){
+	derlRemoteClient * const client = pConnection.GetClient();
+	if(!client){
+		return;
+	}
+	
+	if(&value == &*valueRunStatus){
+		client->OnRunStatusChanged();
+	}
+}
+
+
 // Class derlRemoteClientConnection
 /////////////////////////////////////
 
@@ -53,8 +77,7 @@ pEnabledFeatures(0),
 pPartSize(1357),
 pBatchSize(10),
 pEnableDebugLog(false),
-pStateRun(std::make_shared<denState>(false)),
-pValueRunStatus(std::make_shared<denValueInt>(denValueIntegerFormat::uint8)),
+pStateRun(std::make_shared<StateRun>(*this)),
 pMaxInProgressFiles(3), //1
 pMaxInProgressBlocks(3), //1
 pMaxInProgressBatches(5), //2
@@ -62,8 +85,6 @@ pCountInProgressFiles(0),
 pCountInProgressBlocks(0),
 pCountInProgressBatches(0)
 {
-	pValueRunStatus->SetValue((uint64_t)derlProtocol::RunStateStatus::stopped);
-	pStateRun->AddValue(pValueRunStatus);
 	SetLogger(server.GetLogger());
 }
 
@@ -82,15 +103,8 @@ void derlRemoteClientConnection::SetEnableDebugLog(bool enable){
 	pEnableDebugLog = enable;
 }
 
-derlRemoteClientConnection::RunStatus derlRemoteClientConnection::GetRunStatus() const{
-	switch((derlProtocol::RunStateStatus)pValueRunStatus->GetValue()){
-	case derlProtocol::RunStateStatus::running:
-		return RunStatus::running;
-		
-	case derlProtocol::RunStateStatus::stopped:
-	default:
-		return RunStatus::stopped;
-	}
+const denValueInt::Ref &derlRemoteClientConnection::GetValueRunStatus() const{
+	return pStateRun->valueRunStatus;
 }
 
 void derlRemoteClientConnection::SetLogger(const denLogger::Ref &logger){
@@ -371,6 +385,42 @@ void derlRemoteClientConnection::SendRequestDeleteFile(const derlTaskFileDelete 
 		std::stringstream log;
 		log << "Request delete file: " << task.GetPath();
 		Log(denLogger::LogSeverity::info, "SendRequestDeleteFile", log.str());
+	}
+	pQueueSend.Add(message);
+}
+
+void derlRemoteClientConnection::SendStartApplication(const derlRunParameters &parameters){
+	{
+	std::stringstream log;
+	log << "Start application: ";
+	Log(denLogger::LogSeverity::info, "pSendStartApplication", log.str());
+	}
+	
+	const std::lock_guard guard(derlGlobal::mutexNetwork);
+	const denMessage::Ref message(denMessage::Pool().Get());
+	{
+		denMessageWriter writer(message->Item());
+		writer.WriteByte((uint8_t)derlProtocol::MessageCodes::startApplication);
+		writer.WriteString16(parameters.GetGameConfig());
+		writer.WriteString8(parameters.GetProfileName());
+		writer.WriteString16(parameters.GetArguments());
+	}
+	pQueueSend.Add(message);
+}
+
+void derlRemoteClientConnection::SendStopApplication(derlProtocol::StopApplicationMode mode){
+	{
+	std::stringstream log;
+	log << "Stop application: " << (int)mode;
+	Log(denLogger::LogSeverity::info, "pSendStopApplication", log.str());
+	}
+	
+	const std::lock_guard guard(derlGlobal::mutexNetwork);
+	const denMessage::Ref message(denMessage::Pool().Get());
+	{
+		denMessageWriter writer(message->Item());
+		writer.WriteByte((uint8_t)derlProtocol::MessageCodes::stopApplication);
+		writer.WriteByte((uint8_t)mode);
 	}
 	pQueueSend.Add(message);
 }
@@ -915,42 +965,6 @@ void derlRemoteClientConnection::pSendRequestFinishWriteFile(const derlTaskFileW
 		std::stringstream log;
 		log << "Request finish write file: " << task.GetPath();
 		Log(denLogger::LogSeverity::info, "pSendRequestsFinishWriteFile", log.str());
-	}
-	pQueueSend.Add(message);
-}
-
-void derlRemoteClientConnection::pSendStartApplication(const derlRunParameters &parameters){
-	{
-	std::stringstream log;
-	log << "Start application: ";
-	Log(denLogger::LogSeverity::info, "pSendStartApplication", log.str());
-	}
-	
-	const std::lock_guard guard(derlGlobal::mutexNetwork);
-	const denMessage::Ref message(denMessage::Pool().Get());
-	{
-		denMessageWriter writer(message->Item());
-		writer.WriteByte((uint8_t)derlProtocol::MessageCodes::startApplication);
-		writer.WriteString16(parameters.GetGameConfig());
-		writer.WriteString8(parameters.GetProfileName());
-		writer.WriteString16(parameters.GetArguments());
-	}
-	pQueueSend.Add(message);
-}
-
-void derlRemoteClientConnection::pSendStopApplication(derlProtocol::StopApplicationMode mode){
-	{
-	std::stringstream log;
-	log << "Stop application: " << (int)mode;
-	Log(denLogger::LogSeverity::info, "pSendStopApplication", log.str());
-	}
-	
-	const std::lock_guard guard(derlGlobal::mutexNetwork);
-	const denMessage::Ref message(denMessage::Pool().Get());
-	{
-		denMessageWriter writer(message->Item());
-		writer.WriteByte((uint8_t)derlProtocol::MessageCodes::stopApplication);
-		writer.WriteByte((uint8_t)mode);
 	}
 	pQueueSend.Add(message);
 }

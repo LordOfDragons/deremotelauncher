@@ -51,14 +51,6 @@ class denMessageReader;
  * For internal use.
  */
 class derlLauncherClientConnection : public denConnection{
-public:
-	/** \brief Run state status. */
-	enum class RunStatus{
-		stopped = 0,
-		running = 1
-	};
-	
-	
 private:
 	typedef std::unique_lock<std::mutex> Lock;
 	
@@ -110,8 +102,8 @@ public:
 	void SetEnableDebugLog(bool enable);
 	
 	
-	/** \brief Set run status. */
-	void SetRunStatus(RunStatus status);
+	/** \brief Run status network vaue. */
+	inline const denValueInt::Ref &GetValueRunStatus(){ return pValueRunStatus; }
 	
 	
 	/** \brief Set logger or nullptr to clear. */

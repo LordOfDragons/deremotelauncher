@@ -122,9 +122,6 @@ public:
 	 */
 	void SetPathDataDir(const std::filesystem::path &path);
 	
-	/** \brief Part size. */
-	int GetPartSize() const;
-	
 	
 	
 	/** \brief File layout or nullptr. */

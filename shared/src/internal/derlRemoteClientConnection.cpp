@@ -74,16 +74,12 @@ pServer(server),
 pClient(nullptr),
 pSupportedFeatures(0),
 pEnabledFeatures(0),
-pPartSize(1357),
-pBatchSize(10),
 pEnableDebugLog(false),
 pStateRun(std::make_shared<StateRun>(*this)),
 pMaxInProgressFiles(3), //1
-pMaxInProgressBlocks(3), //1
-pMaxInProgressBatches(5), //2
 pCountInProgressFiles(0),
-pCountInProgressBlocks(0),
-pCountInProgressBatches(0)
+pMaxInProgressBlocks(3), //1
+pCountInProgressBlocks(0)
 {
 	SetLogger(server.GetLogger());
 }
@@ -268,10 +264,7 @@ void derlRemoteClientConnection::SendNextWriteRequests(derlTaskSyncClient &taskS
 					}
 					
 					if(block.GetStatus() == derlTaskFileWriteBlock::Status::dataReady){
-						if(pCountInProgressBatches >= pMaxInProgressBatches){
-							break;
-						}
-						
+						block.SetStatus(derlTaskFileWriteBlock::Status::dataSent);
 						try{
 							pSendSendFileData(block);
 							
@@ -778,26 +771,11 @@ void derlRemoteClientConnection::pProcessFileDataReceived(denMessageReader &read
 	}
 	
 	derlTaskFileWriteBlock &block = **iterBlock;
-	if(block.GetStatus() != derlTaskFileWriteBlock::Status::dataReady){
+	if(block.GetStatus() != derlTaskFileWriteBlock::Status::dataSent){
 		std::stringstream log;
-		log << "Write file data response received but block is not processing: "
+		log << "Write file data response received but block is not dataSent: "
 			<< path << " block " << indexBlock;
 		Log(denLogger::LogSeverity::warning, "pProcessFileDataReceived", log.str());
-		return;
-	}
-	
-	if(pCountInProgressBatches > 0){
-		pCountInProgressBatches--;
-	}
-	
-	if(result == derlProtocol::FileDataReceivedResult::batch){
-		if(pEnableDebugLog){
-			std::stringstream log;
-			log << "Batch finished: " << path << " block " << indexBlock;
-			LogDebug("pProcessFileDataReceived", log.str());
-		}
-		guard.unlock();
-		SendNextWriteRequestsFailSync(*taskSync);
 		return;
 	}
 	
@@ -888,62 +866,23 @@ void derlRemoteClientConnection::pSendRequestWriteFile(const derlTaskFileWrite &
 }
 
 void derlRemoteClientConnection::pSendSendFileData(derlTaskFileWriteBlock &block){
-	const int partCount = block.GetPartCount();
-	if(block.GetNextPartIndex() == partCount){
-		return;
-	}
-	
 	if(pEnableDebugLog){
 		std::stringstream log;
 		log << "Send file data: " << block.GetParentTask().GetPath()
-			<< " block " << block.GetIndex() << " size " << block.GetSize()
-			<< " part " << block.GetNextPartIndex() << "/" << block.GetPartCount();
+			<< " block " << block.GetIndex() << " size " << block.GetSize();
 		LogDebug("pSendSendFileData", log.str());
 	}
 	
-	const uint64_t blockSize = block.GetSize();
-	const uint8_t * const blockData = (const uint8_t *)block.GetData().c_str();
-	const int lastIndex = partCount - 1;
-	int i, batchCounter = 0;
-	
 	const std::lock_guard guard(derlGlobal::mutexNetwork);
-	
-	for(i=block.GetNextPartIndex(); i<partCount; i++, batchCounter++){
-		if(batchCounter == pBatchSize){
-			batchCounter = 0;
-			pCountInProgressBatches++;
-			if(pCountInProgressBatches >= pMaxInProgressBatches){
-				break;
-			}
-		}
-		
-		const uint64_t partOffset = (uint64_t)pPartSize * i;
-		const int partSize = std::min(pPartSize, (int)(blockSize - partOffset));
-		
-		const denMessage::Ref message(denMessage::Pool().Get());
-		{
-			denMessageWriter writer(message->Item());
-			writer.WriteByte((uint8_t)derlProtocol::MessageCodes::sendFileData);
-			writer.WriteString16(block.GetParentTask().GetPath());
-			writer.WriteUInt((uint32_t)block.GetIndex());
-			writer.WriteUInt((uint32_t)i);
-			
-			uint8_t flags = 0;
-			if(i == lastIndex){
-				flags |= (uint8_t)derlProtocol::SendFileDataFlags::finish;
-				pCountInProgressBatches++;
-				
-			}else if(batchCounter == pBatchSize - 1){
-				flags |= (uint8_t)derlProtocol::SendFileDataFlags::batch;
-			}
-			writer.WriteByte(flags);
-			
-			writer.Write(blockData + partOffset, (size_t)partSize);
-		}
-		pQueueSend.Add(message);
+	const denMessage::Ref message(denMessage::Pool().Get());
+	{
+		denMessageWriter writer(message->Item());
+		writer.WriteByte((uint8_t)derlProtocol::MessageCodes::sendFileData);
+		writer.WriteString16(block.GetParentTask().GetPath());
+		writer.WriteUInt((uint32_t)block.GetIndex());
+		writer.Write((void*)block.GetData().c_str(), block.GetSize());
 	}
-	
-	block.SetNextPartIndex(i);
+	pQueueSend.Add(message);
 }
 
 void derlRemoteClientConnection::pSendRequestFinishWriteFile(const derlTaskFileWrite &task){

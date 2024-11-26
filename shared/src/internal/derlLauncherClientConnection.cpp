@@ -48,7 +48,6 @@ derlLauncherClientConnection::derlLauncherClientConnection(derlLauncherClient &c
 pClient(client),
 pConnectionAccepted(false),
 pEnabledFeatures(0),
-pPartSize(1357),
 pEnableDebugLog(false),
 pStateRun(std::make_shared<denState>(false)),
 pValueRunStatus(std::make_shared<denValueInt>(denValueIntegerFormat::uint8)),
@@ -320,26 +319,7 @@ void derlLauncherClientConnection::SendResponseDeleteFile(const derlTaskFileDele
 	pQueueSend.Add(message);
 }
 
-void derlLauncherClientConnection::SendFileDataReceivedBatch(const derlTaskFileWriteBlock &block){
-	const std::lock_guard guard(derlGlobal::mutexNetwork);
-	if(!GetConnected()){
-		return;
-	}
-	
-	const denMessage::Ref message(denMessage::Pool().Get());
-	{
-		denMessageWriter writer(message->Item());
-		writer.WriteByte((uint8_t)derlProtocol::MessageCodes::fileDataReceived);
-		writer.WriteString16(block.GetParentTask().GetPath());
-		writer.WriteUInt((uint32_t)block.GetIndex());
-		writer.WriteByte((uint8_t)derlProtocol::FileDataReceivedResult::batch);
-	}
-	pQueueSend.Add(message);
-	
-	LogDebug("SendFileDataReceivedBatch", "Batch finished");
-}
-
-void derlLauncherClientConnection::SendFileDataReceivedFinished(const derlTaskFileWriteBlock &block){
+void derlLauncherClientConnection::SendFileDataReceived(const derlTaskFileWriteBlock &block){
 	const std::lock_guard guard(derlGlobal::mutexNetwork);
 	if(!GetConnected()){
 		return;
@@ -361,7 +341,7 @@ void derlLauncherClientConnection::SendFileDataReceivedFinished(const derlTaskFi
 	}
 	pQueueSend.Add(message);
 	
-	LogDebug("SendFileDataReceivedFinished", "Block finished");
+	LogDebug("SendFileDataReceived", "Block finished");
 }
 
 void derlLauncherClientConnection::SendResponseWriteFile(const derlTaskFileWrite &task){
@@ -562,79 +542,41 @@ void derlLauncherClientConnection::pProcessRequestWriteFile(denMessageReader &re
 void derlLauncherClientConnection::pProcessSendFileData(denMessageReader &reader){
 	const std::string path(reader.ReadString16());
 	const int indexBlock = reader.ReadUInt();
-	const int indexPart = reader.ReadUInt();
-	const uint8_t flags = reader.ReadByte();
 	
 	const uint64_t size = (uint64_t)(reader.GetLength() - reader.GetPosition());
 	
-	derlTaskFileWriteBlock::List::const_iterator iterBlock(std::find_if(
-		pWriteFileBlocks.cbegin(), pWriteFileBlocks.cend(),
-		[path, indexBlock](const derlTaskFileWriteBlock::Ref &block){
-			return block->GetParentTask().GetPath() == path && block->GetIndex() == indexBlock;
-		}));
-	
-	derlTaskFileWriteBlock::Ref taskBlock;
-	if(iterBlock != pWriteFileBlocks.cend()){
-		taskBlock = *iterBlock;
-		
-	}else{
-		const derlTaskFileWrite::Map::const_iterator iterWrite(pWriteFileTasks.find(path));
-		if(iterWrite == pWriteFileTasks.cend()){
-			std::stringstream log;
-			log << "Send file data received but task does not exist: " << path;
-			Log(denLogger::LogSeverity::warning, "pProcessSendFileData", log.str());
-			return; // ignore
-		}
-		
-		derlTaskFileWrite &taskWrite = *iterWrite->second;
-		if(indexBlock < 0 || indexBlock >= taskWrite.GetBlockCount()){
-			std::stringstream log;
-			log << "Send file data received but block index is out of range: "
-				<< path << " index " << indexBlock << " count " << taskWrite.GetBlockCount();
-			Log(denLogger::LogSeverity::warning, "pProcessSendFileData", log.str());
-			taskWrite.SetStatus(derlTaskFileWrite::Status::failure);
-			return;
-		}
-		
-		const uint64_t blockOffset = taskWrite.GetBlockSize() * indexBlock;
-		const uint64_t blockSize = std::min(
-			taskWrite.GetBlockSize(), taskWrite.GetFileSize() - blockOffset);
-		
-		taskBlock = std::make_shared<derlTaskFileWriteBlock>(taskWrite, indexBlock, blockSize);
-		taskBlock->GetData().assign(blockSize, 0);
-		taskBlock->SetStatus(derlTaskFileWriteBlock::Status::readingData);
-		taskBlock->CalcPartCount(pPartSize);
-		pWriteFileBlocks.push_back(taskBlock);
+	const derlTaskFileWrite::Map::const_iterator iterWrite(pWriteFileTasks.find(path));
+	if(iterWrite == pWriteFileTasks.cend()){
+		std::stringstream log;
+		log << "Send file data received but task does not exist: " << path;
+		Log(denLogger::LogSeverity::warning, "pProcessSendFileData", log.str());
+		return; // ignore
 	}
 	
-	const int partCount = taskBlock->GetPartCount();
-	if(indexPart < 0 || indexPart >= partCount){
+	derlTaskFileWrite &taskWrite = *iterWrite->second;
+	if(indexBlock < 0 || indexBlock >= taskWrite.GetBlockCount()){
 		std::stringstream log;
-		log << "Send file data received but part index is out of range: " << path
-			<< " block " << indexBlock << " part " << indexPart << " count " << partCount;
+		log << "Send file data received but block index is out of range: "
+			<< path << " index " << indexBlock << " count " << taskWrite.GetBlockCount();
 		Log(denLogger::LogSeverity::warning, "pProcessSendFileData", log.str());
-		taskBlock->GetParentTask().SetStatus(derlTaskFileWrite::Status::failure);
+		taskWrite.SetStatus(derlTaskFileWrite::Status::failure);
 		return;
 	}
 	
-	reader.Read(taskBlock->PartDataPointer(pPartSize, indexPart), size);
+	const uint64_t blockOffset = taskWrite.GetBlockSize() * indexBlock;
+	const uint64_t blockSize = std::min(taskWrite.GetBlockSize(), taskWrite.GetFileSize() - blockOffset);
 	
-	if((flags & (uint8_t)derlProtocol::SendFileDataFlags::finish) != 0){
-		taskBlock->SetStatus(derlTaskFileWriteBlock::Status::dataReady);
-		pClient.AddPendingTaskSync(taskBlock);
-		
-		// works because this is only done for the the last part in the block and
-		// thus the block has been found by searching not adding it
-		pWriteFileBlocks.erase(iterBlock);
-		
-	}else if((flags & (uint8_t)derlProtocol::SendFileDataFlags::batch) != 0){
-		SendFileDataReceivedBatch(*taskBlock);
-	}
+	derlTaskFileWriteBlock::Ref taskBlock(std::make_shared<derlTaskFileWriteBlock>(
+		taskWrite, indexBlock, blockSize));
+	taskBlock->GetData().assign(blockSize, 0);
+	taskBlock->SetStatus(derlTaskFileWriteBlock::Status::dataReady);
+	reader.Read((void*)taskBlock->GetData().c_str(), size);
+	
+	pClient.AddPendingTaskSync(taskBlock);
 	
 	if(pEnableDebugLog){
 		std::stringstream log;
-		log << "Send file data received: " << path << " block " << indexBlock
-			<< " part " << indexPart << " flags " << (int)flags;
+		log << "Send file data received: " << path << " block " << indexBlock;
 		LogDebug("pProcessSendFileData", log.str());
 	}
 }
@@ -669,16 +611,6 @@ void derlLauncherClientConnection::pProcessRequestFinishWriteFile(denMessageRead
 	}
 	
 	pClient.AddPendingTaskSync(iterTask->second);
-	
-	derlTaskFileWriteBlock::List removeBlocks;
-	for(const derlTaskFileWriteBlock::Ref &block : pWriteFileBlocks){
-		if(&block->GetParentTask() == &*iterTask->second){
-			removeBlocks.push_back(block);
-		}
-	}
-	for(const derlTaskFileWriteBlock::Ref &block : removeBlocks){
-		pWriteFileBlocks.erase(std::find(pWriteFileBlocks.cbegin(), pWriteFileBlocks.cend(), block));
-	}
 	
 	pWriteFileTasks.erase(iterTask);
 }

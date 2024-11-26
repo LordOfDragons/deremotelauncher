@@ -35,9 +35,7 @@ derlBaseTask(Type::fileWriteBlock),
 pParentTask(parentTask),
 pStatus(Status::pending),
 pIndex(index),
-pSize(size),
-pNextPartIndex(0),
-pPartCount(0){
+pSize(size){
 }
 
 derlTaskFileWriteBlock::derlTaskFileWriteBlock(derlTaskFileWrite &parentTask,
@@ -47,9 +45,7 @@ pParentTask(parentTask),
 pStatus(Status::pending),
 pIndex(index),
 pSize(size),
-pData(data),
-pNextPartIndex(0),
-pPartCount(0){
+pData(data){
 }
 
 
@@ -58,20 +54,4 @@ pPartCount(0){
 
 void derlTaskFileWriteBlock::SetStatus(Status status){
 	pStatus = status;
-}
-
-void derlTaskFileWriteBlock::SetNextPartIndex(int index){
-	pNextPartIndex = index;
-}
-
-void derlTaskFileWriteBlock::SetPartCount(int count){
-	pPartCount = count;
-}
-
-void derlTaskFileWriteBlock::CalcPartCount(int partSize){
-	pPartCount = (int)((pSize - 1L) / (uint64_t)partSize) + 1;
-}
-
-uint8_t *derlTaskFileWriteBlock::PartDataPointer(int partSize, int indexPart) const{
-	return (uint8_t*)pData.c_str() + (uint64_t)partSize * indexPart;
 }

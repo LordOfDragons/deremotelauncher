@@ -54,7 +54,6 @@ void derlTaskProcessorLauncherClient::RunTask(){
 	{
 	const std::lock_guard guard(pClient.GetMutex());
 	pBaseDir = pClient.GetPathDataDir();
-	pPartSize = pClient.GetPartSize();
 	pEnableDebugLog = pClient.GetEnableDebugLog();
 	}
 	
@@ -338,7 +337,7 @@ void derlTaskProcessorLauncherClient::ProcessWriteFileBlock(derlTaskFileWriteBlo
 		pClient.SetDirtyFileLayoutSync(true);
 	}
 	
-	pClient.GetConnection().SendFileDataReceivedFinished(task);
+	pClient.GetConnection().SendFileDataReceived(task);
 }
 
 void derlTaskProcessorLauncherClient::ProcessFinishWriteFile(derlTaskFileWrite &task){

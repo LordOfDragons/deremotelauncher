@@ -88,20 +88,11 @@ namespace derlProtocol{
 	};
 	
 	/**
-	 * \brief Send file data flags.
-	 */
-	enum class SendFileDataFlags{
-		finish = 0x1,
-		batch = 0x2
-	};
-	
-	/**
 	 * \brief File data received result.
 	 */
 	enum class FileDataReceivedResult{
 		success = 0,
-		failure = 1,
-		batch = 2
+		failure = 1
 	};
 	
 	/**

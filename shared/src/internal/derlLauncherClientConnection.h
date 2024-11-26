@@ -57,7 +57,6 @@ private:
 	derlLauncherClient &pClient;
 	bool pConnectionAccepted;
 	uint32_t pEnabledFeatures;
-	int pPartSize;
 	bool pEnableDebugLog;
 	
 	const denState::Ref pStateRun;
@@ -65,7 +64,6 @@ private:
 	
 	bool pPendingRequestLayout;
 	derlTaskFileWrite::Map pWriteFileTasks;
-	derlTaskFileWriteBlock::List pWriteFileBlocks;
 	
 	derlMessageQueue pQueueReceived, pQueueSend;
 	
@@ -86,9 +84,6 @@ public:
 	
 	/** \name Management */
 	/*@{*/
-	/** \brief Part size. */
-	inline int GetPartSize() const{ return pPartSize; }
-	
 	/** \brief Received message queue. */
 	inline derlMessageQueue &GetQueueReceived(){ return pQueueReceived; }
 	
@@ -176,8 +171,7 @@ public:
 	void SendResponseFileBlockHashes(const std::string &path, uint32_t blockSize);
 	void SendFailResponseFileBlockHashes(const derlFile &file);
 	void SendResponseDeleteFile(const derlTaskFileDelete &task);
-	void SendFileDataReceivedBatch(const derlTaskFileWriteBlock &block);
-	void SendFileDataReceivedFinished(const derlTaskFileWriteBlock &block);
+	void SendFileDataReceived(const derlTaskFileWriteBlock &block);
 	void SendResponseWriteFile(const derlTaskFileWrite &task);
 	void SendFailResponseWriteFile(const std::string &path);
 	void SendResponseFinishWriteFile(const derlTaskFileWrite &task);

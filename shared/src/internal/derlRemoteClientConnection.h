@@ -77,19 +77,12 @@ private:
 	std::string pName;
 	const uint32_t pSupportedFeatures;
 	uint32_t pEnabledFeatures;
-	int pPartSize;
-	int pBatchSize;
 	bool pEnableDebugLog;
 	
 	const std::shared_ptr<StateRun> pStateRun;
 	
-	int pMaxInProgressFiles;
-	int pMaxInProgressBlocks;
-	int pMaxInProgressBatches;
-	
-	int pCountInProgressFiles;
-	int pCountInProgressBlocks;
-	int pCountInProgressBatches;
+	int pMaxInProgressFiles, pCountInProgressFiles;
+	int pMaxInProgressBlocks, pCountInProgressBlocks;
 	
 	derlMessageQueue pQueueReceived, pQueueSend;
 	
@@ -117,12 +110,6 @@ public:
 	/** \brief Name of client. */
 	inline const std::string &GetName() const{ return pName; }
 	
-	
-	/** \brief Part size. */
-	inline int GetPartSize() const{ return pPartSize; }
-	
-	/** \brief Batch size. */
-	inline int GetBatchSize() const{ return pBatchSize; }
 	
 	/** \brief Received message queue. */
 	inline derlMessageQueue &GetQueueReceived(){ return pQueueReceived; }

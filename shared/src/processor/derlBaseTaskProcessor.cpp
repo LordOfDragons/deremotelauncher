@@ -52,10 +52,6 @@ void derlBaseTaskProcessor::SetBaseDirectory(const std::filesystem::path &path){
 	pBaseDir = path;
 }
 
-void derlBaseTaskProcessor::SetPartSize(uint64_t size){
-	pPartSize = size;
-}
-
 void derlBaseTaskProcessor::Exit(){
 	pExit = true;
 }

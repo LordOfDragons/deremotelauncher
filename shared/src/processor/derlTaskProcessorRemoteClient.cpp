@@ -53,7 +53,6 @@ void derlTaskProcessorRemoteClient::RunTask(){
 	{
 	const std::lock_guard guard(pClient.GetMutex());
 	pBaseDir = pClient.GetPathDataDir();
-	pPartSize = pClient.GetPartSize();
 	pEnableDebugLog = pClient.GetEnableDebugLog();
 	}
 	
@@ -435,10 +434,8 @@ void derlTaskProcessorRemoteClient::AddFileWriteTaskFull(derlTaskSyncClient &tas
 	for(iter=file.GetBlocksBegin(), index=0; iter!=file.GetBlocksEnd(); iter++, index++){
 		const derlFileBlock &block = **iter;
 		
-		const derlTaskFileWriteBlock::Ref taskBlock(std::make_shared<derlTaskFileWriteBlock>(
+		taskBlocks.push_back(std::make_shared<derlTaskFileWriteBlock>(
 			*taskWrite, index, block.GetSize()));
-		taskBlock->CalcPartCount(pPartSize);
-		taskBlocks.push_back(taskBlock);
 	}
 	
 	task.GetTasksWriteFile()[file.GetPath()] = taskWrite;
@@ -466,11 +463,8 @@ const derlFile &fileServer, const derlFile &fileClient){
 			continue;
 		}
 		
-		const derlTaskFileWriteBlock::Ref taskBlock(std::make_shared<derlTaskFileWriteBlock>(
+		taskBlocks.push_back(std::make_shared<derlTaskFileWriteBlock>(
 			*taskWrite, index, blockServer.GetSize()));
-		taskBlock->CalcPartCount(pPartSize);
-		
-		taskBlocks.push_back(taskBlock);
 	}
 	
 	task.GetTasksWriteFile()[fileServer.GetPath()] = taskWrite;

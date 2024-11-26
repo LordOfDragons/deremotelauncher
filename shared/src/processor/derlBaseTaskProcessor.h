@@ -54,7 +54,6 @@ public:
 protected:
 	std::atomic<bool> pExit;
 	std::filesystem::path pBaseDir, pFilePath;
-	uint64_t pPartSize;
 	std::fstream pFileStream;
 	uint64_t pFileHashReadSize;
 	std::string pLogClassName;
@@ -81,12 +80,6 @@ public:
 	
 	/** \brief Set base directory. */
 	void SetBaseDirectory(const std::filesystem::path &path);
-	
-	/** \brief Part size. */
-	inline uint64_t GetPartSize() const{ return pPartSize; }
-	
-	/** \brief Set part size. */
-	void SetPartSize(uint64_t size);
 	
 	/** \brief Request task processor to exit the next time possible. */
 	void Exit();

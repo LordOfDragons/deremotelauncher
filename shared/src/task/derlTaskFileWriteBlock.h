@@ -50,6 +50,7 @@ public:
 		pending,
 		readingData,
 		dataReady,
+		dataSent,
 		success,
 		failure
 	};
@@ -61,8 +62,6 @@ private:
 	int pIndex;
 	uint64_t pSize;
 	std::string pData;
-	int pNextPartIndex;
-	int pPartCount;
 	
 	
 public:
@@ -96,18 +95,6 @@ public:
 	/** \brief Data. */
 	inline std::string &GetData(){ return pData; }
 	inline const std::string &GetData() const{ return pData; }
-	
-	/** \brief Next part index. */
-	inline int GetNextPartIndex() const{ return pNextPartIndex; }
-	void SetNextPartIndex(int index);
-	
-	/** \brief Part count. */
-	inline int GetPartCount() const{ return pPartCount; }
-	void SetPartCount(int count);
-	void CalcPartCount(int partSize);
-	
-	/** \brief Part data pointer. */
-	uint8_t *PartDataPointer(int partSize, int indexPart) const;
 	/*@}*/
 };
 

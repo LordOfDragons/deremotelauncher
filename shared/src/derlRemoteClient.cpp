@@ -75,10 +75,6 @@ void derlRemoteClient::SetFileLayoutClient(const derlFileLayout::Ref &layout){
 	pFileLayoutClient = layout;
 }
 
-int derlRemoteClient::GetPartSize() const{
-	return pConnection->GetPartSize();
-}
-
 derlTaskSyncClient::Ref derlRemoteClient::GetTaskSyncClient(){
 	const std::lock_guard guard(pMutex);
 	return pTaskSyncClient;

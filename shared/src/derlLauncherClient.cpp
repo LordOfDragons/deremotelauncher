@@ -61,10 +61,6 @@ void derlLauncherClient::SetPathDataDir(const std::filesystem::path &path){
 	pPathDataDir = path;
 }
 
-int derlLauncherClient::GetPartSize() const{
-	return pConnection->GetPartSize();
-}
-
 derlFileLayout::Ref derlLauncherClient::GetFileLayoutSync(){
 	const std::lock_guard guard(pMutex);
 	return pFileLayout;

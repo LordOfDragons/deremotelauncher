@@ -82,8 +82,9 @@ private:
 	std::mutex pMutexPendingTasks;
 	std::condition_variable pConditionPendingTasks;
 	
-	derlTaskProcessorLauncherClient::Ref pTaskProcessor;
-	std::unique_ptr<std::thread> pThreadTaskProcessor;
+	int pStartTaskProcessorCount;
+	derlTaskProcessorLauncherClient::List pTaskProcessors;
+	std::vector<std::shared_ptr<std::thread>> pTaskProcessorThreads;
 	bool pTaskProcessorsRunning;
 	
 	
@@ -226,11 +227,11 @@ public:
 	virtual void StopTaskProcessors();
 	
 	/**
-	 * \brief Task processor or nullptr.
+	 * \brief Task processors.
 	 * 
 	 * Valid if StartTaskProcessors() has been called and subclass did not overwrite it.
 	 */
-	inline const derlTaskProcessorLauncherClient::Ref &GetTaskProcessor() const{ return pTaskProcessor; }
+	inline const derlTaskProcessorLauncherClient::List &GetTaskProcessors() const{ return pTaskProcessors; }
 	
 	
 	

@@ -100,8 +100,9 @@ private:
 	std::mutex pMutexPendingTasks;
 	std::condition_variable pConditionPendingTasks;
 	
-	derlTaskProcessorRemoteClient::Ref pTaskProcessor;
-	std::unique_ptr<std::thread> pThreadTaskProcessor;
+	int pStartTaskProcessorCount;
+	derlTaskProcessorRemoteClient::List pTaskProcessors;
+	std::vector<std::shared_ptr<std::thread>> pTaskProcessorThreads;
 	bool pTaskProcessorsRunning;
 	
 	std::mutex pMutex;
@@ -296,7 +297,7 @@ public:
 	 * 
 	 * Valid if StartTaskProcessors() has been called and subclass did not overwrite it.
 	 */
-	inline const derlTaskProcessorRemoteClient::Ref &GetTaskProcessor() const{ return pTaskProcessor; }
+	inline const derlTaskProcessorRemoteClient::List &GetTaskProcessors() const{ return pTaskProcessors; }
 	
 	
 	

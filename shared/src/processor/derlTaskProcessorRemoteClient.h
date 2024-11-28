@@ -39,6 +39,9 @@ public:
 	/** \brief Reference type. */
 	typedef std::shared_ptr<derlTaskProcessorRemoteClient> Ref;
 	
+	/** \brief List type. */
+	typedef std::vector<Ref> List;
+	
 	
 protected:
 	derlRemoteClient &pClient;

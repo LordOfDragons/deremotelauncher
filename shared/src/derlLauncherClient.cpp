@@ -39,6 +39,7 @@ pLogClassName("derlLauncherClient"),
 pConnection(std::make_unique<derlLauncherClientConnection>(*this)),
 pName("Client"),
 pDirtyFileLayout(false),
+pStartTaskProcessorCount(1),
 pTaskProcessorsRunning(false){
 }
 
@@ -120,8 +121,8 @@ const denLogger::Ref &derlLauncherClient::GetLogger() const{
 
 void derlLauncherClient::SetLogger(const denLogger::Ref &logger){
 	pConnection->SetLogger(logger);
-	if(pTaskProcessor){
-		pTaskProcessor->SetLogger(logger);
+	for(const derlTaskProcessorLauncherClient::Ref &processor : pTaskProcessors){
+		processor->SetLogger(logger);
 	}
 }
 
@@ -159,34 +160,47 @@ void derlLauncherClient::SetRunStatus(RunStatus status){
 }
 
 void derlLauncherClient::StartTaskProcessors(){
-	if(!pTaskProcessor){
-		Log(denLogger::LogSeverity::info, "StartTaskProcessors", "Create task processor");
-		pTaskProcessor = std::make_shared<derlTaskProcessorLauncherClient>(*this);
-		pTaskProcessor->SetLogger(GetLogger());
+	if(pTaskProcessors.empty()){
+		Log(denLogger::LogSeverity::info, "StartTaskProcessors", "Create task processors");
+		int i;
+		for(i=0; i<pStartTaskProcessorCount; i++){
+			const derlTaskProcessorLauncherClient::Ref processor(
+				std::make_shared<derlTaskProcessorLauncherClient>(*this));
+			processor->SetLogger(GetLogger());
+			pTaskProcessors.push_back(processor);
+		}
 	}
 	
-	if(!pThreadTaskProcessor){
-		Log(denLogger::LogSeverity::info, "StartTaskProcessors", "Run task processor thread");
-		pThreadTaskProcessor = std::make_unique<std::thread>([](derlTaskProcessorLauncherClient &processor){
-			processor.Run();
-		}, std::ref(*pTaskProcessor));
+	if(pTaskProcessorThreads.empty()){
+		Log(denLogger::LogSeverity::info, "StartTaskProcessors", "Run task processor threads");
+		for(const derlTaskProcessorLauncherClient::Ref &processor : pTaskProcessors){
+			pTaskProcessorThreads.push_back(std::make_shared<std::thread>(
+				[&](derlTaskProcessorLauncherClient::Ref processor){
+					processor->Run();
+				}, processor));
+		}
 	}
 }
 
 void derlLauncherClient::StopTaskProcessors(){
-	if(pTaskProcessor){
-		Log(denLogger::LogSeverity::info, "StopTaskProcessors", "Exit task processor");
-		pTaskProcessor->Exit();
+	if(!pTaskProcessors.empty()){
+		Log(denLogger::LogSeverity::info, "StopTaskProcessors", "Exit task processors");
+		for(const derlTaskProcessorLauncherClient::Ref &processor : pTaskProcessors){
+			processor->Exit();
+		}
 	}
 	
 	NotifyPendingTaskAdded();
 	
-	if(pThreadTaskProcessor){
-		Log(denLogger::LogSeverity::info, "StopTaskProcessors", "Join task processor thread");
-		pThreadTaskProcessor->join();
-		pThreadTaskProcessor = nullptr;
+	if(!pTaskProcessorThreads.empty()){
+		Log(denLogger::LogSeverity::info, "StopTaskProcessors", "Join task processor threads");
+		for(const std::shared_ptr<std::thread> &thread : pTaskProcessorThreads){
+			thread->join();
+		}
+		pTaskProcessorThreads.clear();
 	}
-	pTaskProcessor = nullptr;
+	
+	pTaskProcessors.clear();
 }
 
 

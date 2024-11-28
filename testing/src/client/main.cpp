@@ -30,8 +30,14 @@ public:
 			std::cout << "[II] ";
 		}
 		
-		const std::time_t t = std::time(nullptr);
-		std::cout << "[" << std::put_time(std::localtime(&t), "%F %T") << "] ";
+		//const std::time_t t = std::time(nullptr);
+		//std::cout << "[" << std::put_time(std::localtime(&t), "%F %T") << "] ";
+		const auto tp = std::chrono::system_clock::now();
+		const auto t = std::chrono::system_clock::to_time_t(tp);
+		std::cout << "[" << std::put_time(std::localtime(&t), "%F %T");
+		auto dur = tp.time_since_epoch();
+		auto ss = std::chrono::duration_cast<std::chrono::milliseconds>(dur) % std::chrono::seconds{1};
+		std::cout << "." << std::setfill('0') << std::setw(3) << ss.count() << "] ";
 		
 		std::cout << message << std::endl;
 	}
@@ -83,30 +89,32 @@ public:
 	}
 	
 	void OnConnectionEstablished() override{
-		std::cout << "OnConnectionEstablished" << std::endl;
+		Log(denLogger::LogSeverity::info, "OnConnectionEstablished", "Run");
 		state = State::connected;
 	}
 	
 	void OnConnectionFailed(denConnection::ConnectionFailedReason reason) override{
-		std::cout << "OnConnectionFailed: reason=" << (int)reason << std::endl;
+		std::stringstream ss;
+		ss << ": reason=" << (int)reason;
+		Log(denLogger::LogSeverity::info, "OnConnectionFailed", ss.str());
 		exit = 1;
 	}
 	
 	void OnConnectionClosed() override{
-		std::cout << "OnConnectionClosed" << std::endl;
+		Log(denLogger::LogSeverity::info, "OnConnectionClosed", "Run");
 		exit = 1;
 	}
 	
 	void StartApplication(const derlRunParameters &params) override{
-		std::cout << "StartApplication" << std::endl;
+		Log(denLogger::LogSeverity::info, "StartApplication", "Run");
 	}
 	
 	void StopApplication() override{
-		std::cout << "StopApplication" << std::endl;
+		Log(denLogger::LogSeverity::info, "StopApplication", "Run");
 	}
 	
 	void KillApplication() override{
-		std::cout << "KillApplication" << std::endl;
+		Log(denLogger::LogSeverity::info, "KillApplication", "Run");
 	}
 };
 

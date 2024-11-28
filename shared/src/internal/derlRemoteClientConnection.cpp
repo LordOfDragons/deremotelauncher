@@ -76,9 +76,9 @@ pSupportedFeatures(0),
 pEnabledFeatures(0),
 pEnableDebugLog(false),
 pStateRun(std::make_shared<StateRun>(*this)),
-pMaxInProgressFiles(3), //1
+pMaxInProgressFiles(1),
 pCountInProgressFiles(0),
-pMaxInProgressBlocks(3), //1
+pMaxInProgressBlocks(2), //1
 pCountInProgressBlocks(0)
 {
 	SetLogger(server.GetLogger());
@@ -249,7 +249,7 @@ void derlRemoteClientConnection::SendNextWriteRequests(derlTaskSyncClient &taskS
 					
 					if(block.GetStatus() == derlTaskFileWriteBlock::Status::pending){
 						if(pCountInProgressBlocks >= pMaxInProgressBlocks){
-							continue;
+							break;
 						}
 						
 						pCountInProgressBlocks++;

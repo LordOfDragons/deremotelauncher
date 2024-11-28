@@ -31,8 +31,14 @@ public:
 			std::cout << "[II] ";
 		}
 		
-		const std::time_t t = std::time(nullptr);
-		std::cout << "[" << std::put_time(std::localtime(&t), "%F %T") << "] ";
+		//const std::time_t t = std::time(nullptr);
+		//std::cout << "[" << std::put_time(std::localtime(&t), "%F %T") << "] ";
+		const auto tp = std::chrono::system_clock::now();
+		const auto t = std::chrono::system_clock::to_time_t(tp);
+		std::cout << "[" << std::put_time(std::localtime(&t), "%F %T");
+		auto dur = tp.time_since_epoch();
+		auto ss = std::chrono::duration_cast<std::chrono::milliseconds>(dur) % std::chrono::seconds{1};
+		std::cout << "." << std::setfill('0') << std::setw(3) << ss.count() << "] ";
 		
 		std::cout << message << std::endl;
 	}
@@ -70,7 +76,7 @@ public:
 		case State::connected:
 			if(std::chrono::duration_cast<std::chrono::milliseconds>(
 			std::chrono::steady_clock::now() - timerBegin.load()).count() >= 1000){
-				std::cout << "[" << GetName() << "] Timeout => synchronize" << std::endl;
+				Log(denLogger::LogSeverity::info, "Update", "Timeout => synchronize");
 				state = State::synchronize;
 				Synchronize();
 			}
@@ -79,7 +85,7 @@ public:
 		case State::delay:
 			if(std::chrono::duration_cast<std::chrono::milliseconds>(
 			std::chrono::steady_clock::now() - timerBegin.load()).count() >= 1000){
-				std::cout << "[" << GetName() << "] Timeout => disconnect" << std::endl;
+				Log(denLogger::LogSeverity::info, "Update", "Timeout => disconnect");
 				state = State::disconnecting;
 				Disconnect();
 			}
@@ -88,17 +94,17 @@ public:
 	}
 	
 	void OnConnectionEstablished() override{
-		std::cout << "[" << GetName() << "] OnConnectionEstablished" << std::endl;
+		Log(denLogger::LogSeverity::info, "OnConnectionEstablished", "Run");
 		timerBegin = std::chrono::steady_clock::now();
 		state = State::connected;
 	}
 	
 	void OnConnectionClosed() override{
-		std::cout << "[" << GetName() << "] OnConnectionClosed" << std::endl;
+		Log(denLogger::LogSeverity::info, "OnConnectionClosed", "Run");
 	}
 	
 	void OnSynchronizeBegin() override{
-		std::cout << "[" << GetName() << "] OnSynchronizeBegin" << std::endl;
+		Log(denLogger::LogSeverity::info, "OnSynchronizeBegin", "Run");
 		syncStartTime = std::chrono::steady_clock::now();
 	}
 	
@@ -111,10 +117,11 @@ public:
 	
 	void OnSynchronizeFinished() override{
 		const int64_t syncElapsed = std::chrono::duration_cast<std::chrono::milliseconds>(
-			std::chrono::steady_clock::now() - timerBegin.load()).count();
-		std::cout << "[" << GetName() << "] OnSynchronizeFinished["
-			<< (int)GetSynchronizeStatus() << "]: " << GetSynchronizeDetails()
-			<< " elapsed " << syncElapsed << "ms" << std::endl;
+			std::chrono::steady_clock::now() - syncStartTime.load()).count();
+		std::stringstream ss;
+		ss << (int)GetSynchronizeStatus() << ": " << GetSynchronizeDetails()
+			<< " elapsed " << syncElapsed << "ms";
+		Log(denLogger::LogSeverity::info, "OnSynchronizeFinished", ss.str());
 		timerBegin = std::chrono::steady_clock::now();
 		state = State::delay;
 	}

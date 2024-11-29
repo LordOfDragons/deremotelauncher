@@ -5,6 +5,9 @@
 		},
 		{
 			"path": "testing/src"
+		},
+		{
+			"path": "launcher/linux"
 		}
 	],
 	"settings": {

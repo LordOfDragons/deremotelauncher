@@ -1,0 +1,21 @@
+{
+    "configurations": [
+        {
+            "name": "Linux",
+            "includePath": [
+                "${workspaceFolder}/**",
+                "${workspaceFolder}/../../shared/build/deremotelauncher-1.0/include",
+                "${workspaceFolder}/../../../denetwork/cpp/library/build/denetwork-1.0/include",
+                "${workspaceFolder}/../../../dragengine/src/launcher/shared/build/include",
+                "${workspaceFolder}/../../../dragengine/src/dragengine/build/include",
+                "${workspaceFolder}/../../../sdk",
+                "${workspaceFolder}/build"
+            ],
+            "defines": [],
+            "cStandard": "c17",
+            "cppStandard": "c++17",
+            "intelliSenseMode": "linux-clang-x64"
+        }
+    ],
+    "version": 4
+}

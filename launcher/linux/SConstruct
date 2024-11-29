@@ -1,0 +1,120 @@
+global_env = Environment(CPPPATH='.', LIBPATH='.')
+
+params = Variables(['custom.py'], ARGUMENTS)
+params.Add(BoolVariable('with_sanitize', 'Enable sanitizing', False))
+params.Add(BoolVariable('with_sanitize_threads', 'Enable thread sanitizing', False))
+params.Add(BoolVariable('with_client_debug', 'Enable client debug', False))
+params.Add(PathVariable('deremotelauncher_includes', help='Path to DERemoteLauncher headers', default=None))
+params.Add(PathVariable('deremotelauncher_libraries', help='Path to DERemoteLauncher libraries', default=None))
+params.Add(PathVariable('denetwork_includes', help='Path to DENetwork headers', default=None))
+params.Add(PathVariable('denetwork_libraries', help='Path to DENetwork libraries', default=None))
+params.Add(PathVariable('delauncher_includes', help='Path to DELauncher headers', default=None))
+params.Add(PathVariable('delauncher_libraries', help='Path to DELauncher libraries', default=None))
+params.Add(PathVariable('dragengine_includes', help='Path to Drag[en]gine headers', default=None))
+params.Add(PathVariable('dragengine_libraries', help='Path to Drag[en]gine libraries', default=None))
+params.Add(PathVariable('libfox_includes', help='Path to FOX-1.6 headers', default=None))
+params.Add(PathVariable('libfox_libraries', help='Path to FOX-1.6 libraries', default=None))
+params.Update(global_env)
+
+# determine sanitize flags to use
+global_env.Replace(SANITIZE_FLAGS = [])
+
+if global_env['with_sanitize']:
+	global_env.Append(SANITIZE_FLAGS = [
+		'-fsanitize=address',
+		'-fsanitize-address-use-after-scope',
+		'-fsanitize=pointer-compare',
+		'-fsanitize=pointer-subtract'])
+	global_env.Append(SANITIZE_FLAGS = [
+		'-fsanitize=leak'])
+	global_env.Append(SANITIZE_FLAGS = [
+		'-fsanitize=undefined',
+		'-fsanitize=shift',
+		'-fsanitize=shift-exponent',
+		'-fsanitize=shift-base',
+		'-fsanitize=integer-divide-by-zero',
+		'-fsanitize=unreachable',
+		'-fsanitize=vla-bound',
+		'-fsanitize=null',
+		'-fsanitize=return',
+		'-fsanitize=signed-integer-overflow',
+		'-fsanitize=bounds',
+		'-fsanitize=bounds-strict',
+		'-fsanitize=alignment',
+		'-fsanitize=object-size',
+		'-fsanitize=float-divide-by-zero',
+		'-fsanitize=float-cast-overflow',
+		'-fsanitize=nonnull-attribute',
+		'-fsanitize=returns-nonnull-attribute',
+		'-fsanitize=bool',
+		'-fsanitize=enum',
+		'-fsanitize=vptr',
+		'-fsanitize=pointer-overflow',
+		'-fsanitize=builtin'])
+	
+	if global_env['with_sanitize_threads']:
+		global_env['SANITIZE_FLAGS'].remove('-fsanitize=leak')
+		global_env['SANITIZE_FLAGS'].remove('-fsanitize=address')
+		global_env['SANITIZE_FLAGS'].remove('-fsanitize=pointer-compare')
+		global_env['SANITIZE_FLAGS'].remove('-fsanitize=pointer-subtract')
+		global_env.Append(SANITIZE_FLAGS = ['-fsanitize=thread'])
+
+global_env.Append(CPPFLAGS = global_env['SANITIZE_FLAGS'])
+global_env.Append(LINKFLAGS = global_env['SANITIZE_FLAGS'])
+
+global_env.Append(CPPFLAGS = ['-g', '-fno-omit-frame-pointer'])
+
+if global_env['with_client_debug']:
+	global_env.Append(CPPFLAGS = ['-DENABLE_CLIENT_DEBUG'])
+
+# deremotelauncher
+if 'deremotelauncher_includes' in global_env and global_env['deremotelauncher_includes']:
+	global_env.Append(CPPPATH = [global_env['deremotelauncher_includes']])
+else:
+	global_env.Append(CPPPATH=['#sdk/deremotelauncher/include'])
+
+if 'deremotelauncher_libraries' in global_env and global_env['deremotelauncher_libraries']:
+	global_env.Append(LIBPATH = [global_env['deremotelauncher_libraries']])
+else:
+	global_env.Append(LIBPATH=['#sdk/deremotelauncher/lib'])
+
+global_env.Append(LIBS=['deremotelauncher'])
+
+# denetwork
+if 'denetwork_includes' in global_env and global_env['denetwork_includes']:
+	global_env.Append(CPPPATH = [global_env['denetwork_includes']])
+
+if 'denetwork_libraries' in global_env and global_env['denetwork_libraries']:
+	global_env.Append(LIBPATH = [global_env['denetwork_libraries']])
+
+global_env.Append(LIBS=['denetwork'])
+
+# delauncher
+if 'delauncher_includes' in global_env and global_env['delauncher_includes']:
+	global_env.Append(CPPPATH = [global_env['delauncher_includes']])
+
+if 'delauncher_libraries' in global_env and global_env['delauncher_libraries']:
+	global_env.Append(LIBPATH = [global_env['delauncher_libraries']])
+
+global_env.Append(LIBS=['delauncher'])
+
+# dragengine
+if 'dragengine_includes' in global_env and global_env['dragengine_includes']:
+	global_env.Append(CPPPATH = [global_env['dragengine_includes']])
+
+if 'dragengine_libraries' in global_env and global_env['dragengine_libraries']:
+	global_env.Append(LIBPATH = [global_env['dragengine_libraries']])
+
+global_env.Append(LIBS=['dragengine'])
+
+# fox
+if 'libfox_includes' in global_env and global_env['libfox_includes']:
+	global_env.Append(CPPPATH = [global_env['libfox_includes']])
+
+if 'libfox_libraries' in global_env and global_env['libfox_libraries']:
+	global_env.Append(LIBPATH = [global_env['libfox_libraries']])
+
+global_env.Append(LIBS=['FOX-1.6'])
+
+SConscript(dirs='src', variant_dir='build', duplicate=0, exports='global_env')
+Default(['deremotelauncher-linux'])

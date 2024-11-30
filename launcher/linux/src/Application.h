@@ -1,7 +1,7 @@
 /**
  * MIT License
  * 
- * Copyright (c) 2022 DragonDreams (info@dragondreams.ch)
+ * Copyright (c) 2024 DragonDreams (info@dragondreams.ch)
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -22,7 +22,10 @@
  * SOFTWARE.
  */
 
-#include <fox-1.6/fx.h>
+#ifndef _APPLICATION_H_
+#define _APPLICATION_H_
+
+#include "foxtoolkit.h"
 
 class WindowMain;
 
@@ -61,3 +64,5 @@ private:
 	FXToolTip *pToolTip;
 	WindowMain *pWindowMain;
 };
+
+#endif

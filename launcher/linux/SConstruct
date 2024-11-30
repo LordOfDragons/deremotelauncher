@@ -114,7 +114,18 @@ if 'libfox_includes' in global_env and global_env['libfox_includes']:
 if 'libfox_libraries' in global_env and global_env['libfox_libraries']:
 	global_env.Append(LIBPATH = [global_env['libfox_libraries']])
 
-global_env.Append(LIBS=['FOX-1.6'])
+conf = Configure(global_env)
+
+if conf.CheckCXXHeader('fox-1.7/fx.h'):
+	conf.env.Append(CPPFLAGS=['-DHAS_FOX_1_7_H'])
+	conf.env.Append(LIBS=['FOX-1.7'])
+elif conf.CheckCXXHeader('fox-1.6/fx.h'):
+	conf.env.Append(CPPFLAGS=['-DHAS_FOX_1_6_H'])
+	conf.env.Append(LIBS=['FOX-1.6'])
+else:
+	raise Exception("Missing compatible FOX headers")
+
+global_env = conf.Finish()
 
 SConscript(dirs='src', variant_dir='build', duplicate=0, exports='global_env')
 Default(['deremotelauncher-linux'])

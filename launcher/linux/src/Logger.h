@@ -22,15 +22,40 @@
  * SOFTWARE.
  */
 
-#include <stdlib.h>
-#include <iostream>
-#include <dragengine/common/string/decString.h>
-#include "Application.h"
+#ifndef _LOGGER_H_
+#define _LOGGER_H_
 
+#include <deque>
+#include <string>
+#include <mutex>
+#include <denetwork/denLogger.h>
 
-int main(int argc, char *argv[]){
-	const decString s("This is a test");
-	std::cout << s.GetString() << std::endl;
+class WindowMain;
+
+/**
+ * Logger.
+ */
+class Logger : public denLogger{
+public:
+	/** \name Constructors and Destructors */
+	/*@{*/
+	/** \brief Create logger. */
+	Logger(std::mutex &mutex, std::deque<std::string> &addLogs);
+	/*@}*/
 	
-	return Application(argc, argv).Run();
-}
+	
+	
+	/** \name Management */
+	/*@{*/
+	/** \brief Logging. */
+	void Log(LogSeverity severity, const std::string &message) override;
+	/*@}*/
+	
+	
+	
+private:
+	std::mutex &pMutex;
+	std::deque<std::string> &pAddLogs;
+};
+
+#endif

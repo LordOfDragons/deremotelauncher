@@ -64,6 +64,11 @@ void derlBaseTaskProcessor::Run(){
 
 void derlBaseTaskProcessor::CalcFileLayout(derlFileLayout &layout, const std::string &pathDir){
 	//LogDebug("CalcFileLayout", pathDir);
+	
+	if(!std::filesystem::is_directory(pBaseDir / pathDir)){
+		return; // directory does not exist. report empty layout
+	}
+	
 	ListDirEntries entries;
 	ListDirectoryFiles(entries, pathDir);
 	

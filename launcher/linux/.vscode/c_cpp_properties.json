@@ -11,7 +11,9 @@
                 "${workspaceFolder}/../../../sdk",
                 "${workspaceFolder}/build"
             ],
-            "defines": [],
+            "defines": [
+                "HAS_FOX_1_7_H"
+            ],
             "cStandard": "c17",
             "cppStandard": "c++17",
             "intelliSenseMode": "linux-clang-x64"

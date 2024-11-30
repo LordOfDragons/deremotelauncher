@@ -22,15 +22,59 @@
  * SOFTWARE.
  */
 
-#include <stdlib.h>
-#include <iostream>
-#include <dragengine/common/string/decString.h>
-#include "Application.h"
+#ifndef _CLIENT_H_
+#define _CLIENT_H_
 
+#include <chrono>
 
-int main(int argc, char *argv[]){
-	const decString s("This is a test");
-	std::cout << s.GetString() << std::endl;
+#include "foxtoolkit.h"
+#include <deremotelauncher/derlLauncherClient.h>
+
+class WindowMain;
+
+/**
+ * Client.
+ */
+class Client : public derlLauncherClient{
+public:
+	/** \name Constructors and Destructors */
+	/*@{*/
+	/** \brief Create client. */
+	Client(WindowMain &windowMain);
+	/*@}*/
 	
-	return Application(argc, argv).Run();
-}
+	
+	
+	/** \name Management */
+	/*@{*/
+	/** \brief Frame update. */
+	void OnFrameUpdate();
+	
+	/** \brief Start application. */
+	void StartApplication(const derlRunParameters &params) override;
+	
+	/** \brief Stop application. */
+	void StopApplication() override;
+	
+	/** \brief Kill application. */
+	void KillApplication() override;
+	
+	/** \brief Connection established. */
+	void OnConnectionEstablished() override;
+	
+	/** \brief Connection failed. */
+	void OnConnectionFailed(denConnection::ConnectionFailedReason reason) override;
+	
+	/** \brief Connection closed either by calling Disconnect() or by server. */
+	void OnConnectionClosed() override;
+	/*@}*/
+	
+	
+	
+private:
+	WindowMain &pWindowMain;
+	
+	std::chrono::steady_clock::time_point pLastTime;
+};
+
+#endif

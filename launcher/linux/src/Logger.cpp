@@ -22,15 +22,52 @@
  * SOFTWARE.
  */
 
-#include <stdlib.h>
-#include <iostream>
-#include <dragengine/common/string/decString.h>
-#include "Application.h"
+#include <sstream>
+#include <chrono>
+#include <iomanip>
+
+#include "Logger.h"
 
 
-int main(int argc, char *argv[]){
-	const decString s("This is a test");
-	std::cout << s.GetString() << std::endl;
+// Constructors
+/////////////////
+
+Logger::Logger(std::mutex &mutex, std::deque<std::string> &addLogs) :
+pMutex(mutex),
+pAddLogs(addLogs){
+}
+
+
+// Management
+///////////////
+
+void Logger::Log(LogSeverity severity, const std::string &message){
+	std::stringstream ss;
 	
-	return Application(argc, argv).Run();
+	switch(severity){
+	case LogSeverity::debug:
+		ss << "[DD] ";
+		break;
+		
+	case LogSeverity::warning:
+		ss << "[WW] ";
+		break;
+		
+	case LogSeverity::error:
+		ss << "[EE] ";
+		break;
+		
+	case LogSeverity::info:
+	default:
+		ss << "[II] ";
+	}
+	
+	const auto tp = std::chrono::system_clock::now();
+	const auto t = std::chrono::system_clock::to_time_t(tp);
+	ss << "[" << std::put_time(std::localtime(&t), "%Y-%m-%d %H-%M-%S") << "] ";
+	
+	ss << message;
+	
+	const std::lock_guard guard(pMutex);
+	pAddLogs.push_back(ss.str());
 }

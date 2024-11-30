@@ -22,15 +22,15 @@
  * SOFTWARE.
  */
 
-#include <stdlib.h>
-#include <iostream>
-#include <dragengine/common/string/decString.h>
-#include "Application.h"
+#ifndef _FOXTOOLKIT_H_
+#define _FOXTOOLKIT_H_
 
+#ifdef HAS_FOX_1_7_H
+	#include <fox-1.7/fx.h>
+#elif defined HAS_FOX_1_6_H
+	#include <fox-1.6/fx.h>
+#else
+	#pragma error "Missing FOX headers"
+#endif
 
-int main(int argc, char *argv[]){
-	const decString s("This is a test");
-	std::cout << s.GetString() << std::endl;
-	
-	return Application(argc, argv).Run();
-}
+#endif

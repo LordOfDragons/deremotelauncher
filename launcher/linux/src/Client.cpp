@@ -22,15 +22,50 @@
  * SOFTWARE.
  */
 
-#include <stdlib.h>
-#include <iostream>
-#include <dragengine/common/string/decString.h>
-#include "Application.h"
+#include "Client.h"
+#include "WindowMain.h"
 
 
-int main(int argc, char *argv[]){
-	const decString s("This is a test");
-	std::cout << s.GetString() << std::endl;
+// Constructors
+/////////////////
+
+Client::Client(WindowMain &windowMain) :
+pWindowMain(windowMain),
+pLastTime(std::chrono::steady_clock::now()){
+}
+
+// Management
+///////////////
+
+void Client::OnFrameUpdate(){
+	const std::chrono::steady_clock::time_point now(std::chrono::steady_clock::now());
+	const int64_t elapsed_us = std::chrono::duration_cast<std::chrono::microseconds>(now - pLastTime).count();
 	
-	return Application(argc, argv).Run();
+	pLastTime = now;
+	
+	Update((float)elapsed_us / 1e6f);
+}
+
+void Client::StartApplication(const derlRunParameters &params){
+	Log(denLogger::LogSeverity::info, "StartApplication", "Run");
+}
+
+void Client::StopApplication(){
+	Log(denLogger::LogSeverity::info, "StopApplication", "Run");
+}
+
+void Client::KillApplication(){
+	Log(denLogger::LogSeverity::info, "KillApplication", "Run");
+}
+
+void Client::OnConnectionEstablished(){
+	pWindowMain.RequestUpdateUIStates();
+}
+
+void Client::OnConnectionFailed(denConnection::ConnectionFailedReason reason){
+	pWindowMain.RequestUpdateUIStates();
+}
+
+void Client::OnConnectionClosed(){
+	pWindowMain.RequestUpdateUIStates();
 }

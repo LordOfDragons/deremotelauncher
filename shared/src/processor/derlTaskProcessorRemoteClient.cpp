@@ -164,6 +164,12 @@ void derlTaskProcessorRemoteClient::ProcessFileLayoutServer(derlTaskFileLayout &
 			}
 		}
 		
+		{
+		std::stringstream ss;
+		ss << "File layout build. " << layout->GetFileCount() << " file(s)";
+		Log(denLogger::LogSeverity::info, "ProcessFileLayoutServer", ss.str());
+		}
+		
 		task.SetStatus(derlTaskFileLayout::Status::success);
 		pClient.SetFileLayoutServer(layout);
 		

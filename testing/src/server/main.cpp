@@ -50,7 +50,10 @@ public:
 		connecting,
 		connected,
 		synchronize,
-		delay,
+		delayStartApplication,
+		startApplication,
+		waitStoppedApplication,
+		delayDisconnect,
 		disconnecting
 	};
 	
@@ -82,7 +85,46 @@ public:
 			}
 			break;
 			
-		case State::delay:
+		case State::delayStartApplication:
+			if(std::chrono::duration_cast<std::chrono::milliseconds>(
+			std::chrono::steady_clock::now() - timerBegin.load()).count() >= 1000){
+				Log(denLogger::LogSeverity::info, "Update", "Timeout => start application");
+				state = State::startApplication;
+				
+				derlRunParameters params;
+				
+				std::string gameConfig;
+				{
+				std::fstream fs;
+				fs.open(GetPathDataDir() / "remotelauncher.degame", fs.in);
+				fs.seekg(0, fs.end);
+				const int size = (int)fs.tellg();
+				gameConfig.assign(size, 0);
+				fs.seekg(0, fs.beg);
+				fs.read((char*)gameConfig.c_str(), size);
+				}
+				params.SetGameConfig(gameConfig);
+				
+				StartApplication(params);
+			}
+			break;
+			
+		case State::startApplication:
+			if(GetRunStatus() == derlRemoteClient::RunStatus::running){
+				Log(denLogger::LogSeverity::info, "Update", "Application Running => wait for exit");
+				state = State::waitStoppedApplication;
+			}
+			break;
+			
+		case State::waitStoppedApplication:
+			if(GetRunStatus() == derlRemoteClient::RunStatus::stopped){
+				Log(denLogger::LogSeverity::info, "Update", "Application Stopped => delay disconnect");
+				timerBegin = std::chrono::steady_clock::now();
+				state = State::delayDisconnect;
+			}
+			break;
+			
+		case State::delayDisconnect:
 			if(std::chrono::duration_cast<std::chrono::milliseconds>(
 			std::chrono::steady_clock::now() - timerBegin.load()).count() >= 1000){
 				Log(denLogger::LogSeverity::info, "Update", "Timeout => disconnect");
@@ -123,7 +165,7 @@ public:
 			<< " elapsed " << syncElapsed << "ms";
 		Log(denLogger::LogSeverity::info, "OnSynchronizeFinished", ss.str());
 		timerBegin = std::chrono::steady_clock::now();
-		state = State::delay;
+		state = State::delayStartApplication; //State::delayDisconnect;
 	}
 };
 

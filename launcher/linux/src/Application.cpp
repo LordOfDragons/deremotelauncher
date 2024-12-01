@@ -59,9 +59,7 @@ inline WindowMain &Application::GetWindowMain() const{
 
 int Application::Run(){
 	try{
-		while(runWhileEvents() && pWindowMain){
-			pWindowMain->OnFrameUpdate();
-		}
+		return run();
 		
 	}catch(const FXException &e){
 		FXMessageBox::error(this, FX::MBOX_OK, "Application Error", "%s", e.what());

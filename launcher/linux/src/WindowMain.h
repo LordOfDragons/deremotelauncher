@@ -30,6 +30,7 @@
 #include <string>
 #include <sstream>
 #include <mutex>
+#include <memory>
 #include <denetwork/denLogger.h>
 #include "foxtoolkit.h"
 
@@ -44,69 +45,6 @@ class WindowMain : public FXMainWindow{
 	FXDECLARE(WindowMain)
 protected:
 	WindowMain();
-	
-public:
-	enum eIDs{
-		ID_HOST_ADDRESS = FXMainWindow::ID_LAST + 1,
-		ID_CLIENT_NAME,
-		ID_DATA_PATH,
-		ID_LOGS,
-		ID_CONNECT,
-		ID_DISCONNECT,
-		ID_LAST
-	};
-	
-	
-	/** \name Constructors and Destructors */
-	/*@{*/
-	/** \brief Create main window. */
-	WindowMain(Application &app);
-	
-	/** \brief Free main window. */
-	~WindowMain() override;
-	/*@}*/
-	
-	
-	
-	/** \name Management */
-	/*@{*/
-	/** \brief Frame update. */
-	void OnFrameUpdate();
-	
-	/** \brief Update logs. */
-	void UpdateLogs();
-	
-	/** \brief Determine is window can be closed. */
-	bool CloseWindow();
-	
-	/** \brief Close window. */
-	void Close();
-	
-	/** \brief Default data path. */
-	FXString GetDefaultDataPath() const;
-	
-	/** \brief Save settings. */
-	void SaveSettings() const;
-	
-	/** \brief Update UI states. */
-	void UpdateUIStates();
-	
-	/** \brief Asynchronously request update UP states. */
-	void RequestUpdateUIStates();
-	/*@}*/
-	
-	
-	
-	/** \name Events */
-	/*@{*/
-	long onClose(FXObject*, FXSelector, void*);
-	long onMinimized(FXObject*, FXSelector, void*);
-	long onRestored(FXObject*, FXSelector, void*);
-	long onMaximized(FXObject*, FXSelector, void*);
-	
-	long onBtnConnect(FXObject*, FXSelector, void*);
-	long onBtnDisconnect(FXObject*, FXSelector, void*);
-	/*@}*/
 	
 private:
 	FXString pHostAddress;
@@ -127,6 +65,8 @@ private:
 	FXButton *pBtnDisconnect = nullptr;
 	FXText *pEditLogs = nullptr;
 	
+	std::shared_ptr<FXMessageChannel> pMessageChannel;
+	
 	std::deque<std::string> pLogLines, pAddLogs;
 	std::stringstream pStreamLogs;
 	int pMaxLogLineCount;
@@ -137,6 +77,75 @@ private:
 	denLogger::Ref pLogger;
 	std::shared_ptr<Client> pClient;
 	
+	
+public:
+	enum eIDs{
+		ID_HOST_ADDRESS = FXMainWindow::ID_LAST + 1,
+		ID_CLIENT_NAME,
+		ID_DATA_PATH,
+		ID_LOGS,
+		ID_CONNECT,
+		ID_DISCONNECT,
+		ID_MSG_LOGS_ADDED,
+		ID_LAST
+	};
+	
+	
+	/** \name Constructors and Destructors */
+	/*@{*/
+	/** \brief Create main window. */
+	WindowMain(Application &app);
+	
+	/** \brief Free main window. */
+	~WindowMain() override;
+	/*@}*/
+	
+	
+	
+	/** \name Management */
+	/*@{*/
+	/** \brief Update logs. */
+	void UpdateLogs();
+	
+	/** \brief Determine is window can be closed. */
+	bool CloseWindow();
+	
+	/** \brief Close window. */
+	void Close();
+	
+	/** \brief Default data path. */
+	FXString GetDefaultDataPath() const;
+	
+	/** \brief Save settings. */
+	void SaveSettings() const;
+	
+	/** \brief Update UI states. */
+	void UpdateUIStates();
+	
+	/** \brief Asynchronously request update UP states. */
+	void RequestUpdateUIStates();
+	
+	/** \brief Enqueue logs. */
+	void AddLogs(const std::string &logs);
+	/*@}*/
+	
+	
+	
+	/** \name Events */
+	/*@{*/
+	long onClose(FXObject*, FXSelector, void*);
+	long onMinimized(FXObject*, FXSelector, void*);
+	long onRestored(FXObject*, FXSelector, void*);
+	long onMaximized(FXObject*, FXSelector, void*);
+	
+	long onBtnConnect(FXObject*, FXSelector, void*);
+	long onBtnDisconnect(FXObject*, FXSelector, void*);
+	
+	long onMsgLogsAdded(FXObject*, FXSelector, void*);
+	/*@}*/
+	
+	
+private:
 	void pCreateContent();
 	void pCreatePanelConnect(FXComposite *container);
 	void pCreatePanelLogs(FXComposite *container);

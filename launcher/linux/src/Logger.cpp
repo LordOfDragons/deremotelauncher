@@ -27,14 +27,14 @@
 #include <iomanip>
 
 #include "Logger.h"
+#include "WindowMain.h"
 
 
 // Constructors
 /////////////////
 
-Logger::Logger(std::mutex &mutex, std::deque<std::string> &addLogs) :
-pMutex(mutex),
-pAddLogs(addLogs){
+Logger::Logger(WindowMain &windowMain) :
+pWindowMain(windowMain){
 }
 
 
@@ -68,6 +68,5 @@ void Logger::Log(LogSeverity severity, const std::string &message){
 	
 	ss << message;
 	
-	const std::lock_guard guard(pMutex);
-	pAddLogs.push_back(ss.str());
+	pWindowMain.AddLogs(ss.str());
 }

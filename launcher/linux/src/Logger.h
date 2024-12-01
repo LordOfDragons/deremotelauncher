@@ -25,9 +25,6 @@
 #ifndef _LOGGER_H_
 #define _LOGGER_H_
 
-#include <deque>
-#include <string>
-#include <mutex>
 #include <denetwork/denLogger.h>
 
 class WindowMain;
@@ -36,11 +33,15 @@ class WindowMain;
  * Logger.
  */
 class Logger : public denLogger{
+private:
+	WindowMain &pWindowMain;
+	
+	
 public:
 	/** \name Constructors and Destructors */
 	/*@{*/
 	/** \brief Create logger. */
-	Logger(std::mutex &mutex, std::deque<std::string> &addLogs);
+	Logger(WindowMain &windowMain);
 	/*@}*/
 	
 	
@@ -50,12 +51,6 @@ public:
 	/** \brief Logging. */
 	void Log(LogSeverity severity, const std::string &message) override;
 	/*@}*/
-	
-	
-	
-private:
-	std::mutex &pMutex;
-	std::deque<std::string> &pAddLogs;
 };
 
 #endif

@@ -26,6 +26,9 @@
 #define _CLIENT_H_
 
 #include <chrono>
+#include <mutex>
+#include <thread>
+#include <atomic>
 
 #include "foxtoolkit.h"
 #include <deremotelauncher/derlLauncherClient.h>
@@ -35,20 +38,39 @@ class WindowMain;
 /**
  * Client.
  */
-class Client : public derlLauncherClient{
+class Client : protected derlLauncherClient{
+private:
+	WindowMain &pWindowMain;
+	
+	std::chrono::steady_clock::time_point pLastTime;
+	
+	std::shared_ptr<std::thread> pThreadUpdater;
+	std::atomic<bool> pExitUpdaterThread;
+	std::mutex pMutexUpdater;
+	
+	
 public:
 	/** \name Constructors and Destructors */
 	/*@{*/
 	/** \brief Create client. */
-	Client(WindowMain &windowMain);
+	Client(WindowMain &windowMain, const denLogger::Ref &logger);
+	
+	/** \brief Clean up client. */
+	~Client() override;
 	/*@}*/
 	
 	
 	
 	/** \name Management */
 	/*@{*/
-	/** \brief Frame update. */
-	void OnFrameUpdate();
+	/** \brief Is disconnected. */
+	bool IsDisconnected();
+	
+	/** \brief Connect to host. */
+	void ConnectToHost(const char *name, const char *pathDataDir, const char *address);
+	
+	/** \brief Disconnect from host. */
+	void DisconnectFromHost();
 	
 	/** \brief Start application. */
 	void StartApplication(const derlRunParameters &params) override;
@@ -70,11 +92,8 @@ public:
 	/*@}*/
 	
 	
-	
-private:
-	WindowMain &pWindowMain;
-	
-	std::chrono::steady_clock::time_point pLastTime;
+protected:
+	void pFrameUpdate();
 };
 
 #endif

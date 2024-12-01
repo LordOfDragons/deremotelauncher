@@ -32,5 +32,6 @@ int main(int argc, char *argv[]){
 	const decString s("This is a test");
 	std::cout << s.GetString() << std::endl;
 	
-	return Application(argc, argv).Run();
+	Application app(argc, argv);
+	return app.Run();
 }

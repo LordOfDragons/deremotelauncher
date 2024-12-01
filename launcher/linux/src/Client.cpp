@@ -26,24 +26,71 @@
 #include "WindowMain.h"
 
 
-// Constructors
-/////////////////
+// Constructors, destructors
+//////////////////////////////
 
-Client::Client(WindowMain &windowMain) :
+Client::Client(WindowMain &windowMain, const denLogger::Ref &logger) :
 pWindowMain(windowMain),
-pLastTime(std::chrono::steady_clock::now()){
+pLastTime(std::chrono::steady_clock::now())
+{
+	SetLogger(logger);
+	
+	pThreadUpdater = std::make_shared<std::thread>([&](){
+		while(!pExitUpdaterThread){
+			pFrameUpdate();
+		}
+	});
 }
+
+Client::~Client(){
+	if(pThreadUpdater){
+		pExitUpdaterThread = true;
+		pThreadUpdater->join();
+	}
+	
+	StopTaskProcessors();
+}
+
 
 // Management
 ///////////////
 
-void Client::OnFrameUpdate(){
+bool Client::IsDisconnected(){
+	const std::lock_guard guard(pMutexUpdater);
+	return GetConnectionState() == denConnection::ConnectionState::disconnected;
+}
+
+void Client::ConnectToHost(const char *name, const char *pathDataDir, const char *address){
+	const std::lock_guard guard(pMutexUpdater);
+	if(GetConnectionState() != denConnection::ConnectionState::disconnected){
+		return;
+	}
+	
+	SetName(name);
+	SetPathDataDir(pathDataDir);
+	ConnectTo(address);
+}
+
+void Client::DisconnectFromHost(){
+	const std::lock_guard guard(pMutexUpdater);
+	if(GetConnectionState() == denConnection::ConnectionState::disconnected){
+		return;
+	}
+	
+	Disconnect();
+}
+
+void Client::pFrameUpdate(){
+	const std::lock_guard guard(pMutexUpdater);
+	
 	const std::chrono::steady_clock::time_point now(std::chrono::steady_clock::now());
 	const int64_t elapsed_us = std::chrono::duration_cast<std::chrono::microseconds>(now - pLastTime).count();
 	
 	pLastTime = now;
 	
 	Update((float)elapsed_us / 1e6f);
+	
+	std::this_thread::yield();
 }
 
 void Client::StartApplication(const derlRunParameters &params){

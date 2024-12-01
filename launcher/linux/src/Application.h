@@ -37,6 +37,12 @@ class Application : public FXApp{
 protected:
 	Application();
 	
+	
+private:
+	FXToolTip *pToolTip;
+	WindowMain *pWindowMain;
+	
+	
 public:
 	/** \name Constructors and Destructors */
 	/*@{*/
@@ -57,12 +63,6 @@ public:
 	/** \brief Quit. */
 	void Quit();
 	/*@}*/
-	
-	
-	
-private:
-	FXToolTip *pToolTip;
-	WindowMain *pWindowMain;
 };
 
 #endif

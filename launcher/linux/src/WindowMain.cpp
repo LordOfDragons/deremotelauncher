@@ -39,7 +39,9 @@ FXDEFMAP(WindowMain) WindowMainMap[] = {
 	FXMAPFUNC(SEL_MAXIMIZE, 0, WindowMain::onMaximized),
 	
 	FXMAPFUNC(SEL_COMMAND, WindowMain::ID_CONNECT, WindowMain::onBtnConnect),
-	FXMAPFUNC(SEL_COMMAND, WindowMain::ID_DISCONNECT, WindowMain::onBtnDisconnect)
+	FXMAPFUNC(SEL_COMMAND, WindowMain::ID_DISCONNECT, WindowMain::onBtnDisconnect),
+	
+	FXMAPFUNC(SEL_COMMAND, WindowMain::ID_MSG_LOGS_ADDED, WindowMain::onMsgLogsAdded)
 };
 
 FXIMPLEMENT(WindowMain, FXMainWindow, WindowMainMap, ARRAYNUMBER(WindowMainMap))
@@ -58,6 +60,7 @@ FXMainWindow(&app, "Drag[en]gine Remote Launcher",
 pHostAddress(app.reg().readStringEntry("settings", "hostAddress", "localhost")),
 pClientName(app.reg().readStringEntry("settings", "clientName", "Client")),
 pDataPath(app.reg().readStringEntry("settings", "dataPath", GetDefaultDataPath().text())),
+pMessageChannel(std::make_shared<FXMessageChannel>(&app)),
 pMaxLogLineCount(100),
 pTargetHostAddress(pHostAddress),
 pTargetClientName(pClientName),
@@ -68,10 +71,9 @@ pNeedUpdateUIStates(false)
 	create();
 	show(FX::PLACEMENT_SCREEN);
 	
-	pLogger = std::make_shared<Logger>(pMutexLogs, pAddLogs);
+	pLogger = std::make_shared<Logger>(*this);
 	
-	pClient = std::make_shared<Client>(*this);
-	pClient->SetLogger(pLogger);
+	pClient = std::make_shared<Client>(*this, pLogger);
 }
 
 WindowMain::~WindowMain(){
@@ -79,11 +81,6 @@ WindowMain::~WindowMain(){
 
 // Management
 ///////////////
-
-void WindowMain::OnFrameUpdate(){
-	pClient->OnFrameUpdate();
-	UpdateLogs();
-}
 
 void WindowMain::UpdateLogs(){
 	{
@@ -143,7 +140,7 @@ void WindowMain::SaveSettings() const{
 void WindowMain::UpdateUIStates(){
 	pNeedUpdateUIStates = false;
 	
-	if(pClient->GetConnectionState() == denConnection::ConnectionState::disconnected){
+	if(pClient->IsDisconnected()){
 		pBtnConnect->enable();
 		pBtnDisconnect->disable();
 		
@@ -156,6 +153,16 @@ void WindowMain::UpdateUIStates(){
 void WindowMain::RequestUpdateUIStates(){
 	pNeedUpdateUIStates = true;
 }
+
+void WindowMain::AddLogs(const std::string &logs){
+	{
+	const std::lock_guard guard(pMutexLogs);
+	pAddLogs.push_back(logs);
+	}
+	
+	pMessageChannel->message(this, FXSEL(SEL_COMMAND, ID_MSG_LOGS_ADDED));
+}
+
 
 // Events
 ///////////
@@ -180,15 +187,8 @@ long WindowMain::onMaximized(FXObject*, FXSelector, void*){
 }
 
 long WindowMain::onBtnConnect(FXObject*, FXSelector, void*){
-	if(pClient->GetConnectionState() != denConnection::ConnectionState::disconnected){
-		return 1;
-	}
-	
-	pClient->SetName(pClientName.text());
-	pClient->SetPathDataDir(pDataPath.text());
-	
 	try{
-		pClient->ConnectTo(pHostAddress.text());
+		pClient->ConnectToHost(pClientName.text(), pDataPath.text(), pHostAddress.text());
 		
 	}catch(const std::exception &e){
 		pLogger->Log(denLogger::LogSeverity::error, e.what());
@@ -200,12 +200,8 @@ long WindowMain::onBtnConnect(FXObject*, FXSelector, void*){
 }
 
 long WindowMain::onBtnDisconnect(FXObject*, FXSelector, void*){
-	if(pClient->GetConnectionState() == denConnection::ConnectionState::disconnected){
-		return 1;
-	}
-	
 	try{
-		pClient->Disconnect();
+		pClient->DisconnectFromHost();
 		
 	}catch(const std::exception &e){
 		pLogger->Log(denLogger::LogSeverity::error, e.what());
@@ -213,6 +209,11 @@ long WindowMain::onBtnDisconnect(FXObject*, FXSelector, void*){
 	}
 	
 	UpdateUIStates();
+	return 1;
+}
+
+long WindowMain::onMsgLogsAdded(FXObject*, FXSelector, void*){
+	UpdateLogs();
 	return 1;
 }
 

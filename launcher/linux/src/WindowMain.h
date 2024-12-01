@@ -35,6 +35,7 @@
 #include "foxtoolkit.h"
 
 #include "Client.h"
+#include "Launcher.h"
 
 class Application;
 
@@ -72,10 +73,9 @@ private:
 	int pMaxLogLineCount;
 	std::mutex pMutexLogs;
 	
-	std::atomic<bool> pNeedUpdateUIStates;
-	
 	denLogger::Ref pLogger;
-	std::shared_ptr<Client> pClient;
+	Client::Ref pClient;
+	Launcher::Ref pLauncher;
 	
 	
 public:
@@ -87,6 +87,7 @@ public:
 		ID_CONNECT,
 		ID_DISCONNECT,
 		ID_MSG_LOGS_ADDED,
+		ID_MSG_UPDATE_UI_STATES,
 		ID_LAST
 	};
 	
@@ -119,6 +120,12 @@ public:
 	/** \brief Save settings. */
 	void SaveSettings() const;
 	
+	/** \brief Client. */
+	inline const Client::Ref &GetClient() const{ return pClient; }
+	
+	/** \brief Launcher. */
+	inline const Launcher::Ref &GetLauncher() const{ return pLauncher; }
+	
 	/** \brief Update UI states. */
 	void UpdateUIStates();
 	
@@ -142,6 +149,7 @@ public:
 	long onBtnDisconnect(FXObject*, FXSelector, void*);
 	
 	long onMsgLogsAdded(FXObject*, FXSelector, void*);
+	long onMsgUpdateUIStates(FXObject*, FXSelector, void*);
 	/*@}*/
 	
 	

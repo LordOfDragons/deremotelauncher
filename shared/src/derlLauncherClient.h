@@ -310,6 +310,9 @@ public:
 	 */
 	virtual void KillApplication() = 0;
 	
+	/** \brief Send log to server. */
+	void SendLog(denLogger::LogSeverity severity, const std::string &source, const std::string &log);
+	
 	
 	/** \brief Log exception. */
 	void LogException(const std::string &functionName, const std::exception &exception,

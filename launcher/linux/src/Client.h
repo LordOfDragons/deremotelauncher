@@ -32,6 +32,7 @@
 
 #include "foxtoolkit.h"
 #include <deremotelauncher/derlLauncherClient.h>
+#include <dragengine/common/exceptions.h>
 
 class WindowMain;
 
@@ -39,6 +40,11 @@ class WindowMain;
  * Client.
  */
 class Client : protected derlLauncherClient{
+public:
+	/** \brief Reference. */
+	typedef std::shared_ptr<Client> Ref;
+	
+	
 private:
 	WindowMain &pWindowMain;
 	
@@ -81,6 +87,9 @@ public:
 	/** \brief Kill application. */
 	void KillApplication() override;
 	
+	/** \brief Send log to server. */
+	void SendLog(denLogger::LogSeverity severity, const std::string &source, const std::string &log);
+	
 	/** \brief Connection established. */
 	void OnConnectionEstablished() override;
 	
@@ -94,6 +103,9 @@ public:
 	
 protected:
 	void pFrameUpdate();
+	void pCheckAppRunState();
+	void pLogException(const std::string &functionName,
+		const deException &exception, const std::string &message);
 };
 
 #endif

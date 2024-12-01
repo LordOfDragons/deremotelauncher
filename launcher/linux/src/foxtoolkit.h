@@ -26,7 +26,17 @@
 #define _FOXTOOLKIT_H_
 
 #ifdef HAS_FOX_1_7_H
+	#ifdef PI
+	#define FIX_FOX_BROKEN_PI
+	#undef PI
+	#endif
+	
+	#ifdef FIX_FOX_BROKEN_PI
+	#include <dragengine/common/math/decMath.h>
+	#endif
+	
 	#include <fox-1.7/fx.h>
+	
 #elif defined HAS_FOX_1_6_H
 	#include <fox-1.6/fx.h>
 #else

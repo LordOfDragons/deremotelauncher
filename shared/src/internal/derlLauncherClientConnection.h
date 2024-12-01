@@ -175,6 +175,7 @@ public:
 	void SendResponseWriteFile(const derlTaskFileWrite &task);
 	void SendFailResponseWriteFile(const std::string &path);
 	void SendResponseFinishWriteFile(const derlTaskFileWrite &task);
+	void SendLog(denLogger::LogSeverity severity, const std::string &source, const std::string &log);
 	/*@}*/
 	
 	

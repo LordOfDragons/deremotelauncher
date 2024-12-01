@@ -41,7 +41,8 @@ FXDEFMAP(WindowMain) WindowMainMap[] = {
 	FXMAPFUNC(SEL_COMMAND, WindowMain::ID_CONNECT, WindowMain::onBtnConnect),
 	FXMAPFUNC(SEL_COMMAND, WindowMain::ID_DISCONNECT, WindowMain::onBtnDisconnect),
 	
-	FXMAPFUNC(SEL_COMMAND, WindowMain::ID_MSG_LOGS_ADDED, WindowMain::onMsgLogsAdded)
+	FXMAPFUNC(SEL_COMMAND, WindowMain::ID_MSG_LOGS_ADDED, WindowMain::onMsgLogsAdded),
+	FXMAPFUNC(SEL_COMMAND, WindowMain::ID_MSG_UPDATE_UI_STATES, WindowMain::onMsgUpdateUIStates)
 };
 
 FXIMPLEMENT(WindowMain, FXMainWindow, WindowMainMap, ARRAYNUMBER(WindowMainMap))
@@ -64,8 +65,7 @@ pMessageChannel(std::make_shared<FXMessageChannel>(&app)),
 pMaxLogLineCount(100),
 pTargetHostAddress(pHostAddress),
 pTargetClientName(pClientName),
-pTargetDataPath(pDataPath),
-pNeedUpdateUIStates(false)
+pTargetDataPath(pDataPath)
 {
 	pCreateContent();
 	create();
@@ -74,6 +74,7 @@ pNeedUpdateUIStates(false)
 	pLogger = std::make_shared<Logger>(*this);
 	
 	pClient = std::make_shared<Client>(*this, pLogger);
+	pLauncher = std::make_shared<Launcher>(*this, pLogger);
 }
 
 WindowMain::~WindowMain(){
@@ -138,7 +139,18 @@ void WindowMain::SaveSettings() const{
 }
 
 void WindowMain::UpdateUIStates(){
-	pNeedUpdateUIStates = false;
+	if(pLauncher->GetState() != Launcher::State::ready){
+		pEditClientName->disable();
+		pEditDataPath->disable();
+		pEditHostAddress->disable();
+		pBtnConnect->disable();
+		pBtnDisconnect->disable();
+		return;
+	}
+	
+	pEditClientName->enable();
+	pEditDataPath->enable();
+	pEditHostAddress->enable();
 	
 	if(pClient->IsDisconnected()){
 		pBtnConnect->enable();
@@ -151,7 +163,7 @@ void WindowMain::UpdateUIStates(){
 }
 
 void WindowMain::RequestUpdateUIStates(){
-	pNeedUpdateUIStates = true;
+	pMessageChannel->message(this, FXSEL(SEL_COMMAND, ID_MSG_UPDATE_UI_STATES));
 }
 
 void WindowMain::AddLogs(const std::string &logs){
@@ -217,6 +229,11 @@ long WindowMain::onMsgLogsAdded(FXObject*, FXSelector, void*){
 	return 1;
 }
 
+long WindowMain::onMsgUpdateUIStates(FXObject*, FXSelector, void*){
+	UpdateUIStates();
+	return 1;
+}
+
 
 // Private Functions
 //////////////////////
@@ -235,19 +252,23 @@ void WindowMain::pCreatePanelConnect(FXComposite *container){
 	pLabHostAddress = new FXLabel(f2, "Host Address:", nullptr, LAYOUT_FILL_ROW | LAYOUT_FILL_Y);
 	pEditHostAddress = new FXTextField(f2, 20, &pTargetHostAddress, FXDataTarget::ID_VALUE,
 		TEXTFIELD_NORMAL | LAYOUT_FILL_ROW | LAYOUT_FILL_COLUMN | LAYOUT_FILL);
+	pEditHostAddress->disable();
 	
 	pLabClientName = new FXLabel(f2, "Client Name:", nullptr, LAYOUT_FILL_ROW | LAYOUT_FILL_Y);
 	pEditClientName = new FXTextField(f2, 20, &pTargetClientName, FXDataTarget::ID_VALUE,
 		TEXTFIELD_NORMAL | LAYOUT_FILL_ROW | LAYOUT_FILL_COLUMN | LAYOUT_FILL);
+	pEditClientName->disable();
 	
 	pLabDataPath = new FXLabel(f2, "Data Path:", nullptr, LAYOUT_FILL_ROW | LAYOUT_FILL_Y);
 	pEditDataPath = new FXTextField(f2, 20, &pTargetDataPath, FXDataTarget::ID_VALUE,
 		TEXTFIELD_NORMAL | LAYOUT_FILL_ROW | LAYOUT_FILL_COLUMN | LAYOUT_FILL);
+	pEditDataPath->disable();
 	
 	FXMatrix * const f3 = new FXMatrix(f, 1, MATRIX_BY_COLUMNS | LAYOUT_FILL_Y);
 	
 	pBtnConnect = new FXButton(f3, "Connect", nullptr, this, ID_CONNECT,
 		BUTTON_NORMAL | LAYOUT_FILL_COLUMN | LAYOUT_FILL_ROW | LAYOUT_FILL);
+	pBtnConnect->disable();
 	
 	pBtnDisconnect = new FXButton(f3, "Disconnect", nullptr, this, ID_DISCONNECT,
 		BUTTON_NORMAL | LAYOUT_FILL_COLUMN | LAYOUT_FILL_ROW | LAYOUT_FILL);

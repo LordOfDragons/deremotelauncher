@@ -368,6 +368,10 @@ void derlLauncherClientConnection::SendResponseWriteFile(const derlTaskFileWrite
 
 void derlLauncherClientConnection::SendFailResponseWriteFile(const std::string &path){
 	const std::lock_guard guard(derlGlobal::mutexNetwork);
+	if(!GetConnected()){
+		return;
+	}
+	
 	const denMessage::Ref message(denMessage::Pool().Get());
 	{
 		denMessageWriter writer(message->Item());
@@ -380,6 +384,10 @@ void derlLauncherClientConnection::SendFailResponseWriteFile(const std::string &
 
 void derlLauncherClientConnection::SendResponseFinishWriteFile(const derlTaskFileWrite &task){
 	const std::lock_guard guard(derlGlobal::mutexNetwork);
+	if(!GetConnected()){
+		return;
+	}
+	
 	const denMessage::Ref message(denMessage::Pool().Get());
 	{
 		denMessageWriter writer(message->Item());
@@ -398,6 +406,39 @@ void derlLauncherClientConnection::SendResponseFinishWriteFile(const derlTaskFil
 		default:
 			writer.WriteByte((uint8_t)derlProtocol::FinishWriteFileResult::failure);
 		}
+	}
+	pQueueSend.Add(message);
+}
+
+void derlLauncherClientConnection::SendLog(denLogger::LogSeverity severity,
+const std::string &source, const std::string &log){
+	const std::lock_guard guard(derlGlobal::mutexNetwork);
+	if(!GetConnected()){
+		return;
+	}
+	
+	const denMessage::Ref message(denMessage::Pool().Get());
+	{
+		denMessageWriter writer(message->Item());
+		writer.WriteByte((uint8_t)derlProtocol::MessageCodes::logs);
+		
+		switch(severity){
+		case denLogger::LogSeverity::error:
+			writer.WriteByte((uint8_t)derlProtocol::LogLevel::error);
+			break;
+			
+		case denLogger::LogSeverity::warning:
+			writer.WriteByte((uint8_t)derlProtocol::LogLevel::warning);
+			break;
+			
+		case denLogger::LogSeverity::info:
+		default:
+			writer.WriteByte((uint8_t)derlProtocol::LogLevel::info);
+			break;
+		}
+		
+		writer.WriteString8(source);
+		writer.WriteString16(log);
 	}
 	pQueueSend.Add(message);
 }

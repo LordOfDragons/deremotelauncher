@@ -270,6 +270,11 @@ void derlLauncherClient::UpdateLayoutChanged(){
 	}
 }
 
+void derlLauncherClient::SendLog(denLogger::LogSeverity severity,
+const std::string &source, const std::string &log){
+	pConnection->SendLog(severity, source, log);
+}
+
 void derlLauncherClient::LogException(const std::string &functionName,
 const std::exception &exception, const std::string &message){
 	std::stringstream ss;

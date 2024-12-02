@@ -43,15 +43,6 @@ if hasSystemFOX:
 	global_env.Append(LIBS=[libLinkName])
 	Return()
 
-patchSoname = None
-
-libLinkName = 'DERLFOX-{}'.format(libFOXVersion)
-libFileNameOrg = libFileName
-patchSoname = envLibrary.subst('${{SHLIBPREFIX}}{}${{SHLIBSUFFIX}}'.format(libLinkName))
-libFileName = 'lib/{}'.format(patchSoname)
-
-staticFileName = envLibrary.subst('lib/${{LIBPREFIX}}{}${{LIBSUFFIX}}'.format(libLinkName))
-
 def foxBuild(target, source, env):
 	buildDir = target[0].get_dir().up()
 	buildDir = target[0].get_dir().up()
@@ -97,11 +88,6 @@ def foxBuild(target, source, env):
 	
 	script.append('cd ../include')
 	script.append('make -j {} install || exit 1'.format(env['with_threads']))
-	
-	if patchSoname:
-		script.append('cd ../.. || exit 1')
-		script.append('cp "{}" "{}" || exit 1'.format(libFileNameOrg, libFileName))
-		script.append('patchelf --set-soname "{}" "{}" || exit 1'.format(patchSoname, libFileName))
 	
 	if not env.RunExternalCommand(script):
 		raise Exception('Failed building fox')

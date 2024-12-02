@@ -25,7 +25,7 @@ params.Add(TernaryVariable('with_system_fox', 'Use System FOX Toolkit'))
 params.Update(global_env)
 
 global_env['OSUnix'] = True
-global_env['OSBeOS'] = True
+global_env['OSBeOS'] = False
 
 global_env.Tool('runExternalCommand')
 global_env.Tool('downloadArtifact')

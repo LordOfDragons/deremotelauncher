@@ -130,6 +130,8 @@ Launcher::~Launcher(){
 ///////////////
 
 Launcher::State Launcher::GetState(){
+	const std::lock_guard guard(pMutex);
+	
 	const State state = pState;
 	if(state != State::preparing && pThreadPrepareLauncher){
 		pThreadPrepareLauncher->join();
@@ -140,6 +142,8 @@ Launcher::State Launcher::GetState(){
 }
 
 void Launcher::RunGame(const std::filesystem::path &dataPath, const derlRunParameters &runParams){
+	const std::lock_guard guard(pMutex);
+	
 	switch(pState){
 	case State::preparing:
 		DETHROW_INFO(deeInvalidAction, "Launcher not fully prepared yet");
@@ -246,6 +250,8 @@ void Launcher::RunGame(const std::filesystem::path &dataPath, const derlRunParam
 }
 
 void Launcher::StopGame(){
+	const std::lock_guard guard(pMutex);
+	
 	switch(pState){
 	case State::preparing:
 		DETHROW_INFO(deeInvalidAction, "Launcher not fully prepared yet");
@@ -271,6 +277,8 @@ void Launcher::StopGame(){
 }
 
 void Launcher::KillGame(){
+	const std::lock_guard guard(pMutex);
+	
 	switch(pState){
 	case State::preparing:
 		DETHROW_INFO(deeInvalidAction, "Launcher not fully prepared yet");

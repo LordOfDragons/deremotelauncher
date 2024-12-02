@@ -244,15 +244,12 @@ const std::string &path, uint32_t blockSize){
 		denMessageWriter writer(message->Item());
 		writer.WriteByte((uint8_t)derlProtocol::MessageCodes::responseFileBlockHashes);
 		writer.WriteString16(path);
-		writer.WriteByte((uint8_t)derlProtocol::FileBlockHashesFlags::finish
-			| (uint8_t)derlProtocol::FileBlockHashesFlags::empty);
 		writer.WriteUInt(0);
-		writer.WriteString8("");
 	}
 	pQueueSend.Add(message);
 }
 
-void derlLauncherClientConnection::SendFailResponseFileBlockHashes(const derlFile &file){
+void derlLauncherClientConnection::SendResponseFileBlockHashes(const derlFile &file){
 	const std::lock_guard guard(derlGlobal::mutexNetwork);
 	if(!GetConnected()){
 		return;
@@ -262,35 +259,13 @@ void derlLauncherClientConnection::SendFailResponseFileBlockHashes(const derlFil
 	const int count = file.GetBlockCount();
 	int i;
 	
-	if(count == 0){
-		const denMessage::Ref message(denMessage::Pool().Get());
-		{
-			denMessageWriter writer(message->Item());
-			writer.WriteByte((uint8_t)derlProtocol::MessageCodes::responseFileBlockHashes);
-			writer.WriteString16(path);
-			writer.WriteByte((uint8_t)derlProtocol::FileBlockHashesFlags::finish
-				| (uint8_t)derlProtocol::FileBlockHashesFlags::empty);
-			writer.WriteUInt(0);
-			writer.WriteString8("");
-		}
-		pQueueSend.Add(message);
-		return;
-	}
-	
-	for(i=0; i<count; i++){
-		const denMessage::Ref message(denMessage::Pool().Get());
-		{
-			denMessageWriter writer(message->Item());
-			writer.WriteByte((uint8_t)derlProtocol::MessageCodes::responseFileBlockHashes);
-			writer.WriteString16(path);
-			
-			uint8_t flags = 0;
-			if(i == count - 1){
-				flags |= (uint8_t)derlProtocol::FileBlockHashesFlags::finish;
-			}
-			writer.WriteByte(flags);
-			
-			writer.WriteUInt(i);
+	const denMessage::Ref message(denMessage::Pool().Get());
+	{
+		denMessageWriter writer(message->Item());
+		writer.WriteByte((uint8_t)derlProtocol::MessageCodes::responseFileBlockHashes);
+		writer.WriteString16(path);
+		writer.WriteUInt((uint32_t)count);
+		for(i=0; i<count; i++){
 			writer.WriteString8(file.GetBlockAt(i)->GetHash());
 		}
 		pQueueSend.Add(message);
@@ -502,7 +477,7 @@ void derlLauncherClientConnection::pProcessRequestFileBlockHashes(denMessageRead
 		log << "Block hashes for file requested but file layout is not present: "
 			<< path << ". Answering with empty file.";
 		Log(denLogger::LogSeverity::warning, "pProcessRequestFileBlockHashes", log.str());
-		SendFailResponseFileBlockHashes(path);
+		SendResponseFileBlockHashes(path);
 		return;
 	}
 	
@@ -512,12 +487,12 @@ void derlLauncherClientConnection::pProcessRequestFileBlockHashes(denMessageRead
 		log << "Block hashes for non-existing file requested: "
 			<< path << ". Answering with empty file.";
 		Log(denLogger::LogSeverity::warning, "pProcessRequestFileBlockHashes", log.str());
-		SendFailResponseFileBlockHashes(path);
+		SendResponseFileBlockHashes(path);
 		return;
 	}
 	
 	if(file->GetHasBlocks() && file->GetBlockSize() == blockSize){
-		SendFailResponseFileBlockHashes(*file);
+		SendResponseFileBlockHashes(*file);
 		
 	}else{
 		file = std::make_shared<derlFile>(*file);
@@ -693,36 +668,29 @@ void derlLauncherClientConnection::pSendResponseFileLayout(const derlFileLayout 
 		{
 			denMessageWriter writer(message->Item());
 			writer.WriteByte((uint8_t)derlProtocol::MessageCodes::responseFileLayout);
-			writer.WriteByte((uint8_t)derlProtocol::FileLayoutFlags::finish
-				| (uint8_t)derlProtocol::FileLayoutFlags::empty);
-			writer.WriteString16("");
-			writer.WriteULong(0L);
-			writer.WriteString8("");
+			writer.WriteUInt(0);
 		}
 		pQueueSend.Add(message);
 		return;
 	}
 	
+	const denMessage::Ref message(denMessage::Pool().Get());
+	{
+	denMessageWriter writer(message->Item());
+	writer.WriteByte((uint8_t)derlProtocol::MessageCodes::responseFileLayout);
+	
+	const int count = layout.GetFileCount();
+	writer.WriteUInt((uint32_t)count);
+	
 	derlFile::Map::const_iterator iter;
-	int count = layout.GetFileCount();
-	for(iter=layout.GetFilesBegin(); iter!=layout.GetFilesEnd(); iter++, count--){
+	for(iter=layout.GetFilesBegin(); iter!=layout.GetFilesEnd(); iter++){
 		const derlFile &file = *iter->second.get();
-		
-		const denMessage::Ref message(denMessage::Pool().Get());
-		{
-		denMessageWriter writer(message->Item());
-		writer.WriteByte((uint8_t)derlProtocol::MessageCodes::responseFileLayout);
-		
-		uint8_t flags = 0;
-		if(count == 1){
-			flags |= (uint8_t)derlProtocol::FileLayoutFlags::finish;
-		}
-		writer.WriteByte(flags);
 		
 		writer.WriteString16(file.GetPath());
 		writer.WriteULong(file.GetSize());
 		writer.WriteString8(file.GetHash());
-		}
-		pQueueSend.Add(message);
 	}
+	
+	}
+	pQueueSend.Add(message);
 }

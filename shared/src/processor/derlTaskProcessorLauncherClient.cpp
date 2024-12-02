@@ -184,21 +184,21 @@ void derlTaskProcessorLauncherClient::ProcessFileBlockHashes(derlTaskFileBlockHa
 		}
 		
 		task.SetStatus(derlTaskFileBlockHashes::Status::success);
-		pClient.GetConnection().SendFailResponseFileBlockHashes(*file);
+		pClient.GetConnection().SendResponseFileBlockHashes(*file);
 		
 	}catch(const std::exception &e){
 		std::stringstream ss;
 		ss << "Failed size " << blockSize << " for " << path;
 		LogException("ProcessFileBlockHashes", e, ss.str());
 		task.SetStatus(derlTaskFileBlockHashes::Status::failure);
-		pClient.GetConnection().SendFailResponseFileBlockHashes(path);
+		pClient.GetConnection().SendResponseFileBlockHashes(path);
 		
 	}catch(...){
 		std::stringstream ss;
 		ss << "Failed size " << blockSize << " for " << path;
 		Log(denLogger::LogSeverity::error, "ProcessFileBlockHashes", ss.str());
 		task.SetStatus(derlTaskFileBlockHashes::Status::failure);
-		pClient.GetConnection().SendFailResponseFileBlockHashes(path);
+		pClient.GetConnection().SendResponseFileBlockHashes(path);
 	}
 }
 

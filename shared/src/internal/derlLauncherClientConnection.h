@@ -169,7 +169,7 @@ public:
 	void LogDebug(const std::string &functionName, const std::string &message);
 	
 	void SendResponseFileBlockHashes(const std::string &path, uint32_t blockSize);
-	void SendFailResponseFileBlockHashes(const derlFile &file);
+	void SendResponseFileBlockHashes(const derlFile &file);
 	void SendResponseDeleteFile(const derlTaskFileDelete &task);
 	void SendFileDataReceived(const derlTaskFileWriteBlock &block);
 	void SendResponseWriteFile(const derlTaskFileWrite &task);

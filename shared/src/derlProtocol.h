@@ -56,22 +56,6 @@ namespace derlProtocol{
 	};
 	
 	/**
-	 * \brief File layout flags.
-	 */
-	enum class FileLayoutFlags{
-		finish = 0x1,
-		empty = 0x2
-	};
-	
-	/**
-	 * \brief File block hashes flags.
-	 */
-	enum class FileBlockHashesFlags{
-		finish = 0x1,
-		empty = 0x2
-	};
-	
-	/**
 	 * \brief Delete file result.
 	 */
 	enum class DeleteFileResult{

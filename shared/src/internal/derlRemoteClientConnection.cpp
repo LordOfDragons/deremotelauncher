@@ -529,27 +529,27 @@ void derlRemoteClientConnection::pProcessResponseFileLayout(denMessageReader &re
 		return;
 	}
 	
-	const uint8_t flags = reader.ReadByte();
+	const derlFileLayout::Ref layout(taskLayout->GetLayout());
+	const int count = reader.ReadUInt();
+	int i;
 	
-	if((flags & (uint8_t)derlProtocol::FileLayoutFlags::empty) == 0){
+	for(i=0; i<count; i++){
 		const derlFile::Ref file(std::make_shared<derlFile>(reader.ReadString16()));
 		file->SetSize(reader.ReadULong());
 		file->SetHash(reader.ReadString8());
-		taskLayout->GetLayout()->AddFile(file);
+		layout->AddFile(file);
 	}
 	
-	if((flags & (uint8_t)derlProtocol::FileLayoutFlags::finish) != 0){
-		pClient->SetFileLayoutClient(taskLayout->GetLayout());
-		
-		std::stringstream ss;
-		ss << "File layout received. " << pClient->GetFileLayoutClient()->GetFileCount() << " file(s)";
-		Log(denLogger::LogSeverity::info, "pProcessResponseFileLayout", ss.str());
-		
-		const std::lock_guard guard(taskSync->GetMutex());
-		taskSync->SetTaskFileLayoutClient(nullptr);
-		if(!taskSync->GetTaskFileLayoutServer()){
-			pClient->AddPendingTaskSync(taskSync);
-		}
+	pClient->SetFileLayoutClient(taskLayout->GetLayout());
+	
+	std::stringstream ss;
+	ss << "File layout received. " << count << " file(s)";
+	Log(denLogger::LogSeverity::info, "pProcessResponseFileLayout", ss.str());
+	
+	const std::lock_guard guard(taskSync->GetMutex());
+	taskSync->SetTaskFileLayoutClient(nullptr);
+	if(!taskSync->GetTaskFileLayoutServer()){
+		pClient->AddPendingTaskSync(taskSync);
 	}
 }
 
@@ -561,8 +561,6 @@ void derlRemoteClientConnection::pProcessResponseFileBlockHashes(denMessageReade
 	}
 	
 	const std::string path(reader.ReadString16());
-	const uint8_t flags = reader.ReadByte();
-	const bool finished = (flags & (uint8_t)derlProtocol::FileBlockHashesFlags::finish) != 0;
 	
 	{
 	const std::lock_guard guard(taskSync->GetMutex());
@@ -584,59 +582,58 @@ void derlRemoteClientConnection::pProcessResponseFileBlockHashes(denMessageReade
 	}
 	}
 	
-	if(finished){
-		taskSync->GetTasksFileBlockHashes().erase(iterTaskHashes);
-	}
+	taskSync->GetTasksFileBlockHashes().erase(iterTaskHashes);
 	}
 	
-	if((flags & (uint8_t)derlProtocol::FileBlockHashesFlags::empty) == 0){
-		try{
-			const derlFileLayout::Ref layout(pClient->GetFileLayoutClient());
-			if(!layout){
-				std::stringstream ss;
-				ss << "Block hashes for file received but file layout is not present: " << path;
-				throw std::runtime_error(ss.str());
-			}
-			
-			const derlFile::Ref file(layout->GetFileAt(path));
-			if(!file){
-				std::stringstream ss;
-				ss << "Block hashes for file received but file does not exist in layout: " << path;
-				throw std::runtime_error(ss.str());
-			}
-			
-			const int index = reader.ReadUInt();
-			if(index < 0 || index >= file->GetBlockCount()){
-				std::stringstream ss;
-				ss << "Block hashes for file received but with index ouf of range: "
-					<< path << " index " << index;
-				throw std::runtime_error(ss.str());
-			}
-			
-			file->GetBlockAt(index)->SetHash(reader.ReadString8());
-			
-		}catch(const std::exception &e){
-			LogException("ProcessResponseFileBlockHashes", e, "Failed");
-			
+	try{
+		const derlFileLayout::Ref layout(pClient->GetFileLayoutClient());
+		if(!layout){
 			std::stringstream ss;
-			ss << "Synchronize client failed: " << e.what();
-			pClient->FailSynchronization(ss.str());
-			return;
-			
-		}catch(...){
-			Log(denLogger::LogSeverity::error, "ProcessResponseFileBlockHashes", "Failed");
-			pClient->FailSynchronization();
-			return;
+			ss << "Block hashes for file received but file layout is not present: " << path;
+			throw std::runtime_error(ss.str());
 		}
+		
+		const derlFile::Ref file(layout->GetFileAt(path));
+		if(!file){
+			std::stringstream ss;
+			ss << "Block hashes for file received but file does not exist in layout: " << path;
+			throw std::runtime_error(ss.str());
+		}
+		
+		const int count = reader.ReadUInt();
+		if(count > file->GetBlockCount()){
+			std::stringstream ss;
+			ss << "Block hashes for file received but with count is out of range: "
+				<< path << " count " << count << " allowed " << file->GetBlockCount();
+			throw std::runtime_error(ss.str());
+		}
+		
+		int i;
+		for(i=0; i<count; i++){
+			file->GetBlockAt(i)->SetHash(reader.ReadString8());
+		}
+		
+	}catch(const std::exception &e){
+		LogException("ProcessResponseFileBlockHashes", e, "Failed");
+		
+		std::stringstream ss;
+		ss << "Synchronize client failed: " << e.what();
+		pClient->FailSynchronization(ss.str());
+		return;
+		
+	}catch(...){
+		Log(denLogger::LogSeverity::error, "ProcessResponseFileBlockHashes", "Failed");
+		pClient->FailSynchronization();
+		return;
 	}
 	
-	if(finished){
-		std::stringstream ss;
-		ss << "Block hashes received: " << path;
-		Log(denLogger::LogSeverity::info, "ProcessResponseFileBlockHashes", ss.str());
-		
-		pCheckFinishedHashes(taskSync);
+	{
+	std::stringstream ss;
+	ss << "Block hashes received: " << path;
+	Log(denLogger::LogSeverity::info, "ProcessResponseFileBlockHashes", ss.str());
 	}
+	
+	pCheckFinishedHashes(taskSync);
 }
 
 void derlRemoteClientConnection::pProcessResponseDeleteFile(denMessageReader &reader){

@@ -25,7 +25,6 @@
 #ifndef _LAUNCHER_H_
 #define _LAUNCHER_H_
 
-#include <mutex>
 #include <atomic>
 #include <thread>
 #include <filesystem>
@@ -80,8 +79,6 @@ private:
 	WindowMain &pWindowMain;
 	const denLogger::Ref pLogger;
 	deLogger::Ref pLauncherLogger;
-	
-	std::mutex pMutex;
 	
 	std::atomic<State> pState = State::preparing;
 	std::shared_ptr<std::thread> pThreadPrepareLauncher;

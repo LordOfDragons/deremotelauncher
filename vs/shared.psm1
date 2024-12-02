@@ -135,7 +135,7 @@ function DownloadArtifactGithub {
 ##########################
 
 New-Variable -Name UrlExternArtifacts -Scope Global -Option ReadOnly -Force `
-    -Value "https://dragondreams.s3.eu-central-1.amazonaws.com/deremotelauncher/extern"
+    -Value "https://dragondreams.s3.eu-central-1.amazonaws.com/dragengine/extern"
 
 New-Variable -Name UrlGithubArtifacts -Scope Global -Option ReadOnly -Force `
     -Value "https://github.com/LordOfDragons"

@@ -513,7 +513,7 @@ void derlRemoteClientConnection::pProcessRequestLogs(denMessageReader &reader){
 	}
 	
 	std::stringstream ss;
-	ss << "<={" << reader.ReadString8() << "} ";
+	ss << "{" << reader.ReadString8() << "} ";
 	ss << reader.ReadString16();
 	
 	//Log(severity, "pProcessRequestLogs", ss.str());

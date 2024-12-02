@@ -1,0 +1,135 @@
+import os
+import sys
+import SCons
+
+from SConsCommon import *
+from SConsExternCommon import *
+
+Import('global_env')
+
+envLibrary = global_env.Clone()
+
+foxSrcVersion = '1.7.67'
+srcdir = 'fox-{}'.format(foxSrcVersion)
+
+libFOXVersion = '1.7'
+libLinkVersion = '0'
+libLinkName = 'FOX-{}'.format(libFOXVersion)
+
+libFileName = envLibrary.subst('lib/${{SHLIBPREFIX}}{}${{SHLIBSUFFIX}}.{}'.format(libLinkName, libLinkVersion))
+staticFileName = envLibrary.subst('lib/${{LIBPREFIX}}{}${{LIBSUFFIX}}'.format(libLinkName))
+
+nodeArtifacts = envLibrary.DownloadArtifactHelper('{}.tar.bz2'.format(srcdir), 'fox', 'lib_fox_fetch')
+
+if 'libfox_includes' in global_env and global_env['libfox_includes']:
+	global_env.Append(CPPPATH = [global_env['libfox_includes']])
+
+if 'libfox_libraries' in global_env and global_env['libfox_libraries']:
+	global_env.Append(LIBPATH = [global_env['libfox_libraries']])
+
+hasSystemFOX = False
+conf = envLibrary.Configure()
+if envLibrary['with_system_fox'] != TernaryVariableNo:
+	hasSystemFOX = conf.CheckLibWithHeader(libLinkName,
+		'fox-{}/fx.h'.format(libFOXVersion), 'c++', 'fxgetticks();')
+conf.Finish()
+
+if not hasSystemFOX and envLibrary['with_system_fox'] == TernaryVariableYes:
+	Exit('Requested to use system FOX-Toolkit but no usable FOX-Toolkit found.')
+
+global_env.Replace(RUNTIME_LIB_FOX=[])
+
+if hasSystemFOX:
+	global_env.Append(LIBS=[libLinkName])
+	Return()
+
+patchSoname = None
+
+libLinkName = 'DERLFOX-{}'.format(libFOXVersion)
+libFileNameOrg = libFileName
+patchSoname = envLibrary.subst('${{SHLIBPREFIX}}{}${{SHLIBSUFFIX}}'.format(libLinkName))
+libFileName = 'lib/{}'.format(patchSoname)
+
+staticFileName = envLibrary.subst('lib/${{LIBPREFIX}}{}${{LIBSUFFIX}}'.format(libLinkName))
+
+def foxBuild(target, source, env):
+	buildDir = target[0].get_dir().up()
+	buildDir = target[0].get_dir().up()
+	
+	untarArchive(buildDir.abspath, source[0].abspath)
+	
+	script = createScriptHeader(env)
+	
+	script.append('cd "{}" || exit 1'.format(buildDir.Dir(srcdir).abspath))
+	
+	for p in env['PATCHES']:
+		script.append('patch -p1 <{} || exit 1'.format(p.srcnode().abspath))
+	
+	script.append('autoreconf -fi || exit 1')
+	
+	for p in env['POST_PATCHES']:
+		script.append('patch -p1 <{} || exit 1'.format(p.srcnode().abspath))
+	
+	cmdline = ['./configure --prefix="{}"'.format(buildDir.abspath)]
+	
+	cmdline.append('--enable-release')
+	
+	cmdline.append('--disable-png')
+	cmdline.append('--disable-jpeg')
+	cmdline.append('--disable-jp2')
+	cmdline.append('--disable-webp')
+	cmdline.append('--disable-tiff')
+	cmdline.append('--disable-bz2lib')
+	cmdline.append('--with-opengl')
+	cmdline.append('--enable-threadsafe')
+	cmdline.append('--enable-silent-rules')
+	
+	cmdline.append('--enable-shared=yes')
+	cmdline.append('--enable-static=no')
+	
+	if 'CROSSCOMPILE_HOST' in env:
+		cmdline.append('--host={}'.format(env['CROSSCOMPILE_HOST']))
+	
+	script.append('{} || exit 1'.format(' '.join(cmdline)))
+	
+	script.append('cd lib || exit 1')
+	script.append('make -j {} install || exit 1'.format(env['with_threads']))
+	
+	script.append('cd ../include')
+	script.append('make -j {} install || exit 1'.format(env['with_threads']))
+	
+	if patchSoname:
+		script.append('cd ../.. || exit 1')
+		script.append('cp "{}" "{}" || exit 1'.format(libFileNameOrg, libFileName))
+		script.append('patchelf --set-soname "{}" "{}" || exit 1'.format(patchSoname, libFileName))
+	
+	if not env.RunExternalCommand(script):
+		raise Exception('Failed building fox')
+
+patches = [] # create with 'diff -rupN original_sources patches_sources'
+globFiles(envLibrary, 'patches/{}'.format(foxSrcVersion), '*.patch', patches, recursive=False)
+envLibrary.Append(PATCHES = [envLibrary.File(x) for x in sorted(patches)])
+
+postPatches = [] # create with 'diff -rupN original_sources patches_sources'
+globFiles(envLibrary, 'postPatches/{}'.format(foxSrcVersion), '*.patch', postPatches, recursive=False)
+envLibrary.Append(POST_PATCHES = [envLibrary.File(x) for x in sorted(postPatches)])
+
+targets = [libFileName]
+with open(envLibrary.File('header_file_list/{}'.format(foxSrcVersion)).srcnode().abspath, 'r') as f:
+	targets.extend([x[:-1] for x in f.readlines()])
+
+library = envLibrary.Command(targets, nodeArtifacts, envLibrary.Action(foxBuild, 'Build fox'))
+envLibrary.Depends(library, envLibrary['PATCHES'])
+envLibrary.Depends(library, envLibrary['POST_PATCHES'])
+
+depends = global_env.Alias('lib_fox', library)
+
+envLibrary.Clean(library, ['bin', 'include', 'lib', srcdir])
+
+global_env.Append(CPPPATH = [envLibrary.Dir('include')])
+global_env.Append(LIBPATH = [envLibrary.Dir('lib')])
+
+global_env.Append(LIBS=[library[0]])
+global_env.Append(RUNTIME_LIB_FOX=[library[0]])
+
+global_env.Append(LINKFLAGS = ['-Wl,-R,"$$ORIGIN"'])

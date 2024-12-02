@@ -148,15 +148,19 @@ void WindowMain::UpdateUIStates(){
 		return;
 	}
 	
-	pEditClientName->enable();
-	pEditDataPath->enable();
-	pEditHostAddress->enable();
-	
 	if(pClient->IsDisconnected()){
+		pEditClientName->enable();
+		pEditDataPath->enable();
+		pEditHostAddress->enable();
+		
 		pBtnConnect->enable();
 		pBtnDisconnect->disable();
 		
 	}else{
+		pEditClientName->disable();
+		pEditDataPath->disable();
+		pEditHostAddress->disable();
+		
 		pBtnConnect->disable();
 		pBtnDisconnect->enable();
 	}
@@ -279,12 +283,7 @@ void WindowMain::pCreatePanelLogs(FXComposite *container){
 	pEditLogs = new FXText(container, this, ID_LOGS,
 		TEXT_READONLY | TEXT_WORDWRAP | TEXT_SHOWACTIVE /*| TEXT_AUTOSCROLL*/ | LAYOUT_FILL);
 	
-#ifdef HAS_FOX_1_7_H
 	FXFontDesc fd(getApp()->getNormalFont()->getFontDesc());
-#else
-	FXFontDesc fd = {};
-	getApp()->getNormalFont()->getFontDesc(fd);
-#endif
 	
 	strcpy(fd.face, "courier");
 	fd.setwidth = 30; // normal=50, condensed=30

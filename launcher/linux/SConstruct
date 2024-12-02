@@ -1,3 +1,5 @@
+from SConsCommon import *
+
 global_env = Environment(CPPPATH='.', LIBPATH='.')
 
 params = Variables(['custom.py'], ARGUMENTS)
@@ -14,7 +16,19 @@ params.Add(PathVariable('dragengine_includes', help='Path to Drag[en]gine header
 params.Add(PathVariable('dragengine_libraries', help='Path to Drag[en]gine libraries', default=None))
 params.Add(PathVariable('libfox_includes', help='Path to FOX-1.6 headers', default=None))
 params.Add(PathVariable('libfox_libraries', help='Path to FOX-1.6 libraries', default=None))
+
+params.Add(StringVariable('with_threads', 'Count of threads to use for building external packages', '1'))
+params.Add(StringVariable('url_extern_artifacts',
+	'Base URL to download external artifacts from if missing',
+	'https://dragondreams.s3.eu-central-1.amazonaws.com/dragengine/extern'))
+params.Add(TernaryVariable('with_system_fox', 'Use System FOX Toolkit'))
 params.Update(global_env)
+
+global_env['OSUnix'] = True
+global_env['OSBeOS'] = True
+
+global_env.Tool('runExternalCommand')
+global_env.Tool('downloadArtifact')
 
 # determine sanitize flags to use
 global_env.Replace(SANITIZE_FLAGS = [])
@@ -108,24 +122,6 @@ if 'dragengine_libraries' in global_env and global_env['dragengine_libraries']:
 global_env.Append(LIBS=['dragengine'])
 
 # fox
-if 'libfox_includes' in global_env and global_env['libfox_includes']:
-	global_env.Append(CPPPATH = [global_env['libfox_includes']])
-
-if 'libfox_libraries' in global_env and global_env['libfox_libraries']:
-	global_env.Append(LIBPATH = [global_env['libfox_libraries']])
-
-conf = Configure(global_env)
-
-if conf.CheckCXXHeader('fox-1.7/fx.h'):
-	conf.env.Append(CPPFLAGS=['-DHAS_FOX_1_7_H'])
-	conf.env.Append(LIBS=['FOX-1.7'])
-elif conf.CheckCXXHeader('fox-1.6/fx.h'):
-	conf.env.Append(CPPFLAGS=['-DHAS_FOX_1_6_H'])
-	conf.env.Append(LIBS=['FOX-1.6'])
-else:
-	raise Exception("Missing compatible FOX headers")
-
-global_env = conf.Finish()
-
+SConscript(dirs='extern/fox', variant_dir='{}/build'.format('extern/fox'), duplicate=0, exports='global_env')
 SConscript(dirs='src', variant_dir='build', duplicate=0, exports='global_env')
 Default(['deremotelauncher-linux'])

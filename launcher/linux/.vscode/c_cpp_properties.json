@@ -12,7 +12,6 @@
                 "${workspaceFolder}/build"
             ],
             "defines": [
-                "HAS_FOX_1_7_H"
             ],
             "cStandard": "c17",
             "cppStandard": "c++17",

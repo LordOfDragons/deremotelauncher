@@ -1,22 +1,18 @@
 import os, fnmatch
 
+from SConsCommon import *
+
 Import('global_env')
 
 env = global_env.Clone()
-
-def globFiles(env, search, pattern, result):
-	oldcwd = os.getcwd()
-	os.chdir(env.Dir('.').srcnode().abspath)
-	for root, dirs, files in os.walk(search):
-		if '.git' in dirs:
-			dirs.remove('.git')
-		for s in fnmatch.filter(files, pattern):
-			result.append(root + os.sep + s)
-	os.chdir(oldcwd)
-
 
 sources = []
 globFiles(env, '.', '*.cpp', sources)
 
 program = env.Program('deremotelauncher-linux', sources)
+
+runtimeLibs = []
+for l in global_env['RUNTIME_LIB_FOX']:
+	env.Depends(program, env.InstallAs(l.name, l))
+
 env.Alias('deremotelauncher-linux', program)

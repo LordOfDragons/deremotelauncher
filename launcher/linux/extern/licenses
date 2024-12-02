@@ -1,0 +1,6 @@
+This file contains a rundown of the licenses of the libraries
+located in this directory. If dual-licenses the most liberal
+license is written here. The targets using the libraries are
+marked in curly brackets.
+
+fox:          L-GPL (MIT compatible)

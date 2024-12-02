@@ -164,5 +164,6 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="post_build.ps1" />
+    <None Include="pre_build.ps1" />
   </ItemGroup>
 </Project>

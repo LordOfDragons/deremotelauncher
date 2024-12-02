@@ -30,6 +30,7 @@
 #include <sstream>
 
 #include "derlBaseTaskProcessor.h"
+#include "../config.h"
 #include "../derlFile.h"
 #include "../derlFileBlock.h"
 #include "../derlFileLayout.h"
@@ -191,10 +192,14 @@ void derlBaseTaskProcessor::TruncateFile(const std::string &path){
 		
 		pFileStream.open(pFilePath, pFileStream.binary | pFileStream.out | pFileStream.trunc);
 		if(pFileStream.fail()){
+#ifdef OS_W32
 			std::string buffer;
 			buffer.assign(256, 0);
 			strerror_s((char*)buffer.c_str(), sizeof(buffer), errno);
 			throw std::runtime_error(buffer);
+#else
+			throw std::runtime_error(std::strerror(errno));
+#endif
 		}
 		
 	}catch(const std::exception &e){
@@ -245,10 +250,14 @@ void derlBaseTaskProcessor::OpenFile(const std::string &path, bool write){
 		
 		pFileStream.open(pFilePath, openmode);
 		if(pFileStream.fail()){
+#ifdef OS_W32
 			std::string buffer;
 			buffer.assign(256, 0);
 			strerror_s((char*)buffer.c_str(), sizeof(buffer), errno);
 			throw std::runtime_error(buffer);
+#else
+			throw std::runtime_error(std::strerror(errno));
+#endif
 		}
 		
 	}catch(const std::exception &e){

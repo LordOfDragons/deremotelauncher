@@ -42,10 +42,19 @@ FXDEFMAP(WindowMain) WindowMainMap[] = {
 	FXMAPFUNC(SEL_COMMAND, WindowMain::ID_DISCONNECT, WindowMain::onBtnDisconnect),
 	
 	FXMAPFUNC(SEL_COMMAND, WindowMain::ID_MSG_LOGS_ADDED, WindowMain::onMsgLogsAdded),
-	FXMAPFUNC(SEL_COMMAND, WindowMain::ID_MSG_UPDATE_UI_STATES, WindowMain::onMsgUpdateUIStates)
+	FXMAPFUNC(SEL_COMMAND, WindowMain::ID_MSG_UPDATE_UI_STATES, WindowMain::onMsgUpdateUIStates),
+	FXMAPFUNC(SEL_COMMAND, WindowMain::ID_MSG_START_APP, WindowMain::onMsgStartApp),
+	FXMAPFUNC(SEL_COMMAND, WindowMain::ID_MSG_STOP_APP, WindowMain::onMsgStopApp),
+	FXMAPFUNC(SEL_COMMAND, WindowMain::ID_MSG_KILL_APP, WindowMain::onMsgKillApp),
+	
+	FXMAPFUNC(SEL_TIMEOUT, WindowMain::ID_TIMER_PULSE, WindowMain::onTimerPulse)
 };
 
 FXIMPLEMENT(WindowMain, FXMainWindow, WindowMainMap, ARRAYNUMBER(WindowMainMap))
+
+
+// pulse time in nano-seconds. 1s pulse time
+#define PULSE_TIME 1000000000
 
 
 // Constructors
@@ -75,9 +84,12 @@ pTargetDataPath(pDataPath)
 	
 	pClient = std::make_shared<Client>(*this, pLogger);
 	pLauncher = std::make_shared<Launcher>(*this, pLogger);
+	
+	getApp()->addTimeout(this, ID_TIMER_PULSE, PULSE_TIME);
 }
 
 WindowMain::~WindowMain(){
+	getApp()->removeTimeout(this, ID_TIMER_PULSE);
 }
 
 // Management
@@ -85,7 +97,7 @@ WindowMain::~WindowMain(){
 
 void WindowMain::UpdateLogs(){
 	{
-	const std::lock_guard guard(pMutexLogs);
+	const std::lock_guard guard(pMutex);
 	if(pAddLogs.empty()){
 		return;
 	}
@@ -172,13 +184,29 @@ void WindowMain::RequestUpdateUIStates(){
 
 void WindowMain::AddLogs(const std::string &logs){
 	{
-	const std::lock_guard guard(pMutexLogs);
+	const std::lock_guard guard(pMutex);
 	pAddLogs.push_back(logs);
 	}
 	
 	pMessageChannel->message(this, FXSEL(SEL_COMMAND, ID_MSG_LOGS_ADDED));
 }
 
+void WindowMain::StartApp(const derlRunParameters &params){
+	{
+	const std::lock_guard guard(pMutex);
+	pRunParams = params;
+	}
+	
+	pMessageChannel->message(this, FXSEL(SEL_COMMAND, ID_MSG_START_APP));
+}
+
+void WindowMain::StopApp(){
+	pMessageChannel->message(this, FXSEL(SEL_COMMAND, ID_MSG_STOP_APP));
+}
+
+void WindowMain::KillApp(){
+	pMessageChannel->message(this, FXSEL(SEL_COMMAND, ID_MSG_KILL_APP));
+}
 
 // Events
 ///////////
@@ -238,6 +266,68 @@ long WindowMain::onMsgUpdateUIStates(FXObject*, FXSelector, void*){
 	return 1;
 }
 
+long WindowMain::onMsgStartApp(FXObject*, FXSelector, void*){
+	pLogger->Log(denLogger::LogSeverity::info, "Start running application");
+	try{
+		pLauncher->RunGame(pDataPath.text(), pRunParams);
+		pClient->SetRunStatus(derlLauncherClient::RunStatus::running);
+		
+	}catch(const deException &e){
+		pLogException(e, "Start application failed");
+		
+	}catch(const std::exception &e){
+		pLogException(e, "Start application failed");
+	}
+	UpdateUIStates();
+	return 1;
+}
+
+long WindowMain::onMsgStopApp(FXObject*, FXSelector, void*){
+	pLogger->Log(denLogger::LogSeverity::info, "Stop running application");
+	try{
+		pLauncher->StopGame();
+		pClient->SetRunStatus(derlLauncherClient::RunStatus::stopped);
+		
+	}catch(const deException &e){
+		pLogException(e, "Stop application failed");
+		
+	}catch(const std::exception &e){
+		pLogException(e, "Stop application failed");
+	}
+	UpdateUIStates();
+	return 1;
+}
+
+long WindowMain::onMsgKillApp(FXObject*, FXSelector, void*){
+	pLogger->Log(denLogger::LogSeverity::info, "Kill running application");
+	try{
+		pLauncher->KillGame();
+		pClient->SetRunStatus(derlLauncherClient::RunStatus::stopped);
+		
+	}catch(const deException &e){
+		pLogException(e, "Kill application failed");
+		
+	}catch(const std::exception &e){
+		pLogException(e, "Kill application failed");
+	}
+	UpdateUIStates();
+	return 1;
+}
+
+long WindowMain::onTimerPulse(FXObject*, FXSelector, void*){
+	getApp()->addTimeout(this, ID_TIMER_PULSE, PULSE_TIME);
+	
+	pLauncher->Pulse();
+	
+	if(pLauncher->GetState() == Launcher::State::running){
+		pClient->SetRunStatus(derlLauncherClient::RunStatus::running);
+		
+	}else{
+		pClient->SetRunStatus(derlLauncherClient::RunStatus::stopped);
+	}
+	return 1;
+}
+
 
 // Private Functions
 //////////////////////
@@ -288,4 +378,26 @@ void WindowMain::pCreatePanelLogs(FXComposite *container){
 	strcpy(fd.face, "courier");
 	fd.setwidth = 30; // normal=50, condensed=30
 	pEditLogs->setFont(new FXFont(getApp(), fd));
+}
+
+void WindowMain::pLogException(const std::exception &exception, const std::string &message){
+	pLogger->Log(denLogger::LogSeverity::error, exception.what());
+}
+
+void WindowMain::pLogException(const deException &exception, const std::string &message){
+	const decStringList lines(exception.FormatOutput());
+	const int count = lines.GetCount();
+	std::stringstream ss;
+	int i;
+	
+	ss << message << ": ";
+	
+	for(i=0; i<count; i++){
+		if(i > 0){
+			ss << std::endl;
+		}
+		ss << lines.GetAt(i).GetString();
+	}
+	
+	pLogger->Log(denLogger::LogSeverity::error, ss.str());
 }

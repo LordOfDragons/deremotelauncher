@@ -302,3 +302,26 @@ void Launcher::KillGame(){
 	pGame = nullptr;
 	pState = State::ready;
 }
+
+void Launcher::Pulse(){
+	const std::lock_guard guard(pMutex);
+	
+	switch(pState){
+	case State::running:
+		if(pGame){
+			pGame->PulseChecking();
+			if(pGame->IsRunning()){
+				break;
+			}
+		}
+		
+		pLauncherLogger->LogInfo("Launcher", "Application stopped running.");
+		
+		pGame = nullptr;
+		pState = State::ready;
+		break;
+		
+	default:
+		break;
+	}
+}

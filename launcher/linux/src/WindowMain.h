@@ -31,6 +31,8 @@
 #include <sstream>
 #include <mutex>
 #include <memory>
+#include <stdexcept>
+#include <deremotelauncher/derlRunParameters.h>
 #include <denetwork/denLogger.h>
 #include "foxtoolkit.h"
 
@@ -71,11 +73,12 @@ private:
 	std::deque<std::string> pLogLines, pAddLogs;
 	std::stringstream pStreamLogs;
 	int pMaxLogLineCount;
-	std::mutex pMutexLogs;
+	std::mutex pMutex;
 	
 	denLogger::Ref pLogger;
 	Client::Ref pClient;
 	Launcher::Ref pLauncher;
+	derlRunParameters pRunParams;
 	
 	
 public:
@@ -88,6 +91,10 @@ public:
 		ID_DISCONNECT,
 		ID_MSG_LOGS_ADDED,
 		ID_MSG_UPDATE_UI_STATES,
+		ID_MSG_START_APP,
+		ID_MSG_STOP_APP,
+		ID_MSG_KILL_APP,
+		ID_TIMER_PULSE,
 		ID_LAST
 	};
 	
@@ -134,6 +141,15 @@ public:
 	
 	/** \brief Enqueue logs. */
 	void AddLogs(const std::string &logs);
+	
+	/** \brief Start application. */
+	void StartApp(const derlRunParameters &params);
+	
+	/** \brief Stop application. */
+	void StopApp();
+	
+	/** \brief Kill application. */
+	void KillApp();
 	/*@}*/
 	
 	
@@ -150,6 +166,11 @@ public:
 	
 	long onMsgLogsAdded(FXObject*, FXSelector, void*);
 	long onMsgUpdateUIStates(FXObject*, FXSelector, void*);
+	long onMsgStartApp(FXObject*, FXSelector, void*);
+	long onMsgStopApp(FXObject*, FXSelector, void*);
+	long onMsgKillApp(FXObject*, FXSelector, void*);
+	
+	long onTimerPulse(FXObject*, FXSelector, void*);
 	/*@}*/
 	
 	
@@ -157,6 +178,9 @@ private:
 	void pCreateContent();
 	void pCreatePanelConnect(FXComposite *container);
 	void pCreatePanelLogs(FXComposite *container);
+	
+	void pLogException(const std::exception &exception, const std::string &message);
+	void pLogException(const deException &exception, const std::string &message);
 };
 
 #endif

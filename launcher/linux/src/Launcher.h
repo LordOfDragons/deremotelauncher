@@ -114,6 +114,9 @@ public:
 	
 	/** \brief Kill game. */
 	void KillGame();
+	
+	/** \brief Pulse check game state. */
+	void Pulse();
 	/*@}*/
 };
 

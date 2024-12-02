@@ -23,7 +23,6 @@
  */
 
 #include "Client.h"
-#include "Launcher.h"
 #include "WindowMain.h"
 
 
@@ -89,66 +88,26 @@ void Client::pFrameUpdate(){
 	
 	pLastTime = now;
 	
-	pCheckAppRunState();
 	Update((float)elapsed_us / 1e6f);
 	
 	std::this_thread::yield();
 	//std::this_thread::sleep_for(std::chrono::milliseconds(1));
 }
 
-void Client::pCheckAppRunState(){
-	const Launcher::Ref launcher(pWindowMain.GetLauncher());
-	if(launcher && launcher->GetState() == Launcher::State::running){
-		SetRunStatus(RunStatus::running);
-		
-	}else{
-		SetRunStatus(RunStatus::stopped);
-	}
-}
-
 void Client::StartApplication(const derlRunParameters &params){
-	Log(denLogger::LogSeverity::info, "StartApplication", "Start running application");
-	try{
-		pWindowMain.GetLauncher()->RunGame(GetPathDataDir(), params);
-		SetRunStatus(RunStatus::running);
-		
-	}catch(const deException &e){
-		pLogException("StartApplication", e, "Start application failed");
-		
-	}catch(const std::exception &e){
-		LogException("StartApplication", e, "Start application failed");
-	}
-	pWindowMain.RequestUpdateUIStates();
+	pWindowMain.StartApp(params);
 }
 
 void Client::StopApplication(){
-	Log(denLogger::LogSeverity::info, "StopApplication", "Stop running application");
-	try{
-		pWindowMain.GetLauncher()->StopGame();
-		SetRunStatus(RunStatus::stopped);
-		
-	}catch(const deException &e){
-		pLogException("StopApplication", e, "Stop application failed");
-		
-	}catch(const std::exception &e){
-		LogException("StopApplication", e, "Stop application failed");
-	}
-	pWindowMain.RequestUpdateUIStates();
+	pWindowMain.StopApp();
 }
 
 void Client::KillApplication(){
-	Log(denLogger::LogSeverity::info, "KillApplication", "Kill running application");
-	try{
-		pWindowMain.GetLauncher()->KillGame();
-		SetRunStatus(RunStatus::stopped);
-		
-	}catch(const deException &e){
-		pLogException("KillApplication", e, "Kill application failed");
-		
-	}catch(const std::exception &e){
-		LogException("KillApplication", e, "Kill application failed");
-	}
-	pWindowMain.RequestUpdateUIStates();
+	pWindowMain.KillApp();
+}
+
+void Client::SetRunStatus(RunStatus status){
+	derlLauncherClient::SetRunStatus(status);
 }
 
 void Client::SendLog(denLogger::LogSeverity severity, const std::string &source,
@@ -166,27 +125,4 @@ void Client::OnConnectionFailed(denConnection::ConnectionFailedReason reason){
 
 void Client::OnConnectionClosed(){
 	pWindowMain.RequestUpdateUIStates();
-}
-
-
-// Private Functions
-//////////////////////
-
-void Client::pLogException(const std::string &functionName,
-const deException &exception, const std::string &message){
-	const decStringList lines(exception.FormatOutput());
-	const int count = lines.GetCount();
-	std::stringstream ss;
-	int i;
-	
-	ss << message << ": ";
-	
-	for(i=0; i<count; i++){
-		if(i > 0){
-			ss << std::endl;
-		}
-		ss << lines.GetAt(i).GetString();
-	}
-	
-	Log(denLogger::LogSeverity::error, functionName, ss.str());
 }

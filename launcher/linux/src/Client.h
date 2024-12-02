@@ -87,6 +87,9 @@ public:
 	/** \brief Kill application. */
 	void KillApplication() override;
 	
+	/** \brief Set run status. */
+	void SetRunStatus(RunStatus status);
+	
 	/** \brief Send log to server. */
 	void SendLog(denLogger::LogSeverity severity, const std::string &source, const std::string &log);
 	
@@ -103,9 +106,6 @@ public:
 	
 protected:
 	void pFrameUpdate();
-	void pCheckAppRunState();
-	void pLogException(const std::string &functionName,
-		const deException &exception, const std::string &message);
 };
 
 #endif

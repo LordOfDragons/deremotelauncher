@@ -1,0 +1,35 @@
+name: Build Windows
+
+on:
+  workflow_call:
+    inputs:
+      releaseVersion:
+        required: true
+        type: string
+      artifactArchive:
+        required: true
+        type: string
+
+jobs:
+  build:
+    runs-on: windows-latest
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup MSBuild.exe
+        uses: microsoft/setup-msbuild@v2
+        
+      - name: Build
+        run: msbuild 'vs/deremotelauncher.sln' /p:configuration=Release /p:platform=x64
+        
+      - name: Archive
+        run: |
+          Compress-Archive -Path vs\x64\Release\SDK\* -DestinationPath DERemoteLauncherSDK-${{ inputs.releaseVersion }}.zip
+
+      - name: Store Archives
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ inputs.artifactArchive }}
+          path: DERemoteLauncherSDK-${{ inputs.releaseVersion }}.zip
+          if-no-files-found: error

@@ -178,7 +178,7 @@ void derlTaskProcessorLauncherClient::ProcessFileBlockHashes(derlTaskFileBlockHa
 		}
 		
 		file = std::make_shared<derlFile>(*file);
-		file->SetBlockSize(blockSize);
+		file->SetBlockSize((uint32_t)blockSize);
 		file->SetBlocks(blocks);
 		layout->SetFileAt(path, file);
 		}
@@ -344,7 +344,7 @@ void derlTaskProcessorLauncherClient::ProcessFinishWriteFile(derlTaskFileWrite &
 	try{
 		const derlFile::Ref file(std::make_shared<derlFile>(task.GetPath()));
 		file->SetSize(task.GetFileSize());
-		file->SetBlockSize(task.GetBlockSize());
+		file->SetBlockSize((uint32_t)task.GetBlockSize());
 		CalcFileHash(*file);
 		CloseFile();
 		
@@ -417,11 +417,11 @@ void derlTaskProcessorLauncherClient::WriteFile(const void *data, uint64_t offse
 		}
 		
 	}catch(const std::exception &e){
-		LogException("WriteFile", e, pFilePath);
+		LogException("WriteFile", e, pFilePath.string());
 		throw;
 		
 	}catch(...){
-		Log(denLogger::LogSeverity::error, "WriteFile", pFilePath);
+		Log(denLogger::LogSeverity::error, "WriteFile", pFilePath.string());
 		throw;
 	}
 }

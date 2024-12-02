@@ -40,7 +40,7 @@ derlFileLayout::~derlFileLayout(){
 ///////////////
 
 int derlFileLayout::GetFileCount() const{
-	return pFiles.size();
+	return (int)pFiles.size();
 }
 
 derlFile::Map::const_iterator derlFileLayout::GetFilesBegin() const{

@@ -362,7 +362,7 @@ void derlRemoteClientConnection::SendRequestFileBlockHashes(const derlTaskFileBl
 		denMessageWriter writer(message->Item());
 		writer.WriteByte((uint8_t)derlProtocol::MessageCodes::requestFileBlockHashes);
 		writer.WriteString16(task.GetPath());
-		writer.WriteUInt(task.GetBlockSize());
+		writer.WriteUInt((uint32_t)task.GetBlockSize());
 	}
 	pQueueSend.Add(message);
 }

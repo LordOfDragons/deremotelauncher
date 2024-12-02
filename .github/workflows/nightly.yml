@@ -12,9 +12,15 @@ jobs:
     with:
       releaseVersion: nightly
       artifactArchive: archives-linux
-  
+      
+  build_windows:
+    uses: ./.github/workflows/build_windows.yml
+    with:
+      releaseVersion: nightly
+      artifactArchive: archives-windows
+      
   upload:
-    needs: [build_linux]
+    needs: [build_linux, build_windows]
     runs-on: ubuntu-latest
     
     steps:
@@ -24,6 +30,11 @@ jobs:
         uses: actions/download-artifact@v4.1.7
         with:
           name: archives-linux
+      
+      - name: Get Windows Archives
+        uses: actions/download-artifact@v4.1.7
+        with:
+          name: archives-windows
       
       - name: Get current date
         id: date

@@ -27,6 +27,7 @@
 #include <thread>
 #include <chrono>
 #include <cstring>
+#include <sstream>
 
 #include "derlBaseTaskProcessor.h"
 #include "../derlFile.h"
@@ -92,13 +93,13 @@ void derlBaseTaskProcessor::ListDirectoryFiles(ListDirEntries &entries, const st
 	
 	std::filesystem::directory_iterator iter{pBaseDir / pathDir};
 	for (const std::filesystem::directory_entry &entry : iter){
-		const std::string filename(entry.path().filename());
+		const std::string filename(entry.path().filename().string());
 		
 		if(entry.is_directory()){
-			entries.push_back({filename, fspathDir / filename, 0, true});
+			entries.push_back({filename, (fspathDir / filename).string(), 0, true});
 			
 		}else if(entry.is_regular_file()){
-			entries.push_back({filename, fspathDir / filename, entry.file_size(), false});
+			entries.push_back({filename, (fspathDir / filename).string(), entry.file_size(), false});
 		}
 	}
 }
@@ -190,7 +191,10 @@ void derlBaseTaskProcessor::TruncateFile(const std::string &path){
 		
 		pFileStream.open(pFilePath, pFileStream.binary | pFileStream.out | pFileStream.trunc);
 		if(pFileStream.fail()){
-			throw std::runtime_error(std::strerror(errno));
+			std::string buffer;
+			buffer.assign(256, 0);
+			strerror_s((char*)buffer.c_str(), sizeof(buffer), errno);
+			throw std::runtime_error(buffer);
 		}
 		
 	}catch(const std::exception &e){
@@ -241,7 +245,10 @@ void derlBaseTaskProcessor::OpenFile(const std::string &path, bool write){
 		
 		pFileStream.open(pFilePath, openmode);
 		if(pFileStream.fail()){
-			throw std::runtime_error(std::strerror(errno));
+			std::string buffer;
+			buffer.assign(256, 0);
+			strerror_s((char*)buffer.c_str(), sizeof(buffer), errno);
+			throw std::runtime_error(buffer);
 		}
 		
 	}catch(const std::exception &e){
@@ -267,11 +274,11 @@ uint64_t derlBaseTaskProcessor::GetFileSize(){
 		return size;
 		
 	}catch(const std::exception &e){
-		LogException("GetFileSize", e, pFilePath);
+		LogException("GetFileSize", e, pFilePath.string());
 		throw;
 		
 	}catch(...){
-		Log(denLogger::LogSeverity::error, "GetFileSize", pFilePath);
+		Log(denLogger::LogSeverity::error, "GetFileSize", pFilePath.string());
 		throw;
 	}
 }
@@ -291,11 +298,11 @@ void derlBaseTaskProcessor::ReadFile(void *data, uint64_t offset, uint64_t size)
 		}
 		
 	}catch(const std::exception &e){
-		LogException("ReadFile", e, pFilePath);
+		LogException("ReadFile", e, pFilePath.string());
 		throw;
 		
 	}catch(...){
-		Log(denLogger::LogSeverity::error, "ReadFile", pFilePath);
+		Log(denLogger::LogSeverity::error, "ReadFile", pFilePath.string());
 		throw;
 	}
 }

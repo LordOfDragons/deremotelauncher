@@ -67,7 +67,7 @@ void derlFile::SetHasBlocks(bool hasBlocks){
 }
 
 int derlFile::GetBlockCount() const{
-	return pBlocks.size();
+	return (int)pBlocks.size();
 }
 
 derlFileBlock::Ref derlFile::GetBlockAt(int index) const{

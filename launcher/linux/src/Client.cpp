@@ -22,6 +22,8 @@
  * SOFTWARE.
  */
 
+#include <deremotelauncher/derlGlobal.h>
+
 #include "Client.h"
 #include "WindowMain.h"
 
@@ -56,39 +58,40 @@ Client::~Client(){
 ///////////////
 
 bool Client::IsDisconnected(){
-	const std::lock_guard guard(pMutexUpdater);
+	const std::lock_guard guard(pMutexClient);
 	return GetConnectionState() == denConnection::ConnectionState::disconnected;
 }
 
 void Client::ConnectToHost(const char *name, const char *pathDataDir, const char *address){
-	const std::lock_guard guard(pMutexUpdater);
+	const std::lock_guard guard(pMutexClient);
 	if(GetConnectionState() != denConnection::ConnectionState::disconnected){
 		return;
 	}
 	
 	SetName(name);
 	SetPathDataDir(pathDataDir);
+	
 	ConnectTo(address);
 }
 
 void Client::DisconnectFromHost(){
-	const std::lock_guard guard(pMutexUpdater);
+	const std::lock_guard guard(pMutexClient);
 	if(GetConnectionState() == denConnection::ConnectionState::disconnected){
-		return;
+		Disconnect();
 	}
-	
-	Disconnect();
 }
 
 void Client::pFrameUpdate(){
-	const std::lock_guard guard(pMutexUpdater);
+	{
+	const std::lock_guard guard(pMutexClient);
 	
 	const std::chrono::steady_clock::time_point now(std::chrono::steady_clock::now());
 	const int64_t elapsed_us = std::chrono::duration_cast<std::chrono::microseconds>(now - pLastTime).count();
-	
+	const float elapsed = (float)elapsed_us / 1e6f;
 	pLastTime = now;
 	
-	Update((float)elapsed_us / 1e6f);
+	Update(elapsed);
+	}
 	
 	std::this_thread::yield();
 	//std::this_thread::sleep_for(std::chrono::milliseconds(1));
@@ -112,6 +115,7 @@ void Client::SetRunStatus(RunStatus status){
 
 void Client::SendLog(denLogger::LogSeverity severity, const std::string &source,
 const std::string &log){
+	const std::lock_guard guard(pMutexClient);
 	derlLauncherClient::SendLog(severity, source, log);
 }
 

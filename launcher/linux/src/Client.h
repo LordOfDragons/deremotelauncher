@@ -51,8 +51,8 @@ private:
 	std::chrono::steady_clock::time_point pLastTime;
 	
 	std::shared_ptr<std::thread> pThreadUpdater;
-	std::atomic<bool> pExitUpdaterThread;
-	std::mutex pMutexUpdater;
+	std::atomic<bool> pExitUpdaterThread = false;
+	std::mutex pMutexClient;
 	
 	
 public:

@@ -235,6 +235,21 @@ void Launcher::RunGame(const std::filesystem::path &dataPath, const derlRunParam
 			game->StartGame(launchRunParams);
 			pGame = game;
 			pState = State::running;
+			
+			// open game logs file
+			decPath pathGameLogs(decPath::CreatePathUnix("/logs"));
+			pathGameLogs.AddUnixPath(pGame->GetLogFile());
+			
+			try{
+				pReaderGameLogs.TakeOver(GetVFS()->OpenFileForReading(pathGameLogs));
+				std::stringstream ss;
+				ss << "Game log file opened for reading: " << pathGameLogs.GetPathUnix().GetString();
+				pLauncherLogger->LogInfo("RunGame", ss.str().c_str());
+				
+			}catch(const deException &e){
+				pLauncherLogger->LogException("RunGame", e);
+				pReaderGameLogs = nullptr;
+			}
 		}
 		
 	}else if(!game->GetAllFormatsSupported()){
@@ -268,6 +283,9 @@ void Launcher::StopGame(){
 	
 	pGame = nullptr;
 	pState = State::ready;
+	
+	ReadGameLogs();
+	pReaderGameLogs = nullptr;
 }
 
 void Launcher::KillGame(){
@@ -293,11 +311,16 @@ void Launcher::KillGame(){
 	
 	pGame = nullptr;
 	pState = State::ready;
+	
+	ReadGameLogs();
+	pReaderGameLogs = nullptr;
 }
 
 void Launcher::Pulse(){
 	switch(pState){
 	case State::running:
+		ReadGameLogs();
+		
 		if(pGame){
 			pGame->PulseChecking();
 			if(pGame->IsRunning()){
@@ -309,9 +332,44 @@ void Launcher::Pulse(){
 		
 		pGame = nullptr;
 		pState = State::ready;
+		
+		ReadGameLogs();
+		pReaderGameLogs = nullptr;
 		break;
 		
 	default:
 		break;
+	}
+}
+
+void Launcher::ReadGameLogs(){
+	if(!pReaderGameLogs){
+		return;
+	}
+	
+	std::string logs;
+	
+	try{
+		const int position = pReaderGameLogs->GetPosition();
+		pReaderGameLogs->SetPositionEnd(0);
+		const int length = pReaderGameLogs->GetPosition() - position;
+		if(length < 1){
+			return;
+		}
+		
+		logs.assign(length, 0);
+		pReaderGameLogs->SetPosition(position);
+		pReaderGameLogs->Read((void*)logs.c_str(), length);
+		
+	}catch(const deException &e){
+		pLauncherLogger->LogException("ReadGameLogs", e);
+		pReaderGameLogs = nullptr;
+		return;
+	}
+	
+	std::istringstream iss(logs);
+	std::string line;
+	while(std::getline(iss, line)){
+		pLauncherLogger->LogInfo("Game", line.c_str());
 	}
 }

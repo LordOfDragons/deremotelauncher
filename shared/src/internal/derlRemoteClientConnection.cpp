@@ -493,6 +493,10 @@ void derlRemoteClientConnection::pMessageReceivedConnect(denMessage &message){
 }
 
 void derlRemoteClientConnection::pProcessRequestLogs(denMessageReader &reader){
+	if(!GetLogger()){
+		return;
+	}
+	
 	denLogger::LogSeverity severity;
 	switch((derlProtocol::LogLevel)reader.ReadByte()){
 	case derlProtocol::LogLevel::error:
@@ -509,10 +513,11 @@ void derlRemoteClientConnection::pProcessRequestLogs(denMessageReader &reader){
 	}
 	
 	std::stringstream ss;
-	ss << "[" << reader.ReadString8() << "]: ";
+	ss << "<={" << reader.ReadString8() << "} ";
 	ss << reader.ReadString16();
 	
-	Log(severity, "pProcessRequestLogs", ss.str());
+	//Log(severity, "pProcessRequestLogs", ss.str());
+	GetLogger()->Log(severity, ss.str());
 }
 
 void derlRemoteClientConnection::pProcessResponseFileLayout(denMessageReader &reader){

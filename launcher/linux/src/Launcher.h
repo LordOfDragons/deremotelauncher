@@ -32,6 +32,7 @@
 #include <delauncher/delLauncher.h>
 #include <delauncher/game/delGame.h>
 #include <denetwork/denLogger.h>
+#include <dragengine/common/file/decBaseFileReader.h>
 
 class WindowMain;
 class derlRunParameters;
@@ -84,6 +85,7 @@ private:
 	std::shared_ptr<std::thread> pThreadPrepareLauncher;
 	
 	delGame::Ref pGame;
+	decBaseFileReader::Ref pReaderGameLogs;
 	
 	
 public:
@@ -114,6 +116,9 @@ public:
 	
 	/** \brief Pulse check game state. */
 	void Pulse();
+	
+	/** \brief Read game logs sending them to server. */
+	void ReadGameLogs();
 	/*@}*/
 };
 

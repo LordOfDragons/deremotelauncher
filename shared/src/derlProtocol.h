@@ -121,6 +121,20 @@ namespace derlProtocol{
 		stopped = 0,
 		running = 1
 	};
+	
+	/**
+	 * \brief System property names.
+	 */
+	namespace SystemPropertyNames{
+		/** \brief List of supported property names as newline separated string. */
+		static const char * const propertyNames = "properties.names";
+		
+		/** \brief List of available profile names as newline separated string. */
+		static const char * const profileNames = "profiles.names";
+		
+		/** \brief Default profile name. */
+		static const char * const defaultProfile = "profiles.default";
+	};
 }
 
 #endif

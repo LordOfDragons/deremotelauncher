@@ -24,6 +24,7 @@
 
 #include <algorithm>
 #include <deremotelauncher/derlGlobal.h>
+#include <deremotelauncher/derlProtocol.h>
 
 #include "Client.h"
 #include "WindowMain.h"
@@ -83,17 +84,17 @@ void Client::DisconnectFromHost(){
 }
 
 std::unique_ptr<std::string> Client::GetSystemProperty(const std::string &property){
-	if(property == "properties.names"){
+	if(property == derlProtocol::SystemPropertyNames::propertyNames){
 		std::stringstream names;
-		names << "profiles.names\n";
-		names << "profiles.default";
+		names << derlProtocol::SystemPropertyNames::profileNames << "\n";
+		names << derlProtocol::SystemPropertyNames::defaultProfile;
 		return std::make_unique<std::string>(names.str());
 		
-	}else if(property == "profiles.names"){
+	}else if(property == derlProtocol::SystemPropertyNames::profileNames){
 		std::stringstream names;
 		return std::make_unique<std::string>(names.str());
 		
-	}else if(property == "profiles.default"){
+	}else if(property == derlProtocol::SystemPropertyNames::defaultProfile){
 		return std::make_unique<std::string>();
 		
 	}else{

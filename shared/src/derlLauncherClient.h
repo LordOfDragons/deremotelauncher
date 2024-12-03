@@ -313,18 +313,24 @@ public:
 	/**
 	 * \brief Server requests system property.
 	 * 
-	 * If the property return the value of the property in string form. If not supported
-	 * return empty string.
+	 * If the value of the property can be determined right in the callback return the value.
+	 * If the value can not be determined return nullptr then later on call
+	 * SendSystemProperty() with the result.
+	 * 
+	 * If the property is not supported treat this as if the property has empty value.
 	 * 
 	 * For the special property name "properties.names" return a newline separated list
 	 * of supported property names (excluding "properties.names").
 	 * 
 	 * Default implementation returns empty string.
 	 */
-	virtual std::string GetSystemProperty(const std::string &property);
+	virtual std::unique_ptr<std::string> GetSystemProperty(const std::string &property);
 	
 	/** \brief Send log to server. */
 	void SendLog(denLogger::LogSeverity severity, const std::string &source, const std::string &log);
+	
+	/** \brief Send system property to server. */
+	void SendSystemProperty(const std::string &property, const std::string &value);
 	
 	
 	/** \brief Log exception. */

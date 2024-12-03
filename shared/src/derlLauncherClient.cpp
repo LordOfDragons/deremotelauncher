@@ -270,13 +270,18 @@ void derlLauncherClient::UpdateLayoutChanged(){
 	}
 }
 
-std::string derlLauncherClient::GetSystemProperty(const std::string &property){
-	return std::string();
+std::unique_ptr<std::string> derlLauncherClient::GetSystemProperty(const std::string &property){
+	return std::make_unique<std::string>();
 }
 
 void derlLauncherClient::SendLog(denLogger::LogSeverity severity,
 const std::string &source, const std::string &log){
 	pConnection->SendLog(severity, source, log);
+}
+
+void derlLauncherClient::SendSystemProperty(const std::string &property, const std::string &value){
+	const std::lock_guard guard(derlGlobal::mutexNetwork);
+	pConnection->SendResponseSystemPropertyNoLock(property, value);
 }
 
 void derlLauncherClient::LogException(const std::string &functionName,

@@ -389,6 +389,22 @@ void derlLauncherClientConnection::SendResponseFinishWriteFile(const derlTaskFil
 	pQueueSend.Add(message);
 }
 
+void derlLauncherClientConnection::SendResponseSystemPropertyNoLock(
+const std::string &property, const std::string &value){
+	if(!GetConnected()){
+		return;
+	}
+	
+	const denMessage::Ref message(denMessage::Pool().Get());
+	{
+		denMessageWriter writer(message->Item());
+		writer.WriteByte((uint8_t)derlProtocol::MessageCodes::responseSystemProperty);
+		writer.WriteString8(property);
+		writer.WriteString16(value);
+	}
+	pQueueSend.Add(message);
+}
+
 void derlLauncherClientConnection::SendLog(denLogger::LogSeverity severity,
 const std::string &source, const std::string &log){
 	const std::lock_guard guard(derlGlobal::mutexNetwork);
@@ -663,16 +679,10 @@ void derlLauncherClientConnection::pProcessStopApplication(denMessageReader &rea
 
 void derlLauncherClientConnection::pProcessRequestSystemProperty(denMessageReader &reader){
 	const std::string property(reader.ReadString8());
-	const std::string value(pClient.GetSystemProperty(property));
-	
-	const denMessage::Ref message(denMessage::Pool().Get());
-	{
-		denMessageWriter writer(message->Item());
-		writer.WriteByte((uint8_t)derlProtocol::MessageCodes::responseSystemProperty);
-		writer.WriteString8(property);
-		writer.WriteString16(value);
+	const std::unique_ptr<std::string> value(pClient.GetSystemProperty(property));
+	if(value){
+		SendResponseSystemPropertyNoLock(property, *value);
 	}
-	pQueueSend.Add(message);
 }
 
 void derlLauncherClientConnection::pSendResponseFileLayout(const derlFileLayout &layout){

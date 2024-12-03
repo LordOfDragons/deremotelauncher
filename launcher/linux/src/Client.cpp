@@ -82,22 +82,22 @@ void Client::DisconnectFromHost(){
 	}
 }
 
-std::string Client::GetSystemProperty(const std::string &property){
+std::unique_ptr<std::string> Client::GetSystemProperty(const std::string &property){
 	if(property == "properties.names"){
 		std::stringstream names;
 		names << "profiles.names\n";
 		names << "profiles.default";
-		return names.str();
+		return std::make_unique<std::string>(names.str());
 		
 	}else if(property == "profiles.names"){
 		std::stringstream names;
-		return names.str();
+		return std::make_unique<std::string>(names.str());
 		
 	}else if(property == "profiles.default"){
-		return std::string();
+		return std::make_unique<std::string>();
 		
 	}else{
-		return std::string();
+		return std::make_unique<std::string>();
 	}
 }
 

@@ -52,7 +52,9 @@ namespace derlProtocol{
 		responseFinishWriteFile = 14,
 		startApplication = 15,
 		stopApplication = 16,
-		logs = 17
+		logs = 17,
+		requestSystemProperty = 18,
+		responseSystemProperty = 19
 	};
 	
 	/**

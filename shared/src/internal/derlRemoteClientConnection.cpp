@@ -178,6 +178,10 @@ void derlRemoteClientConnection::ProcessReceivedMessages(){
 			pProcessResponseFinishWriteFile(reader);
 			break;
 			
+		case derlProtocol::MessageCodes::responseSystemProperty:
+			pProcessResponseSystemProperty(reader);
+			break;
+			
 		default:
 			break; // ignore all other messages
 		}
@@ -418,6 +422,22 @@ void derlRemoteClientConnection::SendStopApplication(derlProtocol::StopApplicati
 	pQueueSend.Add(message);
 }
 
+void derlRemoteClientConnection::SendRequestSystemProperty(const std::string &property){
+	{
+	std::stringstream log;
+	log << "Request system property '" << property << "'";
+	Log(denLogger::LogSeverity::info, "SendRequestSystemProperty", log.str());
+	}
+	
+	const std::lock_guard guard(derlGlobal::mutexNetwork);
+	const denMessage::Ref message(denMessage::Pool().Get());
+	{
+		denMessageWriter writer(message->Item());
+		writer.WriteByte((uint8_t)derlProtocol::MessageCodes::requestSystemProperty);
+		writer.WriteString8(property);
+	}
+	pQueueSend.Add(message);
+}
 
 // Private Functions
 //////////////////////
@@ -847,6 +867,12 @@ void derlRemoteClientConnection::pProcessResponseFinishWriteFile(denMessageReade
 		Log(denLogger::LogSeverity::error, "pProcessResponseFinishWriteFile", ss.str());
 		pClient->FailSynchronization(ss.str());
 	}
+}
+
+void derlRemoteClientConnection::pProcessResponseSystemProperty(denMessageReader &reader){
+	const std::string property(reader.ReadString8());
+	const std::string value(reader.ReadString16());
+	pClient->OnSystemProperty(property, value);
 }
 
 void derlRemoteClientConnection::pSendRequestWriteFile(const derlTaskFileWrite &task){

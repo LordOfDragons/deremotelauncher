@@ -180,6 +180,10 @@ void derlLauncherClientConnection::ProcessReceivedMessages(){
 			pProcessStopApplication(reader);
 			break;
 			
+		case derlProtocol::MessageCodes::requestSystemProperty:
+			pProcessRequestSystemProperty(reader);
+			break;
+			
 		default:
 			break; // ignore all other messages
 		}
@@ -655,6 +659,20 @@ void derlLauncherClientConnection::pProcessStopApplication(denMessageReader &rea
 		pClient.KillApplication();
 		break;
 	}
+}
+
+void derlLauncherClientConnection::pProcessRequestSystemProperty(denMessageReader &reader){
+	const std::string property(reader.ReadString8());
+	const std::string value(pClient.GetSystemProperty(property));
+	
+	const denMessage::Ref message(denMessage::Pool().Get());
+	{
+		denMessageWriter writer(message->Item());
+		writer.WriteByte((uint8_t)derlProtocol::MessageCodes::responseSystemProperty);
+		writer.WriteString8(property);
+		writer.WriteString16(value);
+	}
+	pQueueSend.Add(message);
 }
 
 void derlLauncherClientConnection::pSendResponseFileLayout(const derlFileLayout &layout){

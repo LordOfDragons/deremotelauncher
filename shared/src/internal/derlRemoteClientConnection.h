@@ -182,6 +182,7 @@ public:
 	void SendRequestDeleteFile(const derlTaskFileDelete &task);
 	void SendStartApplication(const derlRunParameters &parameters);
 	void SendStopApplication(derlProtocol::StopApplicationMode mode);
+	void SendRequestSystemProperty(const std::string &property);
 	/*@}*/
 	
 	
@@ -195,6 +196,7 @@ private:
 	void pProcessResponseWriteFile(denMessageReader &reader);
 	void pProcessFileDataReceived(denMessageReader &reader);
 	void pProcessResponseFinishWriteFile(denMessageReader &reader);
+	void pProcessResponseSystemProperty(denMessageReader &reader);
 	
 	void pSendRequestWriteFile(const derlTaskFileWrite &task);
 	void pSendSendFileData(derlTaskFileWriteBlock &block);

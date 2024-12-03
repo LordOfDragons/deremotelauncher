@@ -270,6 +270,10 @@ void derlLauncherClient::UpdateLayoutChanged(){
 	}
 }
 
+std::string derlLauncherClient::GetSystemProperty(const std::string &property){
+	return std::string();
+}
+
 void derlLauncherClient::SendLog(denLogger::LogSeverity severity,
 const std::string &source, const std::string &log){
 	pConnection->SendLog(severity, source, log);

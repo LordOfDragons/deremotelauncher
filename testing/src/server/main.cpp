@@ -81,6 +81,7 @@ public:
 			std::chrono::steady_clock::now() - timerBegin.load()).count() >= 1000){
 				Log(denLogger::LogSeverity::info, "Update", "Timeout => synchronize");
 				state = State::synchronize;
+				RequestSystemProperty("properties.names");
 				Synchronize();
 			}
 			break;
@@ -166,6 +167,23 @@ public:
 		Log(denLogger::LogSeverity::info, "OnSynchronizeFinished", ss.str());
 		timerBegin = std::chrono::steady_clock::now();
 		state = State::delayStartApplication; //State::delayDisconnect;
+	}
+	
+	/** \brief System property received from client. */
+	void OnSystemProperty(const std::string &property, const std::string &value) override{
+		{
+		std::stringstream ss;
+		ss << "'" << property << "' = '" << value << "'";
+		Log(denLogger::LogSeverity::info, "OnSystemProperty", ss.str());
+		}
+		
+		if(property == "properties.names"){
+			std::stringstream ss(value);
+			std::string s;
+			while(std::getline(ss, s, '\n')){
+				RequestSystemProperty(s);
+			}
+		}
 	}
 };
 

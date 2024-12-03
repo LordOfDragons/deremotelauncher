@@ -310,6 +310,19 @@ public:
 	 */
 	virtual void KillApplication() = 0;
 	
+	/**
+	 * \brief Server requests system property.
+	 * 
+	 * If the property return the value of the property in string form. If not supported
+	 * return empty string.
+	 * 
+	 * For the special property name "properties.names" return a newline separated list
+	 * of supported property names (excluding "properties.names").
+	 * 
+	 * Default implementation returns empty string.
+	 */
+	virtual std::string GetSystemProperty(const std::string &property);
+	
 	/** \brief Send log to server. */
 	void SendLog(denLogger::LogSeverity severity, const std::string &source, const std::string &log);
 	

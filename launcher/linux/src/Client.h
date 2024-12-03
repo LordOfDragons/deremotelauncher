@@ -101,6 +101,19 @@ public:
 	
 	/** \brief Connection closed either by calling Disconnect() or by server. */
 	void OnConnectionClosed() override;
+	
+	/**
+	 * \brief Server requests system property.
+	 * 
+	 * If the property return the value of the property in string form. If not supported
+	 * return empty string.
+	 * 
+	 * For the special property name "properties.names" return a newline separated list
+	 * of supported property names (excluding "properties.names").
+	 * 
+	 * Default implementation returns empty string.
+	 */
+	std::string GetSystemProperty(const std::string &property) override;
 	/*@}*/
 	
 	

@@ -22,6 +22,7 @@
  * SOFTWARE.
  */
 
+#include <algorithm>
 #include <deremotelauncher/derlGlobal.h>
 
 #include "Client.h"
@@ -78,6 +79,25 @@ void Client::DisconnectFromHost(){
 	const std::lock_guard guard(pMutexClient);
 	if(GetConnectionState() == denConnection::ConnectionState::disconnected){
 		Disconnect();
+	}
+}
+
+std::string Client::GetSystemProperty(const std::string &property){
+	if(property == "properties.names"){
+		std::stringstream names;
+		names << "profiles.names\n";
+		names << "profiles.default";
+		return names.str();
+		
+	}else if(property == "profiles.names"){
+		std::stringstream names;
+		return names.str();
+		
+	}else if(property == "profiles.default"){
+		return std::string();
+		
+	}else{
+		return std::string();
 	}
 }
 

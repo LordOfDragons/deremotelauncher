@@ -239,6 +239,17 @@ public:
 	void SetRunStatus(RunStatus status);
 	
 	/**
+	 * \brief Request system property from client.
+	 * 
+	 * Once received calls OnSystemProperty with the result.
+	 * 
+	 * All clients have to support at least the property "properties.names". This lists
+	 * all properties supported by the client as newline separated list, for example
+	 * "Profile A\nProfile B".
+	 */
+	void RequestSystemProperty(const std::string &property);
+	
+	/**
 	 * \brief Start application.
 	 * 
 	 * Send start application request to client. Monitor GetRunStatus() or listen to
@@ -366,6 +377,9 @@ public:
 	
 	/** \brief Run status changed. */
 	virtual void OnRunStatusChanged();
+	
+	/** \brief System property received from client. */
+	virtual void OnSystemProperty(const std::string &property, const std::string &value);
 	/*@}*/
 	
 	

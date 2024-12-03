@@ -196,6 +196,10 @@ void derlRemoteClient::SetRunStatus(RunStatus status){
 	}
 }
 
+void derlRemoteClient::RequestSystemProperty(const std::string &property){
+	pConnection->SendRequestSystemProperty(property);
+}
+
 void derlRemoteClient::StartApplication(const derlRunParameters &params){
 	pConnection->SendStartApplication(params);
 }
@@ -378,6 +382,9 @@ void derlRemoteClient::OnSynchronizeFinished(){
 }
 
 void derlRemoteClient::OnRunStatusChanged(){
+}
+
+void derlRemoteClient::OnSystemProperty(const std::string &property, const std::string &value){
 }
 
 // Private Functions

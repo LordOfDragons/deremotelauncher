@@ -190,6 +190,7 @@ private:
 	void pProcessRequestFinishWriteFile(denMessageReader &reader);
 	void pProcessStartApplication(denMessageReader &reader);
 	void pProcessStopApplication(denMessageReader &reader);
+	void pProcessRequestSystemProperty(denMessageReader &reader);
 	
 	void pSendResponseFileLayout(const derlFileLayout &layout);
 };

@@ -94,6 +94,8 @@ public:
 		ID_MSG_START_APP,
 		ID_MSG_STOP_APP,
 		ID_MSG_KILL_APP,
+		ID_MSG_SYSPROP_PROFILENAMES,
+		ID_MSG_SYSPROP_DEFAULTPROFILE,
 		ID_TIMER_PULSE,
 		ID_LAST
 	};
@@ -150,6 +152,12 @@ public:
 	
 	/** \brief Kill application. */
 	void KillApp();
+	
+	/** \brief Request profile names and send them to server. */
+	void RequestProfileNames();
+	
+	/** \brief Request default profile name and send it to server. */
+	void RequestDefaultProfileName();
 	/*@}*/
 	
 	
@@ -169,6 +177,8 @@ public:
 	long onMsgStartApp(FXObject*, FXSelector, void*);
 	long onMsgStopApp(FXObject*, FXSelector, void*);
 	long onMsgKillApp(FXObject*, FXSelector, void*);
+	long onMsgSysPropProfileNames(FXObject*, FXSelector, void*);
+	long onMsgSysPropDefaultProfile(FXObject*, FXSelector, void*);
 	
 	long onTimerPulse(FXObject*, FXSelector, void*);
 	/*@}*/

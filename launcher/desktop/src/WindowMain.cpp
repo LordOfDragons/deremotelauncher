@@ -31,6 +31,8 @@
 #include "Logger.h"
 #include "resources/icons.h"
 
+#include <deremotelauncher/derlProtocol.h>
+
 #ifdef OS_W32
 #include <dragengine/app/deOSWindows.h>
 #endif
@@ -50,6 +52,8 @@ FXDEFMAP(WindowMain) WindowMainMap[] = {
 	FXMAPFUNC(SEL_COMMAND, WindowMain::ID_MSG_START_APP, WindowMain::onMsgStartApp),
 	FXMAPFUNC(SEL_COMMAND, WindowMain::ID_MSG_STOP_APP, WindowMain::onMsgStopApp),
 	FXMAPFUNC(SEL_COMMAND, WindowMain::ID_MSG_KILL_APP, WindowMain::onMsgKillApp),
+	FXMAPFUNC(SEL_COMMAND, WindowMain::ID_MSG_SYSPROP_PROFILENAMES, WindowMain::onMsgSysPropProfileNames),
+	FXMAPFUNC(SEL_COMMAND, WindowMain::ID_MSG_SYSPROP_DEFAULTPROFILE, WindowMain::onMsgSysPropDefaultProfile),
 	
 	FXMAPFUNC(SEL_TIMEOUT, WindowMain::ID_TIMER_PULSE, WindowMain::onTimerPulse)
 };
@@ -216,6 +220,14 @@ void WindowMain::KillApp(){
 	pMessageChannel->message(this, FXSEL(SEL_COMMAND, ID_MSG_KILL_APP));
 }
 
+void WindowMain::RequestProfileNames(){
+	pMessageChannel->message(this, FXSEL(SEL_COMMAND, ID_MSG_SYSPROP_PROFILENAMES));
+}
+
+void WindowMain::RequestDefaultProfileName(){
+	pMessageChannel->message(this, FXSEL(SEL_COMMAND, ID_MSG_SYSPROP_DEFAULTPROFILE));
+}
+
 // Events
 ///////////
 
@@ -319,6 +331,29 @@ long WindowMain::onMsgKillApp(FXObject*, FXSelector, void*){
 		pLogException(e, "Kill application failed");
 	}
 	UpdateUIStates();
+	return 1;
+}
+
+long WindowMain::onMsgSysPropProfileNames(FXObject*, FXSelector, void*){
+	std::stringstream names;
+	const delGameProfileList &profiles = pLauncher->GetGameManager().GetProfiles();
+	const int count = profiles.GetCount();
+	int i;
+	for(i=0; i<count; i++){
+		if(i > 0){
+			names << '\n';
+		}
+		names << profiles.GetAt(i)->GetName().GetString();
+	}
+	pClient->SendSystemProperty(derlProtocol::SystemPropertyNames::profileNames, names.str());
+	
+	return 1;
+}
+
+long WindowMain::onMsgSysPropDefaultProfile(FXObject*, FXSelector, void*){
+	const delGameProfile * const profile = pLauncher->GetGameManager().GetDefaultProfile();
+	pClient->SendSystemProperty(derlProtocol::SystemPropertyNames::defaultProfile,
+		profile ? profile->GetName().GetString() : "");
 	return 1;
 }
 

@@ -41,7 +41,7 @@ class derlRunParameters;
 /**
  * Launcher.
  */
-class Launcher : protected delLauncher{
+class Launcher : public delLauncher{
 public:
 	/** \brief Reference. */
 	typedef std::shared_ptr<Launcher> Ref;

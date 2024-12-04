@@ -117,6 +117,9 @@ public:
 	 * Default implementation returns empty string.
 	 */
 	std::unique_ptr<std::string> GetSystemProperty(const std::string &property) override;
+	
+	/** \brief Send system property to server. */
+	void SendSystemProperty(const std::string &property, const std::string &value);
 	/*@}*/
 	
 	

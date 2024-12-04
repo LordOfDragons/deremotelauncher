@@ -91,15 +91,21 @@ std::unique_ptr<std::string> Client::GetSystemProperty(const std::string &proper
 		return std::make_unique<std::string>(names.str());
 		
 	}else if(property == derlProtocol::SystemPropertyNames::profileNames){
-		std::stringstream names;
-		return std::make_unique<std::string>(names.str());
+		pWindowMain.RequestProfileNames();
+		return nullptr;
 		
 	}else if(property == derlProtocol::SystemPropertyNames::defaultProfile){
-		return std::make_unique<std::string>();
+		pWindowMain.RequestDefaultProfileName();
+		return nullptr;
 		
 	}else{
 		return std::make_unique<std::string>();
 	}
+}
+
+void Client::SendSystemProperty(const std::string &property, const std::string &value){
+	const std::lock_guard guard(pMutexClient);
+	derlLauncherClient::SendSystemProperty(property, value);
 }
 
 void Client::pFrameUpdate(){

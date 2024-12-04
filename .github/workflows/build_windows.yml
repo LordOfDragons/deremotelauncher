@@ -35,6 +35,6 @@ jobs:
         with:
           name: ${{ inputs.artifactArchive }}
           path: |
-            DERemoteLauncherSDK-${{ inputs.releaseVersion }}.zip,
+            DERemoteLauncherSDK-${{ inputs.releaseVersion }}.zip
             DERemoteLauncherDesktop-${{ inputs.releaseVersion }}.zip
           if-no-files-found: error

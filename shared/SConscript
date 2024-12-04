@@ -136,7 +136,7 @@ headers = []
 globFiles(envLibrary, 'src', '*.cpp', sources)
 globFiles(envLibrary, 'src', '*.h', headers)
 
-objects = [envLibrary.StaticObject(s) for s in sources]
+objects = [envLibrary.SharedObject(s) for s in sources]
 
 library = envLibrary.StaticLibrary(target='deremotelauncher', source=objects)
 

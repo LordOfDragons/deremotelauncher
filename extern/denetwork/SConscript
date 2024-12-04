@@ -1,0 +1,61 @@
+import os
+import SCons
+
+from SConsCommon import *
+from SConsExternCommon import *
+
+Import('globalEnv')
+
+envLibrary = globalEnv.Clone()
+
+srcVersion = 'nightly'
+srcdir = 'denetworkcpp-unix-x64-{}'.format(srcVersion)
+
+libLinkName = 'denetwork'
+
+libFileName = envLibrary.subst('{}/lib/${{LIBPREFIX}}{}${{LIBSUFFIX}}'.format(srcdir, libLinkName))
+
+baseUrl = 'https://github.com/LordOfDragons/denetwork/releases/download'
+
+nodeArtifacts = envLibrary.DownloadArtifactHelper(
+	'{}.tar.bz2'.format(srcdir), 'nightly', 'lib_denetwork_fetch', baseUrl=baseUrl)
+
+cpppath = []
+if 'denetwork_includes' in envLibrary and envLibrary['denetwork_includes']:
+	cpppath = [envLibrary['denetwork_includes']]
+	envLibrary.Append(CPPPATH = cpppath)
+
+linkpath = []
+if 'denetwork_libraries' in envLibrary and envLibrary['denetwork_libraries']:
+	linkpath = [envLibrary['denetwork_libraries']]
+	envLibrary.Append(LIBPATH = linkpath)
+
+conf = envLibrary.Configure()
+hasLocalLib = conf.CheckLibWithHeader(libLinkName, 'denetwork/denServer.h', 'c++')
+conf.Finish()
+
+if hasLocalLib:
+	targetLibrary = globalEnv.targetManager.TargetLibrary('DENetwork Library')
+	globalEnv.targetManager.add('denetwork', targetLibrary)
+	targetLibrary.addParametersBuildCPP(envLibrary, [libLinkName], cpppath, linkpath, linkStatic=True)
+	Return()
+
+def denetworkUnpack(target, source, env):
+	untarArchive(target[0].get_dir().up().up().abspath, source[0].abspath)
+
+targets = [libFileName]
+with open(envLibrary.File('header_file_list/denetwork').srcnode().abspath, 'r') as f:
+	targets.extend([x[:-1] for x in f.readlines()])
+
+libraryHeaders = envLibrary.Command(targets, nodeArtifacts,
+	envLibrary.Action(denetworkUnpack, 'Unpack DENetwork'))[0:1]
+
+envLibrary.Clean(libraryHeaders, [srcdir])
+
+targetLibrary = globalEnv.targetManager.TargetLibrary('DENetwork Library')
+globalEnv.targetManager.add('denetwork', targetLibrary)
+
+targetLibrary.build.extend(libraryHeaders)
+
+targetLibrary.addParametersBuildCPP(envLibrary, libraryHeaders,
+	os.path.join(srcdir, 'include'), os.path.join(srcdir, 'lib'), linkStatic=True)

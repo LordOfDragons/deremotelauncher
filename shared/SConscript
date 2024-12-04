@@ -144,34 +144,34 @@ targetLibrary.build.extend(library)
 targetLibrary.aliasBuild(envLibrary, 'deremotelaunchershared_build')
 
 targetLibrary.installCutDirs(envLibrary,
-	'deremotelaunchershared-{}/include/deremotelauncher'.format(versionString),
+	'deremotelauncher-{}/include/deremotelauncher'.format(versionString),
 	headers, 1)
 
 targetLibrary.install.extend(envLibrary.Install(
-	'deremotelaunchershared-{}/lib'.format(versionString), library))
+	'deremotelauncher-{}/lib'.format(versionString), library))
 
 targetLibrary.aliasInstall(envLibrary, 'deremotelaunchershared')
 
 targetLibrary.archiveCutDirs(envLibrary,
-	'deremotelaunchershared-{}-x64-{}/include/deremotelauncher'.format(
+	'deremotelauncher-{}-x64-{}/include/deremotelauncher'.format(
 		platformName, versionString), headers, 1)
 
 targetLibrary.archiveLibrary(envLibrary,
-	'deremotelaunchershared-{}-x64-{}/lib'.format(
+	'deremotelauncher-{}-x64-{}/lib'.format(
 		platformName, versionString), library)
 
 targetLibrary.addParametersBuildCPP(envLibrary, library,
-	'deremotelaunchershared-{}/include'.format(versionString), linkStatic=True)
+	'deremotelauncher-{}/include'.format(versionString), linkStatic=True)
 
 # archive
 targetArchive = globalEnv.targetManager.TargetArchive('DERemoteLauncher Shared Library Archive')
 globalEnv.targetManager.add('deremotelaunchershared_archive', targetArchive)
 
 archiveFiles = {}
-archiveFiles['deremotelaunchershared-{}-x64-{}/LICENSE'.format(platformName,  versionString)] = envLibrary.File('#LICENSE')
-archiveFiles['deremotelaunchershared-{}-x64-{}/README.md'.format(platformName, versionString)] = envLibrary.File('#README.md')
+archiveFiles['deremotelauncher-{}-x64-{}/LICENSE'.format(platformName,  versionString)] = envLibrary.File('#LICENSE')
+archiveFiles['deremotelauncher-{}-x64-{}/README.md'.format(platformName, versionString)] = envLibrary.File('#README.md')
 
-targetArchive.archiveFiles(envLibrary, 'deremotelaunchershared-{}-x64-{}'.format(platformName, versionString),
+targetArchive.archiveFiles(envLibrary, 'deremotelauncher-{}-x64-{}'.format(platformName, versionString),
 	{**targetLibrary.archiveFiles, **archiveFiles},
 	format=globalEnv.targetManager.TargetArchive.formatZip)
 targetArchive.aliasArchive(envLibrary, 'deremotelaunchershared_archive')

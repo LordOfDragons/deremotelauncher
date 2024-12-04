@@ -24,18 +24,11 @@ jobs:
       - name: Init custom.py
         run: |
           cp ${{ github.workspace }}/.github/workflows/custom_linux.py custom.py
-      
-      - name: Download DENetwork SDK
-        run: |
-          wget https://github.com/LordOfDragons/denetwork/releases/download/nightly/denetworkcpp-unix-x64-nightly.zip
-          unzip denetworkcpp-unix-x64-nightly.zip
           
       - name: Build
         run: |
           scons -j 14 \
             version=${{ inputs.releaseVersion }} \
-            denetwork_includes="`realpath denetworkcpp-unix-x64-nightly/include`" \
-            denetwork_libraries="`realpath denetworkcpp-unix-x64-nightly/lib`" \
             build archive
       
       - name: Move Artifacts

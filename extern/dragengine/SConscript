@@ -34,7 +34,7 @@ dragengineVersion = 'nightly'
 srcdir = 'dragengine-{}-linux64'.format(dragengineVersion)
 srcdirDev = 'dragengine-dev-{}-linux64'.format(dragengineVersion)
 
-libLinkVersion = dragengineVersion.split('.')[0]
+libLinkVersion = 9999  # dragengineVersion.split('.')[0]
 libLinkNameDragengine = 'dragengine'
 libLinkNameDELauncher = 'delauncher'
 

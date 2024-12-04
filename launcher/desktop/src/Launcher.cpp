@@ -29,6 +29,7 @@
 #include <delauncher/game/delGameRunParams.h>
 #include <dragengine/common/file/decMemoryFile.h>
 #include <dragengine/common/file/decMemoryFileReader.h>
+#include <delauncher/engine/delEngineInstanceThreaded.h>
 
 
 // Class LauncherLogger
@@ -82,7 +83,7 @@ pLogger(logger),
 pLauncherLogger(deLogger::Ref::New(new LauncherLogger(windowMain, *pLogger)))
 {
 	#ifdef OS_W32
-	delEngineInstanceThreaded::SetDefaultExecutableName("deremotelauncher-engine");
+	delEngineInstanceThreaded::SetDefaultExecutableName("DERemoteLauncherRunner");
 	#endif
 	
 	logger->Log(denLogger::LogSeverity::info, "Preparing launcher...");
@@ -161,7 +162,7 @@ void Launcher::RunGame(const std::filesystem::path &dataPath, const derlRunParam
 	
 	{
 	const decMemoryFile::Ref fileGameConfig(decMemoryFile::Ref::New(new decMemoryFile("game.degame")));
-	fileGameConfig->Resize(runParams.GetGameConfig().size());
+	fileGameConfig->Resize((int)runParams.GetGameConfig().size());
 	runParams.GetGameConfig().copy(fileGameConfig->GetPointer(), runParams.GetGameConfig().size());
 	
 	delGameXML gameXml(pLauncherLogger, "DERemoteLauncher");

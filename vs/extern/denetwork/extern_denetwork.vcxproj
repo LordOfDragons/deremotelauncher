@@ -105,12 +105,12 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <CustomBuildBeforeTargets>
     </CustomBuildBeforeTargets>
-    <PublicIncludeDirectories>$(ProjectDir)DENetworkSDK\SDL\Include</PublicIncludeDirectories>
+    <PublicIncludeDirectories>$(ProjectDir)DENetworkSDK\SDK\Include</PublicIncludeDirectories>
     <AllProjectIncludesArePublic>true</AllProjectIncludesArePublic>
     <PublicModuleDirectories>
     </PublicModuleDirectories>
-    <TargetName>libdscript</TargetName>
-    <OutDir>$(ProjectDir)DENetworkSDK\SDK\Library\</OutDir>
+    <TargetName>DENetwork</TargetName>
+    <OutDir>$(ProjectDir)DENetworkSDK\SDK\Library\x64\</OutDir>
     <AllProjectBMIsArePublic />
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -120,8 +120,8 @@
     <AllProjectIncludesArePublic>true</AllProjectIncludesArePublic>
     <PublicModuleDirectories>
     </PublicModuleDirectories>
-    <TargetName>libdscript</TargetName>
-    <OutDir>$(ProjectDir)DENetworkSDK\SDK\Library\</OutDir>
+    <TargetName>DENetwork</TargetName>
+    <OutDir>$(ProjectDir)DENetworkSDK\SDK\Library\x64\</OutDir>
     <AllProjectBMIsArePublic />
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseDebug|x64'">
@@ -129,8 +129,8 @@
     <PublicIncludeDirectories>$(ProjectDir)DENetworkSDK\SDK\Include</PublicIncludeDirectories>
     <AllProjectIncludesArePublic>true</AllProjectIncludesArePublic>
     <PublicModuleDirectories />
-    <TargetName>libdscript</TargetName>
-    <OutDir>$(ProjectDir)DENetworkSDK\SDK\Library\</OutDir>
+    <TargetName>DENetwork</TargetName>
+    <OutDir>$(ProjectDir)DENetworkSDK\SDK\Library\x64\</OutDir>
     <AllProjectBMIsArePublic />
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">

@@ -26,110 +26,49 @@
       <Platform>x64</Platform>
     </ProjectConfiguration>
   </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="..\..\shared\src\derlFile.h" />
-    <ClInclude Include="..\..\shared\src\derlFileBlock.h" />
-    <ClInclude Include="..\..\shared\src\derlFileLayout.h" />
-    <ClInclude Include="..\..\shared\src\derlGlobal.h" />
-    <ClInclude Include="..\..\shared\src\derlLauncherClient.h" />
-    <ClInclude Include="..\..\shared\src\derlMessageQueue.h" />
-    <ClInclude Include="..\..\shared\src\derlProtocol.h" />
-    <ClInclude Include="..\..\shared\src\derlRemoteClient.h" />
-    <ClInclude Include="..\..\shared\src\derlRunParameters.h" />
-    <ClInclude Include="..\..\shared\src\derlServer.h" />
-    <ClInclude Include="..\..\shared\src\hashing\sha256.h" />
-    <ClInclude Include="..\..\shared\src\internal\derlLauncherClientConnection.h" />
-    <ClInclude Include="..\..\shared\src\internal\derlRemoteClientConnection.h" />
-    <ClInclude Include="..\..\shared\src\internal\derlServerServer.h" />
-    <ClInclude Include="..\..\shared\src\processor\derlBaseTaskProcessor.h" />
-    <ClInclude Include="..\..\shared\src\processor\derlTaskProcessorLauncherClient.h" />
-    <ClInclude Include="..\..\shared\src\processor\derlTaskProcessorRemoteClient.h" />
-    <ClInclude Include="..\..\shared\src\task\derlBaseTask.h" />
-    <ClInclude Include="..\..\shared\src\task\derlTaskFileBlockHashes.h" />
-    <ClInclude Include="..\..\shared\src\task\derlTaskFileDelete.h" />
-    <ClInclude Include="..\..\shared\src\task\derlTaskFileLayout.h" />
-    <ClInclude Include="..\..\shared\src\task\derlTaskFileWrite.h" />
-    <ClInclude Include="..\..\shared\src\task\derlTaskFileWriteBlock.h" />
-    <ClInclude Include="..\..\shared\src\task\derlTaskSyncClient.h" />
-    <ClInclude Include="config.h" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClCompile Include="..\..\shared\src\derlFile.cpp" />
-    <ClCompile Include="..\..\shared\src\derlFileBlock.cpp" />
-    <ClCompile Include="..\..\shared\src\derlFileLayout.cpp" />
-    <ClCompile Include="..\..\shared\src\derlGlobal.cpp" />
-    <ClCompile Include="..\..\shared\src\derlLauncherClient.cpp" />
-    <ClCompile Include="..\..\shared\src\derlMessageQueue.cpp" />
-    <ClCompile Include="..\..\shared\src\derlRemoteClient.cpp" />
-    <ClCompile Include="..\..\shared\src\derlRunParameters.cpp" />
-    <ClCompile Include="..\..\shared\src\derlServer.cpp" />
-    <ClCompile Include="..\..\shared\src\hashing\sha256.cpp" />
-    <ClCompile Include="..\..\shared\src\internal\derlLauncherClientConnection.cpp" />
-    <ClCompile Include="..\..\shared\src\internal\derlRemoteClientConnection.cpp" />
-    <ClCompile Include="..\..\shared\src\internal\derlServerServer.cpp" />
-    <ClCompile Include="..\..\shared\src\processor\derlBaseTaskProcessor.cpp" />
-    <ClCompile Include="..\..\shared\src\processor\derlTaskProcessorLauncherClient.cpp" />
-    <ClCompile Include="..\..\shared\src\processor\derlTaskProcessorRemoteClient.cpp" />
-    <ClCompile Include="..\..\shared\src\task\derlBaseTask.cpp" />
-    <ClCompile Include="..\..\shared\src\task\derlTaskFileBlockHashes.cpp" />
-    <ClCompile Include="..\..\shared\src\task\derlTaskFileDelete.cpp" />
-    <ClCompile Include="..\..\shared\src\task\derlTaskFileLayout.cpp" />
-    <ClCompile Include="..\..\shared\src\task\derlTaskFileWrite.cpp" />
-    <ClCompile Include="..\..\shared\src\task\derlTaskFileWriteBlock.cpp" />
-    <ClCompile Include="..\..\shared\src\task\derlTaskSyncClient.cpp" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\extern\denetwork\extern_denetwork.vcxproj">
-      <Project>{043eff15-4b38-4a5b-a20b-9c572699ba59}</Project>
-    </ProjectReference>
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="post_build.ps1" />
-    <None Include="pre_build.ps1" />
-  </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>17.0</VCProjectVersion>
     <Keyword>Win32Proj</Keyword>
-    <ProjectGuid>{a2a292f9-95b9-408f-9ce3-5ec35e2f0f92}</ProjectGuid>
-    <RootNamespace>staticLibrary</RootNamespace>
+    <ProjectGuid>{0d0e80fd-5c41-4fe2-a4a3-3f2abbde5661}</ProjectGuid>
+    <RootNamespace>launcher_desktop</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
-    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v143</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
-    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
     <PlatformToolset>v143</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseDebug|Win32'" Label="Configuration">
-    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
     <PlatformToolset>v143</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
-    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v143</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
-    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
     <PlatformToolset>v143</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseDebug|x64'" Label="Configuration">
-    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
     <PlatformToolset>v143</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
@@ -159,30 +98,24 @@
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <TargetName>DERemoteLauncher</TargetName>
-    <PublicIncludeDirectories>$(SolutionDir)$(Platform)\$(Configuration)\SDK\Include;$(PublicIncludeDirectories)</PublicIncludeDirectories>
-  </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <TargetName>DERemoteLauncher</TargetName>
-    <PublicIncludeDirectories>$(SolutionDir)$(Platform)\$(Configuration)\SDK\Include;$(PublicIncludeDirectories)</PublicIncludeDirectories>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseDebug|x64'">
     <TargetName>DERemoteLauncher</TargetName>
-    <PublicIncludeDirectories>$(SolutionDir)$(Platform)\$(Configuration)\SDK\Include;$(PublicIncludeDirectories)</PublicIncludeDirectories>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <TargetName>DERemoteLauncher</TargetName>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <PrecompiledHeader>Use</PrecompiledHeader>
-      <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
     </ClCompile>
     <Link>
-      <SubSystem>
-      </SubSystem>
+      <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
   </ItemDefinitionGroup>
@@ -192,14 +125,11 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>WIN32;NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <PrecompiledHeader>Use</PrecompiledHeader>
-      <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
     </ClCompile>
     <Link>
-      <SubSystem>
-      </SubSystem>
+      <SubSystem>Windows</SubSystem>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -211,14 +141,11 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>WIN32;NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <PrecompiledHeader>Use</PrecompiledHeader>
-      <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
     </ClCompile>
     <Link>
-      <SubSystem>
-      </SubSystem>
+      <SubSystem>Windows</SubSystem>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -228,27 +155,21 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>_DEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_DEBUG;_WINDOWS;WIN32;FOXDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <PrecompiledHeader>NotUsing</PrecompiledHeader>
-      <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
-      <AdditionalIncludeDirectories>
-      </AdditionalIncludeDirectories>
-      <LanguageStandard>stdcpp17</LanguageStandard>
+      <LanguageStandard>stdcpp20</LanguageStandard>
       <LanguageStandard_C>stdc17</LanguageStandard_C>
+      <DisableSpecificWarnings>4251</DisableSpecificWarnings>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>
-      <SubSystem>
-      </SubSystem>
+      <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>ws2_32.lib;Iphlpapi.lib;$(SolutionDir)extern\dragengine\dragengine-sdk\SDK\lib\delauncher.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
-      <Command>powershell.exe -NoProfile -ExecutionPolicy Bypass -NonInteractive -File "$(ProjectDir)post_build.ps1" -SourceDir "$(SolutionDir)..\shared\src" -OutputDir "$(SolutionDir)$(Platform)\$(Configuration)" -ProjectDir $(ProjectDir)</Command>
+      <Command>powershell.exe -NoProfile -ExecutionPolicy Bypass -NonInteractive -File "$(ProjectDir)post_build.ps1" -OutputDir "$(SolutionDir)$(Platform)\$(Configuration)" -SolutionDir $(SolutionDir)</Command>
     </PostBuildEvent>
-    <PreBuildEvent>
-      <Command>powershell.exe -NoProfile -ExecutionPolicy Bypass -NonInteractive -File "$(ProjectDir)pre_build.ps1" -SourceDir "$(SolutionDir)..\shared\src" -ProjectDir $(ProjectDir)</Command>
-    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
@@ -256,28 +177,22 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>NDEBUG;_WINDOWS;WIN32;FOXDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <PrecompiledHeader>NotUsing</PrecompiledHeader>
-      <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
-      <AdditionalIncludeDirectories>
-      </AdditionalIncludeDirectories>
-      <LanguageStandard>stdcpp17</LanguageStandard>
+      <LanguageStandard>stdcpp20</LanguageStandard>
       <LanguageStandard_C>stdc17</LanguageStandard_C>
+      <DisableSpecificWarnings>4251</DisableSpecificWarnings>
     </ClCompile>
     <Link>
-      <SubSystem>
-      </SubSystem>
+      <SubSystem>Windows</SubSystem>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>ws2_32.lib;Iphlpapi.lib;$(SolutionDir)extern\dragengine\dragengine-sdk\SDK\lib\delauncher.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
-      <Command>powershell.exe -NoProfile -ExecutionPolicy Bypass -NonInteractive -File "$(ProjectDir)post_build.ps1" -SourceDir "$(SolutionDir)..\shared\src" -OutputDir "$(SolutionDir)$(Platform)\$(Configuration)" -ProjectDir $(ProjectDir)</Command>
+      <Command>powershell.exe -NoProfile -ExecutionPolicy Bypass -NonInteractive -File "$(ProjectDir)post_build.ps1" -OutputDir "$(SolutionDir)$(Platform)\$(Configuration)" -SolutionDir $(SolutionDir)</Command>
     </PostBuildEvent>
-    <PreBuildEvent>
-      <Command>powershell.exe -NoProfile -ExecutionPolicy Bypass -NonInteractive -File "$(ProjectDir)pre_build.ps1" -SourceDir "$(SolutionDir)..\shared\src" -ProjectDir $(ProjectDir)</Command>
-    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseDebug|x64'">
     <ClCompile>
@@ -285,29 +200,64 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>NDEBUG;_WINDOWS;WIN32;FOXDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <PrecompiledHeader>NotUsing</PrecompiledHeader>
-      <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
-      <AdditionalIncludeDirectories>
-      </AdditionalIncludeDirectories>
-      <LanguageStandard>stdcpp17</LanguageStandard>
+      <LanguageStandard>stdcpp20</LanguageStandard>
       <LanguageStandard_C>stdc17</LanguageStandard_C>
+      <DisableSpecificWarnings>4251</DisableSpecificWarnings>
     </ClCompile>
     <Link>
-      <SubSystem>
-      </SubSystem>
+      <SubSystem>Windows</SubSystem>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>ws2_32.lib;Iphlpapi.lib;$(SolutionDir)extern\dragengine\dragengine-sdk\SDK\lib\delauncher.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
-      <Command>powershell.exe -NoProfile -ExecutionPolicy Bypass -NonInteractive -File "$(ProjectDir)post_build.ps1" -SourceDir "$(SolutionDir)..\shared\src" -OutputDir "$(SolutionDir)$(Platform)\$(Configuration)" -ProjectDir $(ProjectDir)</Command>
+      <Command>powershell.exe -NoProfile -ExecutionPolicy Bypass -NonInteractive -File "$(ProjectDir)post_build.ps1" -OutputDir "$(SolutionDir)$(Platform)\$(Configuration)" -SolutionDir $(SolutionDir)</Command>
     </PostBuildEvent>
-    <PreBuildEvent>
-      <Command>powershell.exe -NoProfile -ExecutionPolicy Bypass -NonInteractive -File "$(ProjectDir)pre_build.ps1" -SourceDir "$(SolutionDir)..\shared\src" -ProjectDir $(ProjectDir)</Command>
-    </PreBuildEvent>
   </ItemDefinitionGroup>
+  <ItemGroup>
+    <Image Include="launcher_desktop.ico" />
+    <Image Include="small.ico" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\launcher\desktop\src\Application.h" />
+    <ClInclude Include="..\..\launcher\desktop\src\Client.h" />
+    <ClInclude Include="..\..\launcher\desktop\src\foxtoolkit.h" />
+    <ClInclude Include="..\..\launcher\desktop\src\Launcher.h" />
+    <ClInclude Include="..\..\launcher\desktop\src\Logger.h" />
+    <ClInclude Include="..\..\launcher\desktop\src\WindowMain.h" />
+    <ClInclude Include="resource.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="launcher_desktop.rc" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\launcher\desktop\src\Application.cpp" />
+    <ClCompile Include="..\..\launcher\desktop\src\Client.cpp" />
+    <ClCompile Include="..\..\launcher\desktop\src\Launcher.cpp" />
+    <ClCompile Include="..\..\launcher\desktop\src\Logger.cpp" />
+    <ClCompile Include="..\..\launcher\desktop\src\main.cpp" />
+    <ClCompile Include="..\..\launcher\desktop\src\WindowMain.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\extern\denetwork\extern_denetwork.vcxproj">
+      <Project>{043eff15-4b38-4a5b-a20b-9c572699ba59}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\extern\dragengine\extern_dragengine.vcxproj">
+      <Project>{3e278dc3-2c14-46cb-bff3-b3ec79e833b7}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\extern\fox\extern_fox.vcxproj">
+      <Project>{9541cccd-8b54-4632-954d-48531d5935f4}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\staticLibrary\staticLibrary.vcxproj">
+      <Project>{a2a292f9-95b9-408f-9ce3-5ec35e2f0f92}</Project>
+    </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="post_build.ps1" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

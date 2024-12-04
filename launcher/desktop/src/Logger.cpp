@@ -64,7 +64,14 @@ void Logger::Log(LogSeverity severity, const std::string &message){
 	
 	const auto tp = std::chrono::system_clock::now();
 	const auto t = std::chrono::system_clock::to_time_t(tp);
+
+#ifdef OS_W32
+	struct tm tm{};
+	localtime_s(&tm, &t);
+	ss << "[" << std::put_time(&tm, "%Y-%m-%d %H-%M-%S") << "] ";
+#else
 	ss << "[" << std::put_time(std::localtime(&t), "%Y-%m-%d %H-%M-%S") << "] ";
+#endif
 	
 	ss << message;
 	

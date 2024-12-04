@@ -35,3 +35,19 @@ int main(int argc, char *argv[]){
 	Application app(argc, argv);
 	return app.Run();
 }
+
+#ifdef OS_W32
+#include <Windows.h>
+int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine, int nCmdShow){
+	int nArgs;
+	LPWSTR * const szArglist = CommandLineToArgvW(GetCommandLineW(), &nArgs);
+	if(!szArglist){
+		wprintf(L"CommandLineToArgvW failed\n");
+		return 0;
+	}
+	
+	const int result = main(nArgs, (char**)szArglist);
+	LocalFree(szArglist);
+	return result;
+}
+#endif

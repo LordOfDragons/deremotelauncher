@@ -31,6 +31,10 @@
 #include "Logger.h"
 #include "resources/icons.h"
 
+#ifdef OS_W32
+#include <dragengine/app/deOSWindows.h>
+#endif
+
 
 FXDEFMAP(WindowMain) WindowMainMap[] = {
 	FXMAPFUNC(SEL_CLOSE, 0, WindowMain::onClose),
@@ -140,7 +144,11 @@ void WindowMain::Close(){
 }
 
 FXString WindowMain::GetDefaultDataPath() const{
+#ifdef OS_W32
+	return deOSWindows::ParseNativePath("@LocalAppData\\DERemoteLauncher\\data").GetString();
+#else
 	return FXPath::expand("~/.cache/deremotelauncher/data");
+#endif
 }
 
 void WindowMain::SaveSettings() const{
@@ -375,7 +383,11 @@ void WindowMain::pCreatePanelLogs(FXComposite *container){
 	
 	FXFontDesc fd(getApp()->getNormalFont()->getFontDesc());
 	
+#ifdef OS_W32
+	strcpy_s(fd.face, sizeof(fd.face), "courier");
+#else
 	strcpy(fd.face, "courier");
+#endif
 	fd.setwidth = 30; // normal=50, condensed=30
 	pEditLogs->setFont(new FXFont(getApp(), fd));
 }

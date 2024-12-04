@@ -25,6 +25,15 @@
 #ifndef _FOXTOOLKIT_H_
 #define _FOXTOOLKIT_H_
 
+#include <deremotelauncher/config.h>
+
+#ifdef OS_W32
+#define NO_SINCOSF
+#define NO_SINCOS
+#define NO_EXP10F
+#define NO_EXP10
+#endif
+
 #ifdef PI
 #define FIX_FOX_BROKEN_PI
 #undef PI

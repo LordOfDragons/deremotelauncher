@@ -165,5 +165,5 @@ archiveFiles[os.path.join(baseDir, 'README.md')] = envProgram.File('#README.md')
 targetArchive.archiveFiles(envProgram,
 	'deremotelauncherdesktop-{}-x64-{}'.format(platformName, versionString),
 	{**targetProgram.archiveFiles, **archiveFiles},
-	format=globalEnv.targetManager.TargetArchive.formatZip)
+	format=globalEnv.targetManager.TargetArchive.formatTarBz2)
 targetArchive.aliasArchive(envProgram, 'deremotelauncherdesktop_archive')

@@ -41,7 +41,7 @@ jobs:
       - name: Move Artifacts
         run: |
           mkdir artifacts
-          cp -a shared/build/deremotelaunchershared-unix-x64-${{ inputs.releaseVersion }}.tar.bz2 artifacts
+          cp -a shared/build/deremotelauncher-unix-x64-${{ inputs.releaseVersion }}.tar.bz2 artifacts
           cp -a launcher/desktop/build/deremotelauncherdesktop-unix-x64-${{ inputs.releaseVersion }}.tar.bz2 artifacts
         
       - name: Store Archives
@@ -49,6 +49,6 @@ jobs:
         with:
           name: ${{ inputs.artifactArchive }}
           path: |
-            artifacts/deremotelaunchershared-unix-x64-${{ inputs.releaseVersion }}.tar.bz2
+            artifacts/deremotelauncher-unix-x64-${{ inputs.releaseVersion }}.tar.bz2
             artifacts/deremotelauncherdesktop-unix-x64-${{ inputs.releaseVersion }}.tar.bz2
           if-no-files-found: error

@@ -15,5 +15,4 @@ if (Test-Path $ExpandedDir) {
 DownloadArtifactGithub -SourceDir $ProjectDir -FilenameArtifact "DENetworkSDK-nightly.zip" `
     -UrlPath "denetwork/releases/download/nightly"
 
-Expand-Archive -Path "$ProjectDir\DENetworkSDK-nightly.zip" `
-    -DestinationPath "$ProjectDir\DENetworkSDK"
+Expand-Archive -Path "$ProjectDir\DENetworkSDK-nightly.zip" -DestinationPath "$ProjectDir"

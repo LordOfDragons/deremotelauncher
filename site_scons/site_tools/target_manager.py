@@ -124,12 +124,14 @@ def generate(env):
 				self.addParameters(LIBPATH = [env.Dir(libDir)])
 			if isList(libs):
 				if linkStatic:
-					self.addParameters(STATIC_LIBS = libs)
+					#self.addParameters(STATIC_LIBS = libs)
+					self.addParameters(LIBS = libs)
 				else:
 					self.addParameters(LIBS = libs)
 			else:
 				if linkStatic:
-					self.addParameters(STATIC_LIBS = [libs])
+					#self.addParameters(STATIC_LIBS = [libs])
+					self.addParameters(LIBS = [libs])
 				else:
 					self.addParameters(LIBS = [libs])
 		

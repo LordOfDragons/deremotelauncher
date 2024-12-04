@@ -25,11 +25,16 @@ jobs:
         
       - name: Archive
         run: |
-          Compress-Archive -Path vs\x64\Release\SDK\* -DestinationPath DERemoteLauncherSDK-${{ inputs.releaseVersion }}.zip
+          Compress-Archive -Path vs\x64\Release\SDK\* `
+            -DestinationPath DERemoteLauncherSDK-${{ inputs.releaseVersion }}.zip
+          Compress-Archive -Path vs\x64\Release\DERemoteLauncherDesktop\* `
+            -DestinationPath DERemoteLauncherDesktop-${{ inputs.releaseVersion }}.zip
 
       - name: Store Archives
         uses: actions/upload-artifact@v4
         with:
           name: ${{ inputs.artifactArchive }}
-          path: DERemoteLauncherSDK-${{ inputs.releaseVersion }}.zip
+          path: |
+            DERemoteLauncherSDK-${{ inputs.releaseVersion }}.zip,
+            DERemoteLauncherDesktop-${{ inputs.releaseVersion }}.zip
           if-no-files-found: error

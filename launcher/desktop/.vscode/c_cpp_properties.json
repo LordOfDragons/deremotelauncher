@@ -4,6 +4,7 @@
             "name": "Linux",
             "includePath": [
                 "${workspaceFolder}/**",
+                "${workspaceFolder}/../../extern/fox/build/include",
                 "${workspaceFolder}/../../shared/build/deremotelauncher-1.0/include",
                 "${workspaceFolder}/../../../denetwork/cpp/library/build/denetwork-1.0/include",
                 "${workspaceFolder}/../../../dragengine/src/launcher/shared/build/include",

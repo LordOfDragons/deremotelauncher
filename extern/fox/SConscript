@@ -5,9 +5,9 @@ import SCons
 from SConsCommon import *
 from SConsExternCommon import *
 
-Import('global_env')
+Import('globalEnv')
 
-envLibrary = global_env.Clone()
+envLibrary = globalEnv.Clone()
 
 foxSrcVersion = '1.7.67'
 srcdir = 'fox-{}'.format(foxSrcVersion)
@@ -21,11 +21,11 @@ staticFileName = envLibrary.subst('lib/${{LIBPREFIX}}{}${{LIBSUFFIX}}'.format(li
 
 nodeArtifacts = envLibrary.DownloadArtifactHelper('{}.tar.bz2'.format(srcdir), 'fox', 'lib_fox_fetch')
 
-if 'libfox_includes' in global_env and global_env['libfox_includes']:
-	global_env.Append(CPPPATH = [global_env['libfox_includes']])
+if 'libfox_includes' in globalEnv and globalEnv['libfox_includes']:
+	globalEnv.Append(CPPPATH = [globalEnv['libfox_includes']])
 
-if 'libfox_libraries' in global_env and global_env['libfox_libraries']:
-	global_env.Append(LIBPATH = [global_env['libfox_libraries']])
+if 'libfox_libraries' in globalEnv and globalEnv['libfox_libraries']:
+	globalEnv.Append(LIBPATH = [globalEnv['libfox_libraries']])
 
 hasSystemFOX = False
 conf = envLibrary.Configure()
@@ -37,10 +37,10 @@ conf.Finish()
 if not hasSystemFOX and envLibrary['with_system_fox'] == TernaryVariableYes:
 	Exit('Requested to use system FOX-Toolkit but no usable FOX-Toolkit found.')
 
-global_env.Replace(RUNTIME_LIB_FOX=[])
+globalEnv.Replace(RUNTIME_LIB_FOX=[])
 
 if hasSystemFOX:
-	global_env.Append(LIBS=[libLinkName])
+	globalEnv.Append(LIBS=[libLinkName])
 	Return()
 
 def foxBuild(target, source, env):
@@ -108,14 +108,14 @@ library = envLibrary.Command(targets, nodeArtifacts, envLibrary.Action(foxBuild,
 envLibrary.Depends(library, envLibrary['PATCHES'])
 envLibrary.Depends(library, envLibrary['POST_PATCHES'])
 
-depends = global_env.Alias('lib_fox', library)
+depends = globalEnv.Alias('lib_fox', library)
 
 envLibrary.Clean(library, ['bin', 'include', 'lib', srcdir])
 
-global_env.Append(CPPPATH = [envLibrary.Dir('include')])
-global_env.Append(LIBPATH = [envLibrary.Dir('lib')])
+globalEnv.Append(CPPPATH = [envLibrary.Dir('include')])
+globalEnv.Append(LIBPATH = [envLibrary.Dir('lib')])
 
-global_env.Append(LIBS=[library[0]])
-global_env.Append(RUNTIME_LIB_FOX=[library[0]])
+globalEnv.Append(LIBS=[library[0]])
+globalEnv.Append(RUNTIME_LIB_FOX=[library[0]])
 
-global_env.Append(LINKFLAGS = ['-Wl,-R,"$$ORIGIN"'])
+globalEnv.Append(LINKFLAGS = ['-Wl,-R,"$$ORIGIN"'])

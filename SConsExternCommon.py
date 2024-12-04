@@ -13,6 +13,8 @@ def createScriptHeader(env, deps=[], cflags=[], cppflags=[], cxxflags=[], linkfl
 	
 	# append all known compiler declarations if present
 	exportCommand = 'export'
+	if 'HostOSWindows' in env and env['HostOSWindows']:
+		exportCommand = 'SET'
 	for x in ['CC', 'CXX', 'LD', 'AS', 'AR', 'STRIP', 'MAKE', 'RC', 'RANLIB', 'NM', 'NASM']:
 		if x in env:
 			script.append('{} {}="{}"'.format(exportCommand, x, env.subst(env[x])))

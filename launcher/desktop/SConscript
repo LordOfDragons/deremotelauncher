@@ -1,0 +1,169 @@
+import os, fnmatch, shlex
+
+Import('globalEnv')
+
+versionString = globalEnv['version']
+
+envProgram = globalEnv.Clone()
+
+applyEnvVars = []
+applyEnvVars.append('CFLAGS')
+applyEnvVars.append('CPPFLAGS')
+applyEnvVars.append('CXXFLAGS')
+applyEnvVars.append('LDFLAGS')
+
+# Haiku: The PATH found by SCons are wrong in many ways causing binaries to be not found.
+#        Replace them with sane values. This is not a 'good' solution but should work.
+if envProgram['TARGET_PLATFORM'] == 'beos':
+	import os
+	envProgram['ENV']['PATH'] = os.environ['PATH']
+
+# set global construction variables
+for x in applyEnvVars:
+	if x in os.environ:
+		envProgram.MergeFlags({x: shlex.split(os.environ[x])})
+
+if 'CPPFLAGS' in applyEnvVars and 'CPPFLAGS' in os.environ:
+	envProgram.Append(MODULE_CPPFLAGS = shlex.split(os.environ['CPPFLAGS']))
+
+if 'LDFLAGS' in applyEnvVars and 'LDFLAGS' in os.environ:
+	envProgram.Append(MODULE_LINKFLAGS = shlex.split(os.environ['LDFLAGS']))
+
+if envProgram['with_debug']:
+	envProgram.Append(CPPFLAGS = ['-g', '-fno-omit-frame-pointer'])
+
+envProgram.Append(CPPFLAGS = ['-Wall'])
+if envProgram['with_warnerrors']:
+	envProgram.Append(CPPFLAGS = ['-Werror'])
+
+# determine sanitize flags to use
+envProgram.Replace(SANITIZE_FLAGS = [])
+
+if envProgram['with_sanitize']:
+	envProgram.Append(SANITIZE_FLAGS = [
+		'-fsanitize=address',
+		'-fsanitize-address-use-after-scope',
+		'-fsanitize=pointer-compare',
+		'-fsanitize=pointer-subtract'])
+	envProgram.Append(SANITIZE_FLAGS = [
+		'-fsanitize=leak'])
+	envProgram.Append(SANITIZE_FLAGS = [
+		'-fsanitize=undefined',
+		'-fsanitize=shift',
+		'-fsanitize=shift-exponent',
+		'-fsanitize=shift-base',
+		'-fsanitize=integer-divide-by-zero',
+		'-fsanitize=unreachable',
+		'-fsanitize=vla-bound',
+		'-fsanitize=null',
+		'-fsanitize=return',
+		'-fsanitize=signed-integer-overflow',
+		'-fsanitize=bounds',
+		'-fsanitize=bounds-strict',
+		'-fsanitize=alignment',
+		'-fsanitize=object-size',
+		'-fsanitize=float-divide-by-zero',
+		'-fsanitize=float-cast-overflow',
+		'-fsanitize=nonnull-attribute',
+		'-fsanitize=returns-nonnull-attribute',
+		'-fsanitize=bool',
+		'-fsanitize=enum',
+		'-fsanitize=vptr',
+		'-fsanitize=pointer-overflow',
+		'-fsanitize=builtin'])
+	
+	if envProgram['with_sanitize_threads']:
+		envProgram['SANITIZE_FLAGS'].remove('-fsanitize=leak')
+		envProgram['SANITIZE_FLAGS'].remove('-fsanitize=address')
+		envProgram['SANITIZE_FLAGS'].remove('-fsanitize=pointer-compare')
+		envProgram['SANITIZE_FLAGS'].remove('-fsanitize=pointer-subtract')
+		envProgram.Append(SANITIZE_FLAGS = ['-fsanitize=thread'])
+
+envProgram.Append(CPPFLAGS = envProgram['SANITIZE_FLAGS'])
+envProgram.Append(LINKFLAGS = envProgram['SANITIZE_FLAGS'])
+
+envProgram.Append(CPPFLAGS = ['-g', '-fno-omit-frame-pointer'])
+
+if envProgram['with_client_debug']:
+	envProgram.Append(CPPFLAGS = ['-DENABLE_CLIENT_DEBUG'])
+
+# program
+platformName = 'unix'
+if envProgram['TARGET_PLATFORM'] == 'beos':
+	platformName = 'beos'
+
+baseDir = 'deremotelauncherdesktop-{}-x64-{}'.format(platformName, versionString)
+baseDirBin = os.path.join(baseDir, 'bin')
+
+targetProgram = globalEnv.targetManager.TargetProgram('DERemoteLauncher Desktop')
+globalEnv.targetManager.add('deremotelauncherdesktop', targetProgram)
+
+# deremotelauncher
+globalEnv.targetManager.targets['deremotelaunchershared'].applyBuild(envProgram)
+
+# denetwork
+if 'denetwork_includes' in envProgram and envProgram['denetwork_includes']:
+	envProgram.Append(CPPPATH = [envProgram['denetwork_includes']])
+
+if 'denetwork_libraries' in envProgram and envProgram['denetwork_libraries']:
+	envProgram.Append(LIBPATH = [envProgram['denetwork_libraries']])
+
+envProgram.Append(LIBS=['denetwork'])
+
+# delauncher
+if 'delauncher_includes' in envProgram and envProgram['delauncher_includes']:
+	envProgram.Append(CPPPATH = [envProgram['delauncher_includes']])
+
+if 'delauncher_libraries' in envProgram and envProgram['delauncher_libraries']:
+	envProgram.Append(LIBPATH = [envProgram['delauncher_libraries']])
+
+envProgram.Append(LIBS=['delauncher'])
+
+# dragengine
+if 'dragengine_includes' in envProgram and envProgram['dragengine_includes']:
+	envProgram.Append(CPPPATH = [envProgram['dragengine_includes']])
+
+if 'dragengine_libraries' in envProgram and envProgram['dragengine_libraries']:
+	envProgram.Append(LIBPATH = [envProgram['dragengine_libraries']])
+
+envProgram.Append(LIBS=['dragengine'])
+
+# build
+from glob_files import globFiles
+
+sources = []
+globFiles(envProgram, 'src', '*.cpp', sources)
+
+program = envProgram.Program('deremotelauncher', sources)
+
+for l in globalEnv['RUNTIME_LIB_FOX']:
+	envProgram.Depends(program, envProgram.InstallAs(l.name, l))
+
+targetProgram.build.extend(program)
+targetProgram.aliasBuild(envProgram, 'deremotelauncherdesktop_build')
+
+targetProgram.install.extend(envProgram.Install(baseDirBin, program))
+
+for l in globalEnv['RUNTIME_LIB_FOX']:
+	targetProgram.install.extend(envProgram.InstallAs(os.path.join(baseDirBin, l.name), l))
+
+targetProgram.aliasInstall(envProgram, 'deremotelauncherdesktop')
+
+targetProgram.archiveProgram(envProgram, baseDirBin, program)
+
+for l in globalEnv['RUNTIME_LIB_FOX']:
+	targetProgram.archiveFiles[os.path.normpath(os.path.join(baseDirBin, l.name))] = l
+
+# archive
+targetArchive = globalEnv.targetManager.TargetArchive('DERemoteLauncher Desktop Archive')
+globalEnv.targetManager.add('deremotelauncherdesktop_archive', targetArchive)
+
+archiveFiles = {}
+archiveFiles[os.path.join(baseDir, 'LICENSE')] = envProgram.File('#LICENSE')
+archiveFiles[os.path.join(baseDir, 'README.md')] = envProgram.File('#README.md')
+
+targetArchive.archiveFiles(envProgram,
+	'deremotelauncherdesktop-{}-x64-{}'.format(platformName, versionString),
+	{**targetProgram.archiveFiles, **archiveFiles},
+	format=globalEnv.targetManager.TargetArchive.formatZip)
+targetArchive.aliasArchive(envProgram, 'deremotelauncherdesktop_archive')

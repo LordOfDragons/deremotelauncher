@@ -6,7 +6,7 @@
 Import-Module "$PSScriptRoot\..\shared.psm1"
 
 # application
-$TargetDir = "$OutputDir\DERemoteLauncher"
+$TargetDir = "$OutputDir\DERemoteLauncherDesktop"
 #if (Test-Path $TargetDir) {
 #    Remove-Item $TargetDir -Force -Recurse
 #}

@@ -48,5 +48,6 @@ jobs:
         with:
           name: ${{ inputs.artifactArchive }}
           path: |
-            artifacts/deremotelaunchershared-unix-x64-${{ inputs.releaseVersion }}.zip
+            artifacts/deremotelaunchershared-unix-x64-${{ inputs.releaseVersion }}.zip,
+            artifacts/deremotelauncherdesktop-unix-x64-${{ inputs.releaseVersion }}.zip
           if-no-files-found: error

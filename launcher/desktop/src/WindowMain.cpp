@@ -78,11 +78,11 @@ FXMainWindow(&app, "Drag[en]gine Remote Launcher",
 pHostAddress(app.reg().readStringEntry("settings", "hostAddress", "localhost")),
 pClientName(app.reg().readStringEntry("settings", "clientName", "Client")),
 pDataPath(app.reg().readStringEntry("settings", "dataPath", GetDefaultDataPath().text())),
-pMessageChannel(std::make_shared<FXMessageChannel>(&app)),
-pMaxLogLineCount(100),
 pTargetHostAddress(pHostAddress),
 pTargetClientName(pClientName),
-pTargetDataPath(pDataPath)
+pTargetDataPath(pDataPath),
+pMessageChannel(std::make_shared<FXMessageChannel>(&app)),
+pMaxLogLineCount(100)
 {
 	pCreateContent();
 	create();
@@ -116,7 +116,7 @@ void WindowMain::UpdateLogs(){
 	}
 	}
 	
-	while(pLogLines.size() > pMaxLogLineCount){
+	while((int)pLogLines.size() > pMaxLogLineCount){
 		pLogLines.pop_front();
 	}
 	

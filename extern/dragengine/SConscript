@@ -67,13 +67,12 @@ libFileNameDELauncher = envLibrary.subst(
 		libLinkNameDELauncher, libLinkVersion))
 
 baseUrl = 'https://github.com/LordOfDragons/dragengine/releases/download'
+urlVersion = 'v{}'.format(dragengineVersion) if dragengineVersion == 'nightly' else str(dragengineVersion)
 
-nodeArtifacts = envLibrary.DownloadArtifactHelper(
-	'{}.tar.bz2'.format(srcdir), 'v{}'.format(dragengineVersion),
-	'lib_dragengine_fetch', baseUrl=baseUrl)
-nodeArtifactsDev = envLibrary.DownloadArtifactHelper(
-	'{}.tar.bz2'.format(srcdirDev), 'v{}'.format(dragengineVersion),
-	'lib_dragengine2_fetch', baseUrl=baseUrl)
+nodeArtifacts = envLibrary.DownloadArtifactHelper('{}.tar.bz2'.format(srcdir),
+	urlVersion, 'lib_dragengine_fetch', baseUrl=baseUrl)
+nodeArtifactsDev = envLibrary.DownloadArtifactHelper('{}.tar.bz2'.format(srcdirDev),
+	urlVersion, 'lib_dragengine2_fetch', baseUrl=baseUrl)
 
 def dragengineUnpack(target, source, env):
 	untarArchive(target[0].get_dir().up().up().abspath, source[0].abspath)

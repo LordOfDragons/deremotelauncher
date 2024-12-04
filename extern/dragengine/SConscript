@@ -42,7 +42,7 @@ if 'libdragengine_libraries' in globalEnv and globalEnv['libdragengine_libraries
 def dragengineUnpack(target, source, env):
 	untarArchive(target[0].get_dir().up().up().abspath, source[0].abspath)
 
-targets = []
+targets = ['sdk/include/dummy']
 with open(envLibrary.File('header_file_list/dragengine').srcnode().abspath, 'r') as f:
 	targets.extend([x[:-1] for x in f.readlines()])
 with open(envLibrary.File('header_file_list/delauncher').srcnode().abspath, 'r') as f:
@@ -55,9 +55,9 @@ targets = [libFileNameDragengine, libFileNameDELauncher]
 libraries = envLibrary.Command(targets, nodeArtifacts,
 	envLibrary.Action(dragengineUnpack, 'Unpack Dragengine Libraries'))
 
-envLibrary.Clean(libraries, ['bin', 'include', 'lib', srcdir, srcdirDev])
+envLibrary.Clean(libraries, ['sdk', 'usr', srcdir, srcdirDev])
 
-globalEnv.Append(CPPPATH = [envLibrary.Dir('include')])
-globalEnv.Append(LIBPATH = [envLibrary.Dir('lib')])
+globalEnv.Append(CPPPATH = [envLibrary.Dir('sdk/include')])
+globalEnv.Append(LIBPATH = [envLibrary.Dir('usr/lib')])
 
 globalEnv.Append(LIBS=libraries)

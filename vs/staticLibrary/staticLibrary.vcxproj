@@ -161,15 +161,15 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <TargetName>DERemoteLauncher</TargetName>
-    <PublicIncludeDirectories>$(SolutionDir)$(Platform)\$(Configuration)\SDK\Include;$(PublicIncludeDirectories)</PublicIncludeDirectories>
+    <PublicIncludeDirectories>$(SolutionDir)$(Platform)\$(Configuration)\DERemoteLauncherSDK\Include;$(PublicIncludeDirectories)</PublicIncludeDirectories>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <TargetName>DERemoteLauncher</TargetName>
-    <PublicIncludeDirectories>$(SolutionDir)$(Platform)\$(Configuration)\SDK\Include;$(PublicIncludeDirectories)</PublicIncludeDirectories>
+    <PublicIncludeDirectories>$(SolutionDir)$(Platform)\$(Configuration)\DERemoteLauncherSDK\Include;$(PublicIncludeDirectories)</PublicIncludeDirectories>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseDebug|x64'">
     <TargetName>DERemoteLauncher</TargetName>
-    <PublicIncludeDirectories>$(SolutionDir)$(Platform)\$(Configuration)\SDK\Include;$(PublicIncludeDirectories)</PublicIncludeDirectories>
+    <PublicIncludeDirectories>$(SolutionDir)$(Platform)\$(Configuration)\DERemoteLauncherSDK\Include;$(PublicIncludeDirectories)</PublicIncludeDirectories>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>

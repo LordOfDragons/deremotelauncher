@@ -25,7 +25,7 @@ jobs:
         
       - name: Archive
         run: |
-          Compress-Archive -Path vs\x64\Release\SDK\* `
+          Compress-Archive -Path vs\x64\Release\DERemoteLauncherSDK\* `
             -DestinationPath DERemoteLauncherSDK-${{ inputs.releaseVersion }}.zip
           Compress-Archive -Path vs\x64\Release\DERemoteLauncherDesktop\* `
             -DestinationPath DERemoteLauncherDesktop-${{ inputs.releaseVersion }}.zip

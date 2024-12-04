@@ -98,35 +98,11 @@ baseDirBin = os.path.join(baseDir, 'bin')
 targetProgram = globalEnv.targetManager.TargetProgram('DERemoteLauncher Desktop')
 globalEnv.targetManager.add('deremotelauncherdesktop', targetProgram)
 
-# deremotelauncher
+# dependencies
 globalEnv.targetManager.targets['deremotelaunchershared'].applyBuild(envProgram)
-
-# denetwork
-if 'denetwork_includes' in envProgram and envProgram['denetwork_includes']:
-	envProgram.Append(CPPPATH = [envProgram['denetwork_includes']])
-
-if 'denetwork_libraries' in envProgram and envProgram['denetwork_libraries']:
-	envProgram.Append(LIBPATH = [envProgram['denetwork_libraries']])
-
-envProgram.Append(LIBS=['denetwork'])
-
-# delauncher
-if 'delauncher_includes' in envProgram and envProgram['delauncher_includes']:
-	envProgram.Append(CPPPATH = [envProgram['delauncher_includes']])
-
-if 'delauncher_libraries' in envProgram and envProgram['delauncher_libraries']:
-	envProgram.Append(LIBPATH = [envProgram['delauncher_libraries']])
-
-envProgram.Append(LIBS=['delauncher'])
-
-# dragengine
-if 'dragengine_includes' in envProgram and envProgram['dragengine_includes']:
-	envProgram.Append(CPPPATH = [envProgram['dragengine_includes']])
-
-if 'dragengine_libraries' in envProgram and envProgram['dragengine_libraries']:
-	envProgram.Append(LIBPATH = [envProgram['dragengine_libraries']])
-
-envProgram.Append(LIBS=['dragengine'])
+globalEnv.targetManager.targets['denetwork'].applyBuild(envProgram)
+globalEnv.targetManager.targets['delauncher'].applyBuild(envProgram)
+globalEnv.targetManager.targets['dragengine'].applyBuild(envProgram)
 
 # build
 from glob_files import globFiles

@@ -9,19 +9,27 @@ Import('globalEnv')
 
 envLibrary = globalEnv.Clone()
 
+cpppathDragengine = []
 if 'dragengine_includes' in envLibrary and envLibrary['dragengine_includes']:
-	envLibrary.Append(CPPPATH = [envLibrary['dragengine_includes']])
+	cpppathDragengine = [envLibrary['dragengine_includes']]
+	envLibrary.Append(CPPPATH = cpppathDragengine)
 
+linkpathDragengine = []
 if 'dragengine_libraries' in envLibrary and envLibrary['dragengine_libraries']:
-	envLibrary.Append(LIBPATH = [envLibrary['dragengine_libraries']])
+	linkpathDragengine = [envLibrary['dragengine_libraries']]
+	envLibrary.Append(LIBPATH = linkpathDragengine)
 
+cpppathDELauncher = []
 if 'delauncher_includes' in envLibrary and envLibrary['delauncher_includes']:
-	envLibrary.Append(CPPPATH = [envLibrary['delauncher_includes']])
+	cpppathDELauncher = [envLibrary['delauncher_includes']]
+	envLibrary.Append(CPPPATH = cpppathDELauncher)
 
+linkpathDELauncher = []
 if 'delauncher_libraries' in envLibrary and envLibrary['delauncher_libraries']:
-	envLibrary.Append(LIBPATH = [envLibrary['delauncher_libraries']])
+	linkpathDELauncher = [envLibrary['delauncher_libraries']]
+	envLibrary.Append(LIBPATH = linkpathDELauncher)
 
-dragengineVersion = '1.24'
+dragengineVersion = 'nightly'
 
 srcdir = 'dragengine-{}-linux64'.format(dragengineVersion)
 srcdirDev = 'dragengine-dev-{}-linux64'.format(dragengineVersion)
@@ -37,7 +45,16 @@ hasSystemLibs = (conf.CheckLibWithHeader(libLinkNameDragengine, 'dragengine/deOb
 conf.Finish()
 
 if hasSystemLibs:
-	globalEnv.Append(LIBS=[libLinkNameDragengine, libLinkNameDELauncher])
+	targetLibrary = globalEnv.targetManager.TargetLibrary('Dragengine Library')
+	globalEnv.targetManager.add('dragengine', targetLibrary)
+	targetLibrary.addParametersBuildCPP(envLibrary, [libLinkNameDragengine],
+		cpppathDragengine, linkpathDragengine)
+
+	targetLibrary = globalEnv.targetManager.TargetLibrary('DELauncher Library')
+	globalEnv.targetManager.add('delauncher', targetLibrary)
+	targetLibrary.addParametersBuildCPP(envLibrary, [libLinkNameDELauncher],
+		cpppathDELauncher, linkpathDELauncher)
+
 	Return()
 
 # download and unpack
@@ -76,7 +93,12 @@ libraries = envLibrary.Command(targets, nodeArtifacts,
 
 envLibrary.Clean(libraries, ['sdk', 'usr', srcdir, srcdirDev])
 
-globalEnv.Append(CPPPATH = [envLibrary.Dir('sdk/include')])
-globalEnv.Append(LIBPATH = [envLibrary.Dir('usr/lib')])
+targetLibrary = globalEnv.targetManager.TargetLibrary('Dragengine Library')
+globalEnv.targetManager.add('dragengine', targetLibrary)
+targetLibrary.build.append(libLinkNameDragengine)
+targetLibrary.addParametersBuildCPP(envLibrary, [libLinkNameDragengine], 'sdk/include', 'usr/lib')
 
-globalEnv.Append(LIBS=libraries)
+targetLibrary = globalEnv.targetManager.TargetLibrary('DELauncher Library')
+globalEnv.targetManager.add('delauncher', targetLibrary)
+targetLibrary.build.append(libLinkNameDELauncher)
+targetLibrary.addParametersBuildCPP(envLibrary, [libLinkNameDELauncher], 'sdk/include', 'usr/lib')

@@ -9,15 +9,38 @@ Import('globalEnv')
 
 envLibrary = globalEnv.Clone()
 
-dragengineSrcVersion = 'nightly'
-srcdir = 'dragengine-{}-linux64'.format(dragengineSrcVersion)
-srcdirDev = 'dragengine-dev-{}-linux64'.format(dragengineSrcVersion)
+if 'dragengine_includes' in envLibrary and envLibrary['dragengine_includes']:
+	envLibrary.Append(CPPPATH = [envLibrary['dragengine_includes']])
 
-libDragengineVersion = 'nightly'
-libLinkVersion = '9999'
+if 'dragengine_libraries' in envLibrary and envLibrary['dragengine_libraries']:
+	envLibrary.Append(LIBPATH = [envLibrary['dragengine_libraries']])
+
+if 'delauncher_includes' in envLibrary and envLibrary['delauncher_includes']:
+	envLibrary.Append(CPPPATH = [envLibrary['delauncher_includes']])
+
+if 'delauncher_libraries' in envLibrary and envLibrary['delauncher_libraries']:
+	envLibrary.Append(LIBPATH = [envLibrary['delauncher_libraries']])
+
+dragengineVersion = '1.24'
+
+srcdir = 'dragengine-{}-linux64'.format(dragengineVersion)
+srcdirDev = 'dragengine-dev-{}-linux64'.format(dragengineVersion)
+
+libLinkVersion = dragengineVersion.split('.')[0]
 libLinkNameDragengine = 'dragengine'
 libLinkNameDELauncher = 'delauncher'
 
+hasSystemLibs = False
+conf = envLibrary.Configure()
+hasSystemLibs = (conf.CheckLibWithHeader(libLinkNameDragengine, 'dragengine/deObject.h', 'c++')
+	and conf.CheckLibWithHeader(libLinkNameDELauncher, 'delauncher/delLauncher.h', 'c++'))
+conf.Finish()
+
+if hasSystemLibs:
+	globalEnv.Append(LIBS=[libLinkNameDragengine, libLinkNameDELauncher])
+	Return()
+
+# download and unpack
 libFileNameDragengine = envLibrary.subst(
 	'usr/lib/${{SHLIBPREFIX}}{}${{SHLIBSUFFIX}}.{}'.format(
 		libLinkNameDragengine, libLinkVersion))
@@ -29,15 +52,11 @@ libFileNameDELauncher = envLibrary.subst(
 baseUrl = 'https://github.com/LordOfDragons/dragengine/releases/download'
 
 nodeArtifacts = envLibrary.DownloadArtifactHelper(
-	'{}.tar.bz2'.format(srcdir), 'nightly', 'lib_dragengine_fetch', baseUrl=baseUrl)
+	'{}.tar.bz2'.format(srcdir), 'v{}'.format(dragengineVersion),
+	'lib_dragengine_fetch', baseUrl=baseUrl)
 nodeArtifactsDev = envLibrary.DownloadArtifactHelper(
-	'{}.tar.bz2'.format(srcdirDev), 'nightly', 'lib_dragengine2_fetch', baseUrl=baseUrl)
-
-if 'libdragengine_includes' in globalEnv and globalEnv['libdragengine_includes']:
-	globalEnv.Append(CPPPATH = [globalEnv['libdragengine_includes']])
-
-if 'libdragengine_libraries' in globalEnv and globalEnv['libdragengine_libraries']:
-	globalEnv.Append(LIBPATH = [globalEnv['libdragengine_libraries']])
+	'{}.tar.bz2'.format(srcdirDev), 'v{}'.format(dragengineVersion),
+	'lib_dragengine2_fetch', baseUrl=baseUrl)
 
 def dragengineUnpack(target, source, env):
 	untarArchive(target[0].get_dir().up().up().abspath, source[0].abspath)

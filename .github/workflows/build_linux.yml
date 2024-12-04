@@ -19,7 +19,7 @@ jobs:
       
       - name: Install required packages
         run: |
-          sudo apt -y install build-essential scons
+          sudo apt -y install build-essential scons libxft-dev
       
       - name: Init custom.py
         run: |

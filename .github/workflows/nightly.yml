@@ -63,7 +63,7 @@ jobs:
             
             Builds are potentially unstable. Use at own risk.
           artifacts: >
-            deremotelaunchershared-unix-x64-nightly.tarbz2,
-            deremotelauncherdesktop-unix-x64-nightly.tarbz2,
+            deremotelaunchershared-unix-x64-nightly.tar.bz2,
+            deremotelauncherdesktop-unix-x64-nightly.tar.bz2,
             DERemoteLauncherSDK-nightly.zip,
             DERemoteLauncherDesktop-nightly.zip

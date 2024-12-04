@@ -65,6 +65,7 @@ params.Update(globalEnv)
 
 # build
 SConscript(dirs='extern/fox', variant_dir='{}/build'.format('extern/fox'), duplicate=0, exports='globalEnv')
+SConscript(dirs='extern/dragengine', variant_dir='{}/build'.format('extern/dragengine'), duplicate=0, exports='globalEnv')
 
 SConscript(dirs='shared', variant_dir='shared/build', duplicate=0, exports='globalEnv')
 SConscript(dirs='launcher/desktop', variant_dir='launcher/desktop/build', duplicate=0, exports='globalEnv')

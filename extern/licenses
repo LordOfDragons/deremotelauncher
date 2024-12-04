@@ -4,3 +4,4 @@ license is written here. The targets using the libraries are
 marked in curly brackets.
 
 fox:          L-GPL (MIT compatible)
+dragengine:   MIT / L-GPL

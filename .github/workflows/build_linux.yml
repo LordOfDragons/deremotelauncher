@@ -42,6 +42,7 @@ jobs:
         run: |
           mkdir artifacts
           cp -a shared/build/deremotelaunchershared-unix-x64-${{ inputs.releaseVersion }}.zip artifacts
+          cp -a launcher/desktop/build/deremotelauncherdesktop-unix-x64-${{ inputs.releaseVersion }}.zip artifacts
         
       - name: Store Archives
         uses: actions/upload-artifact@v4

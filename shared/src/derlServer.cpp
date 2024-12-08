@@ -64,6 +64,10 @@ derlRemoteClient::Ref derlServer::CreateClient(const derlRemoteClientConnection:
 	return std::make_shared<derlRemoteClient>(*this, connection);
 }
 
+bool derlServer::IsListening() const{
+	return pServer->IsListening();
+}
+
 void derlServer::ListenOn(const std::string &address){
 	if(pPathDataDir.empty()){
 		throw std::invalid_argument("data directory path is empty");
@@ -98,18 +102,16 @@ void derlServer::Update(float elapsed){
 	}
 	
 	derlRemoteClient::List closed;
-	derlRemoteClient::List::const_iterator iter;
-	for(iter=pClients.cbegin(); iter!=pClients.cend(); iter++){
-		derlRemoteClient &client = **iter;
-		client.Update(elapsed);
-		if(client.GetDisconnected()){
-			client.StopTaskProcessors();
-			closed.push_back(*iter);
+	for(const derlRemoteClient::Ref &each : pClients){
+		each->Update(elapsed);
+		if(each->GetDisconnected()){
+			each->StopTaskProcessors();
+			closed.push_back(each);
 		}
 	}
 	
-	for(iter=closed.cbegin(); iter!=closed.cend(); iter++){
-		pClients.erase(std::find(pClients.cbegin(), pClients.cend(), *iter));
+	for(const derlRemoteClient::Ref &each : closed){
+		pClients.erase(std::find(pClients.cbegin(), pClients.cend(), each));
 	}
 }
 

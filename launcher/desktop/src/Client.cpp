@@ -78,7 +78,7 @@ void Client::ConnectToHost(const char *name, const char *pathDataDir, const char
 
 void Client::DisconnectFromHost(){
 	const std::lock_guard guard(pMutexClient);
-	if(GetConnectionState() == denConnection::ConnectionState::disconnected){
+	if(GetConnectionState() != denConnection::ConnectionState::disconnected){
 		Disconnect();
 	}
 }

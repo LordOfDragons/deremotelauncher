@@ -56,6 +56,10 @@ const std::string &derlRemoteClient::GetName() const{
 	return pConnection->GetName();
 }
 
+const std::string &derlRemoteClient::GetAddress() const{
+	return pConnection->GetRemoteAddress();
+}
+
 derlFileLayout::Ref derlRemoteClient::GetFileLayoutServerSync(){
 	const std::lock_guard guard(pMutex);
 	return pFileLayoutServer;

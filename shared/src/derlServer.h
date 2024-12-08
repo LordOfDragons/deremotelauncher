@@ -106,6 +106,9 @@ public:
 	
 	
 	
+	/** \brief Server is listening. */
+	bool IsListening() const;
+	
 	/**
 	 * \brief Start listening on address for incoming connections.
 	 * \throws std::invalid_argument Data directory path is empty.

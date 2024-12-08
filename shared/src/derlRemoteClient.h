@@ -138,6 +138,9 @@ public:
 	/** \brief Name identifying the client. */
 	const std::string &GetName() const;
 	
+	/** \brief Address of client. */
+	const std::string &GetAddress() const;
+	
 	
 	
 	/** \brief Server file layout or nullptr. */

@@ -164,8 +164,7 @@ void derlLauncherClient::StartTaskProcessors(){
 		Log(denLogger::LogSeverity::info, "StartTaskProcessors", "Create task processors");
 		int i;
 		for(i=0; i<pStartTaskProcessorCount; i++){
-			const derlTaskProcessorLauncherClient::Ref processor(
-				std::make_shared<derlTaskProcessorLauncherClient>(*this));
+			const derlTaskProcessorLauncherClient::Ref processor(CreateTaskProcessor());
 			processor->SetLogger(GetLogger());
 			pTaskProcessors.push_back(processor);
 		}
@@ -180,6 +179,10 @@ void derlLauncherClient::StartTaskProcessors(){
 				}, processor));
 		}
 	}
+}
+
+derlTaskProcessorLauncherClient::Ref derlLauncherClient::CreateTaskProcessor(){
+	return std::make_shared<derlTaskProcessorLauncherClient>(*this);
 }
 
 void derlLauncherClient::StopTaskProcessors(){

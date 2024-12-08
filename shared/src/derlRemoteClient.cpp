@@ -221,8 +221,7 @@ void derlRemoteClient::StartTaskProcessors(){
 		Log(denLogger::LogSeverity::info, "StartTaskProcessors", "Create task processors");
 		int i;
 		for(i=0; i<pStartTaskProcessorCount; i++){
-			const derlTaskProcessorRemoteClient::Ref processor(
-				std::make_shared<derlTaskProcessorRemoteClient>(*this));
+			const derlTaskProcessorRemoteClient::Ref processor(CreateTaskProcessor());
 			processor->SetLogger(GetLogger());
 			pTaskProcessors.push_back(processor);
 		}
@@ -237,6 +236,10 @@ void derlRemoteClient::StartTaskProcessors(){
 				}, processor));
 		}
 	}
+}
+
+derlTaskProcessorRemoteClient::Ref derlRemoteClient::CreateTaskProcessor(){
+	return std::make_shared<derlTaskProcessorRemoteClient>(*this);
 }
 
 void derlRemoteClient::StopTaskProcessors(){

@@ -205,7 +205,7 @@ public:
 	/**
 	 * \brief Start task processors.
 	 * 
-	 * Default implementation starts running a single derlTaskProcessorLauncherClient instance in a thread.
+	 * Default implementation starts running a single CreateTaskProcessor() instance in a thread.
 	 * Overwrite method to start any number of task processors instead.
 	 * 
 	 * This method has to be safe being called multiple times.
@@ -215,10 +215,18 @@ public:
 	virtual void StartTaskProcessors();
 	
 	/**
+	 * \brief Create task processors.
+	 * 
+	 * Default implementation creates instance of derlTaskProcessorLauncherClient.
+	 * Overwrite method to create own task processors instead.
+	 */
+	virtual derlTaskProcessorLauncherClient::Ref CreateTaskProcessor();
+	
+	/**
 	 * \brief Stop task processors.
 	 * 
-	 * Default implementation stops running the single derlTaskProcessorLauncherClient instance if running.
-	 * Overwrite method to stop all task processors started by StartTaskProcessors().
+	 * Default implementation stops running the single derlTaskProcessorLauncherClient instance
+	 * if running. Overwrite method to stop all task processors started by StartTaskProcessors().
 	 * 
 	 * This method has to be safe being called multiple times.
 	 * 

@@ -97,24 +97,28 @@ public:
 	
 	
 protected:
-	typedef std::unique_lock<std::mutex> LockMutex;
+	/**
+	 * \brief Prepare run task.
+	 * \note Client mutex is held while this method is called.
+	 */
+	virtual void PrepareRunTask();
 	
-	/** Compare file layouts and add delete file tasks. */
+	/** \brief Compare file layouts and add delete file tasks. */
 	void AddFileDeleteTasks(derlTaskSyncClient &task,
 		const derlFileLayout &layoutServer, const derlFileLayout &layoutClient);
 	
-	/** Compare file layouts and add write file block hash tasks. */
+	/** \brief Compare file layouts and add write file block hash tasks. */
 	void AddFileBlockHashTasks(derlTaskSyncClient &task,
 		const derlFileLayout &layoutServer, const derlFileLayout &layoutClient);
 	
-	/** Compare file layouts and add write file tasks. */
+	/** \brief Compare file layouts and add write file tasks. */
 	void AddFileWriteTasks(derlTaskSyncClient &task, const derlFileLayout &layoutServer,
 		const derlFileLayout &layoutClient);
 	
-	/** Create write file task writing the entire file. */
+	/** \brief Create write file task writing the entire file. */
 	void AddFileWriteTaskFull(derlTaskSyncClient &task, const derlFile &file);
 	
-	/** Create write file task writing only changed blocks. */
+	/** \brief Create write file task writing only changed blocks. */
 	void AddFileWriteTaskPartial(derlTaskSyncClient &task, const derlFile &fileServer,
 		const derlFile &fileClient);
 };

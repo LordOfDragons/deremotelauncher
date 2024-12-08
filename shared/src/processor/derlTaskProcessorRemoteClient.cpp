@@ -54,6 +54,7 @@ void derlTaskProcessorRemoteClient::RunTask(){
 	const std::lock_guard guard(pClient.GetMutex());
 	pBaseDir = pClient.GetPathDataDir();
 	pEnableDebugLog = pClient.GetEnableDebugLog();
+	PrepareRunTask();
 	}
 	
 	switch(task->GetType()){
@@ -314,6 +315,9 @@ void derlTaskProcessorRemoteClient::ProcessReadFileBlock(derlTaskFileWriteBlock 
 
 // Protected Functions
 ////////////////////////
+
+void derlTaskProcessorRemoteClient::PrepareRunTask(){
+}
 
 void derlTaskProcessorRemoteClient::AddFileDeleteTasks(derlTaskSyncClient &task,
 const derlFileLayout &layoutServer, const derlFileLayout &layoutClient){

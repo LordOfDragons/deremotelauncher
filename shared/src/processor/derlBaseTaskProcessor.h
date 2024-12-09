@@ -81,6 +81,9 @@ public:
 	/** \brief Set base directory. */
 	void SetBaseDirectory(const std::filesystem::path &path);
 	
+	/** \brief Task processor has been requested to exit the next time possible. */
+	inline bool HasExitRequested() const{ return pExit; }
+	
 	/** \brief Request task processor to exit the next time possible. */
 	void Exit();
 	
@@ -96,6 +99,13 @@ public:
 	 * \brief Calculate file layout.
 	 */
 	void CalcFileLayout(derlFileLayout &layout, const std::string &pathDir);
+	
+	/**
+	 * \brief Path exists and refers to an existing directory.
+	 * 
+	 * Default implementation uses std::filesystem::is_directory.
+	 */
+	virtual bool IsPathDirectory(const std::string &pathDir);
 	
 	/**
 	 * \brief List all files in directory.

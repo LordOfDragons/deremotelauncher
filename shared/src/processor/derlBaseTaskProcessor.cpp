@@ -67,25 +67,31 @@ void derlBaseTaskProcessor::Run(){
 void derlBaseTaskProcessor::CalcFileLayout(derlFileLayout &layout, const std::string &pathDir){
 	//LogDebug("CalcFileLayout", pathDir);
 	
-	if(!std::filesystem::is_directory(pBaseDir / pathDir)){
+	if(!IsPathDirectory(pathDir)){
 		return; // directory does not exist. report empty layout
 	}
 	
 	ListDirEntries entries;
 	ListDirectoryFiles(entries, pathDir);
 	
-	ListDirEntries::const_iterator iter;
-	for(iter = entries.cbegin(); iter != entries.cend(); iter++){
-		if(iter->isDirectory){
-			CalcFileLayout(layout, iter->path);
+	for(const DirectoryEntry &each : entries){
+		if(each.isDirectory){
+			CalcFileLayout(layout, each.path);
+			if(pExit){
+				return;
+			}
 			
 		}else{
-			const derlFile::Ref file(std::make_shared<derlFile>(iter->path));
-			file->SetSize(iter->fileSize);
+			const derlFile::Ref file(std::make_shared<derlFile>(each.path));
+			file->SetSize(each.fileSize);
 			CalcFileHash(*file);
 			layout.AddFile(file);
 		}
 	}
+}
+
+bool derlBaseTaskProcessor::IsPathDirectory(const std::string &pathDir){
+	return std::filesystem::is_directory(pBaseDir / pathDir);
 }
 
 void derlBaseTaskProcessor::ListDirectoryFiles(ListDirEntries &entries, const std::string &pathDir){

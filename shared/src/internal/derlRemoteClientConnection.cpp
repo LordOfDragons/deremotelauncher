@@ -134,9 +134,9 @@ void derlRemoteClientConnection::SendQueuedMessages(){
 	}
 }
 
-void derlRemoteClientConnection::ProcessReceivedMessages(){
+bool derlRemoteClientConnection::ProcessReceivedMessages(){
 	if(!pClient){
-		return;
+		return false;
 	}
 	
 	derlMessageQueue::Messages messages;
@@ -187,10 +187,13 @@ void derlRemoteClientConnection::ProcessReceivedMessages(){
 		}
 	}
 	
+	const bool returnValue = !messages.empty();
 	{
 	std::lock_guard guard(derlGlobal::mutexNetwork);
 	messages.clear();
 	}
+	
+	return returnValue;
 }
 
 void derlRemoteClientConnection::SendNextWriteRequests(derlTaskSyncClient &taskSync){
@@ -438,6 +441,17 @@ void derlRemoteClientConnection::SendRequestSystemProperty(const std::string &pr
 	}
 	pQueueSend.Add(message);
 }
+
+void derlRemoteClientConnection::SendKeepAlive(){
+	const std::lock_guard guard(derlGlobal::mutexNetwork);
+	const denMessage::Ref message(denMessage::Pool().Get());
+	{
+		denMessageWriter writer(message->Item());
+		writer.WriteByte((uint8_t)derlProtocol::MessageCodes::keepAlive);
+	}
+	pQueueSend.Add(message);
+}
+
 
 // Private Functions
 //////////////////////

@@ -153,8 +153,11 @@ public:
 	 * */
 	void SendQueuedMessages();
 	
-	/** \brief Process received messages. */
-	void ProcessReceivedMessages();
+	/**
+	 * \brief Process received messages.
+	 * \returns true if any messages have been processed or false otherwise..
+	 */
+	bool ProcessReceivedMessages();
 	
 	/** \brief Send next write requests if possible. */
 	void SendNextWriteRequests(derlTaskSyncClient &taskSync);
@@ -183,6 +186,7 @@ public:
 	void SendStartApplication(const derlRunParameters &parameters);
 	void SendStopApplication(derlProtocol::StopApplicationMode mode);
 	void SendRequestSystemProperty(const std::string &property);
+	void SendKeepAlive();
 	/*@}*/
 	
 	

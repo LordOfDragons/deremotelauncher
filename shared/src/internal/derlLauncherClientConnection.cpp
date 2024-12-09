@@ -136,7 +136,7 @@ void derlLauncherClientConnection::SendQueuedMessages(){
 	}
 }
 
-void derlLauncherClientConnection::ProcessReceivedMessages(){
+bool derlLauncherClientConnection::ProcessReceivedMessages(){
 	derlMessageQueue::Messages messages;
 	{
 	const std::lock_guard guard(derlGlobal::mutexNetwork);
@@ -189,10 +189,13 @@ void derlLauncherClientConnection::ProcessReceivedMessages(){
 		}
 	}
 	
+	const bool returnValue = !messages.empty();
 	{
 	const std::lock_guard guard(derlGlobal::mutexNetwork);
 	messages.clear();
 	}
+	
+	return returnValue;
 }
 
 void derlLauncherClientConnection::OnFileLayoutChanged(){
@@ -434,6 +437,20 @@ const std::string &source, const std::string &log){
 		
 		writer.WriteString8(source);
 		writer.WriteString16(log);
+	}
+	pQueueSend.Add(message);
+}
+
+void derlLauncherClientConnection::SendKeepAlive(){
+	const std::lock_guard guard(derlGlobal::mutexNetwork);
+	if(!GetConnected()){
+		return;
+	}
+	
+	const denMessage::Ref message(denMessage::Pool().Get());
+	{
+		denMessageWriter writer(message->Item());
+		writer.WriteByte((uint8_t)derlProtocol::MessageCodes::keepAlive);
 	}
 	pQueueSend.Add(message);
 }

@@ -44,6 +44,8 @@ FXDEFMAP(WindowMain) WindowMainMap[] = {
 	FXMAPFUNC(SEL_RESTORE, 0, WindowMain::onRestored),
 	FXMAPFUNC(SEL_MAXIMIZE, 0, WindowMain::onMaximized),
 	
+	FXMAPFUNC(SEL_COMMAND, WindowMain::ID_SELECT_DATA_PATH, WindowMain::onBtnSelectDataPath),
+	FXMAPFUNC(SEL_COMMAND, WindowMain::ID_RESET_DATA_PATH, WindowMain::onBtnResetDataPath),
 	FXMAPFUNC(SEL_COMMAND, WindowMain::ID_CONNECT, WindowMain::onBtnConnect),
 	FXMAPFUNC(SEL_COMMAND, WindowMain::ID_DISCONNECT, WindowMain::onBtnDisconnect),
 	
@@ -169,6 +171,7 @@ void WindowMain::UpdateUIStates(){
 	case Launcher::State::prepareFailed:
 		pEditClientName->disable();
 		pEditDataPath->disable();
+		pBtnSelectDataPath->disable();
 		pEditHostAddress->disable();
 		pBtnConnect->disable();
 		pBtnDisconnect->disable();
@@ -181,6 +184,7 @@ void WindowMain::UpdateUIStates(){
 	if(pClient->IsDisconnected()){
 		pEditClientName->enable();
 		pEditDataPath->enable();
+		pBtnSelectDataPath->enable();
 		pEditHostAddress->enable();
 		
 		pBtnConnect->enable();
@@ -190,6 +194,7 @@ void WindowMain::UpdateUIStates(){
 	
 	pEditClientName->disable();
 	pEditDataPath->disable();
+	pBtnSelectDataPath->disable();
 	pEditHostAddress->disable();
 	
 	pBtnConnect->disable();
@@ -254,6 +259,22 @@ long WindowMain::onRestored(FXObject*, FXSelector, void*){
 
 long WindowMain::onMaximized(FXObject*, FXSelector, void*){
 	return 0;
+}
+
+long WindowMain::onBtnSelectDataPath(FXObject*, FXSelector, void*){
+	FXDirDialog * const dialog = new FXDirDialog(getApp(), "Select Data Path");
+	dialog->showFiles(false);
+	dialog->showHiddenFiles(true);
+	dialog->setDirectory(pDataPath);
+	if(dialog->execute(PLACEMENT_OWNER)){
+		pDataPath = dialog->getDirectory();
+	}
+	return 1;
+}
+
+long WindowMain::onBtnResetDataPath(FXObject*, FXSelector, void*){
+	pDataPath = GetDefaultDataPath();
+	return 1;
 }
 
 long WindowMain::onBtnConnect(FXObject*, FXSelector, void*){
@@ -388,29 +409,43 @@ void WindowMain::pCreateContent(){
 }
 
 void WindowMain::pCreatePanelConnect(FXComposite *container){
-	FXHorizontalFrame * const f = new FXHorizontalFrame(container, LAYOUT_FILL_X);
+	FXHorizontalFrame * const panel = new FXHorizontalFrame(container, LAYOUT_FILL_X);
 	
-	FXMatrix * const f2 = new FXMatrix(f, 2, MATRIX_BY_COLUMNS | LAYOUT_FILL);
+	FXMatrix *grid = new FXMatrix(panel, 2, MATRIX_BY_COLUMNS | LAYOUT_FILL);
 	
-	pLabHostAddress = new FXLabel(f2, "Host Address:", nullptr, LAYOUT_FILL_ROW | LAYOUT_FILL_Y);
-	pEditHostAddress = new FXTextField(f2, 20, &pTargetHostAddress, FXDataTarget::ID_VALUE,
+	pLabHostAddress = new FXLabel(grid, "Host Address:", nullptr, LAYOUT_FILL_ROW | LAYOUT_FILL_Y);
+	pEditHostAddress = new FXTextField(grid, 20, &pTargetHostAddress, FXDataTarget::ID_VALUE,
 		TEXTFIELD_NORMAL | LAYOUT_FILL_ROW | LAYOUT_FILL_COLUMN | LAYOUT_FILL);
+	pEditHostAddress->setTipText("Host address to connect to (ip[:port] or hostname[:port])");
 	
-	pLabClientName = new FXLabel(f2, "Client Name:", nullptr, LAYOUT_FILL_ROW | LAYOUT_FILL_Y);
-	pEditClientName = new FXTextField(f2, 20, &pTargetClientName, FXDataTarget::ID_VALUE,
+	pLabClientName = new FXLabel(grid, "Client Name:", nullptr, LAYOUT_FILL_ROW | LAYOUT_FILL_Y);
+	pEditClientName = new FXTextField(grid, 20, &pTargetClientName, FXDataTarget::ID_VALUE,
 		TEXTFIELD_NORMAL | LAYOUT_FILL_ROW | LAYOUT_FILL_COLUMN | LAYOUT_FILL);
+	pEditClientName->setTipText("Name shown on the server to identify this client");
 	
-	pLabDataPath = new FXLabel(f2, "Data Path:", nullptr, LAYOUT_FILL_ROW | LAYOUT_FILL_Y);
-	pEditDataPath = new FXTextField(f2, 20, &pTargetDataPath, FXDataTarget::ID_VALUE,
-		TEXTFIELD_NORMAL | LAYOUT_FILL_ROW | LAYOUT_FILL_COLUMN | LAYOUT_FILL);
+	pLabDataPath = new FXLabel(grid, "Data Path:", nullptr, LAYOUT_FILL_ROW | LAYOUT_FILL_Y);
 	
-	FXMatrix * const f3 = new FXMatrix(f, 1, MATRIX_BY_COLUMNS | LAYOUT_FILL_Y);
+	FXHorizontalFrame *formLine = new FXHorizontalFrame(grid,
+		LAYOUT_FILL_ROW | LAYOUT_FILL_COLUMN | LAYOUT_FILL, 0, 0, 0, 0, 0, 0, 0, 0);
+	pEditDataPath = new FXTextField(formLine, 20, &pTargetDataPath, FXDataTarget::ID_VALUE,
+		TEXTFIELD_NORMAL | LAYOUT_FILL);
+	pEditDataPath->setTipText("Data directory where synchronized files are stored");
+	pBtnSelectDataPath = new FXButton(formLine, "...", nullptr, this, ID_SELECT_DATA_PATH,
+		BUTTON_NORMAL | LAYOUT_FILL_Y);
+	pBtnSelectDataPath->setTipText("Select data directory");
+	pBtnResetDataPath = new FXButton(formLine, "R", nullptr, this, ID_RESET_DATA_PATH,
+		BUTTON_NORMAL | LAYOUT_FILL_Y);
+	pBtnResetDataPath->setTipText("Reset data directory to default value");
 	
-	pBtnConnect = new FXButton(f3, "Connect", nullptr, this, ID_CONNECT,
+	grid = new FXMatrix(panel, 1, MATRIX_BY_COLUMNS | LAYOUT_FILL_Y);
+	
+	pBtnConnect = new FXButton(grid, "Connect", nullptr, this, ID_CONNECT,
 		BUTTON_NORMAL | LAYOUT_FILL_COLUMN | LAYOUT_FILL_ROW | LAYOUT_FILL);
+	pBtnConnect->setTipText("Connect to server");
 	
-	pBtnDisconnect = new FXButton(f3, "Disconnect", nullptr, this, ID_DISCONNECT,
+	pBtnDisconnect = new FXButton(grid, "Disconnect", nullptr, this, ID_DISCONNECT,
 		BUTTON_NORMAL | LAYOUT_FILL_COLUMN | LAYOUT_FILL_ROW | LAYOUT_FILL);
+	pBtnDisconnect->setTipText("Disconnect from server");
 }
 
 void WindowMain::pCreatePanelLogs(FXComposite *container){

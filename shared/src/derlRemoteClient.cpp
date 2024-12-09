@@ -44,7 +44,9 @@ pStartTaskProcessorCount(1),
 pTaskProcessorsRunning(false),
 pNotifyRunStatusChanged(false),
 pNotifyConnectionEstablished(false),
-pNotifyConnectionClosed(false){
+pNotifyConnectionClosed(false),
+pKeepAliveInterval(10.0f),
+pKeepAliveElapsed(0.0f){
 }
 
 derlRemoteClient::~derlRemoteClient(){
@@ -283,7 +285,17 @@ bool derlRemoteClient::GetDisconnected(){
 
 void derlRemoteClient::Update(float elapsed){
 	pConnection->SendQueuedMessages();
-	pConnection->ProcessReceivedMessages();
+	
+	if(pConnection->ProcessReceivedMessages()){
+		pKeepAliveElapsed = 0.0f;
+		
+	}else{
+		pKeepAliveElapsed += elapsed;
+		if(pKeepAliveElapsed >= pKeepAliveInterval){
+			pKeepAliveElapsed = 0.0f;
+			pConnection->SendKeepAlive();
+		}
+	}
 	
 	{
 	const std::lock_guard guard(derlGlobal::mutexNetwork);

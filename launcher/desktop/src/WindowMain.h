@@ -64,6 +64,8 @@ private:
 	FXTextField *pEditHostAddress = nullptr;
 	FXTextField *pEditClientName = nullptr;
 	FXTextField *pEditDataPath = nullptr;
+	FXButton *pBtnSelectDataPath = nullptr;
+	FXButton *pBtnResetDataPath = nullptr;
 	FXButton *pBtnConnect = nullptr;
 	FXButton *pBtnDisconnect = nullptr;
 	FXText *pEditLogs = nullptr;
@@ -87,6 +89,8 @@ public:
 		ID_CLIENT_NAME,
 		ID_DATA_PATH,
 		ID_LOGS,
+		ID_SELECT_DATA_PATH,
+		ID_RESET_DATA_PATH,
 		ID_CONNECT,
 		ID_DISCONNECT,
 		ID_MSG_LOGS_ADDED,
@@ -169,6 +173,8 @@ public:
 	long onRestored(FXObject*, FXSelector, void*);
 	long onMaximized(FXObject*, FXSelector, void*);
 	
+	long onBtnSelectDataPath(FXObject*, FXSelector, void*);
+	long onBtnResetDataPath(FXObject*, FXSelector, void*);
 	long onBtnConnect(FXObject*, FXSelector, void*);
 	long onBtnDisconnect(FXObject*, FXSelector, void*);
 	

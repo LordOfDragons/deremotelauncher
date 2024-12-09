@@ -111,6 +111,8 @@ private:
 	bool pNotifyConnectionEstablished;
 	bool pNotifyConnectionClosed;
 	
+	float pKeepAliveInterval, pKeepAliveElapsed;
+	
 	
 public:
 	/** \name Constructors and Destructors */

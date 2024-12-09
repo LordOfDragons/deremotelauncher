@@ -87,6 +87,8 @@ private:
 	std::vector<std::shared_ptr<std::thread>> pTaskProcessorThreads;
 	bool pTaskProcessorsRunning;
 	
+	float pKeepAliveInterval, pKeepAliveElapsed;
+	
 	
 public:
 	/** \name Constructors and Destructors */

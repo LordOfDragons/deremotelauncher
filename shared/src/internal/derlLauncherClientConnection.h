@@ -151,8 +151,11 @@ public:
 	 * */
 	void SendQueuedMessages();
 	
-	/** \brief Process received messages. */
-	void ProcessReceivedMessages();
+	/**
+	 * \brief Process received messages.
+	 * \returns true if any message has been processed or false otherwise.
+	 */
+	bool ProcessReceivedMessages();
 	
 	/** \brief File layout changed. */
 	void OnFileLayoutChanged();
@@ -177,6 +180,7 @@ public:
 	void SendResponseFinishWriteFile(const derlTaskFileWrite &task);
 	void SendResponseSystemPropertyNoLock(const std::string &property, const std::string &value);
 	void SendLog(denLogger::LogSeverity severity, const std::string &source, const std::string &log);
+	void SendKeepAlive();
 	/*@}*/
 	
 	

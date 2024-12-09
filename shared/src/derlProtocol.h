@@ -54,7 +54,8 @@ namespace derlProtocol{
 		stopApplication = 16,
 		logs = 17,
 		requestSystemProperty = 18,
-		responseSystemProperty = 19
+		responseSystemProperty = 19,
+		keepAlive = 20
 	};
 	
 	/**

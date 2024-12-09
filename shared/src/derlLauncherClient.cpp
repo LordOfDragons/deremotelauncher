@@ -40,7 +40,9 @@ pConnection(std::make_unique<derlLauncherClientConnection>(*this)),
 pName("Client"),
 pDirtyFileLayout(false),
 pStartTaskProcessorCount(1),
-pTaskProcessorsRunning(false){
+pTaskProcessorsRunning(false),
+pKeepAliveInterval(10.0f),
+pKeepAliveElapsed(0.0f){
 }
 
 derlLauncherClient::~derlLauncherClient(){
@@ -236,7 +238,17 @@ void derlLauncherClient::Update(float elapsed){
 	UpdateLayoutChanged();
 	
 	pConnection->SendQueuedMessages();
-	pConnection->ProcessReceivedMessages();
+	
+	if(pConnection->ProcessReceivedMessages()){
+		pKeepAliveElapsed = 0.0f;
+		
+	}else{
+		pKeepAliveElapsed += elapsed;
+		if(pKeepAliveElapsed >= pKeepAliveInterval){
+			pKeepAliveElapsed = 0.0f;
+			pConnection->SendKeepAlive();
+		}
+	}
 	
 	{
 	const std::lock_guard guard(derlGlobal::mutexNetwork);

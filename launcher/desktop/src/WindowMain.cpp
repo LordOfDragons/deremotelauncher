@@ -158,6 +158,14 @@ FXString WindowMain::GetDefaultDataPath() const{
 #endif
 }
 
+FXString WindowMain::GetLogFilePath() const{
+#ifdef OS_W32
+	return deOSWindows::ParseNativePath("@LocalAppData\\DERemoteLauncher\\launcher.log").GetString();
+#else
+	return FXPath::expand("~/.cache/deremotelauncher/launcher.log");
+#endif
+}
+
 void WindowMain::SaveSettings() const{
 	FXRegistry &r = getApp()->reg();
 	r.writeStringEntry("settings", "hostAddress", pHostAddress.text());
@@ -172,6 +180,7 @@ void WindowMain::UpdateUIStates(){
 		pEditClientName->disable();
 		pEditDataPath->disable();
 		pBtnSelectDataPath->disable();
+		pBtnResetDataPath->disable();
 		pEditHostAddress->disable();
 		pBtnConnect->disable();
 		pBtnDisconnect->disable();
@@ -185,6 +194,7 @@ void WindowMain::UpdateUIStates(){
 		pEditClientName->enable();
 		pEditDataPath->enable();
 		pBtnSelectDataPath->enable();
+		pBtnResetDataPath->enable();
 		pEditHostAddress->enable();
 		
 		pBtnConnect->enable();
@@ -195,6 +205,7 @@ void WindowMain::UpdateUIStates(){
 	pEditClientName->disable();
 	pEditDataPath->disable();
 	pBtnSelectDataPath->disable();
+	pBtnResetDataPath->disable();
 	pEditHostAddress->disable();
 	
 	pBtnConnect->disable();
@@ -333,7 +344,6 @@ long WindowMain::onMsgStopApp(FXObject*, FXSelector, void*){
 	pLogger->Log(denLogger::LogSeverity::info, "Stop running application");
 	try{
 		pLauncher->StopGame();
-		pClient->SetRunStatus(derlLauncherClient::RunStatus::stopped);
 		
 	}catch(const deException &e){
 		pLogException(e, "Stop application failed");
@@ -378,7 +388,7 @@ long WindowMain::onMsgSysPropProfileNames(FXObject*, FXSelector, void*){
 }
 
 long WindowMain::onMsgSysPropDefaultProfile(FXObject*, FXSelector, void*){
-	const delGameProfile * const profile = pLauncher->GetGameManager().GetDefaultProfile();
+	const delGameProfile * const profile = pLauncher->GetGameManager().GetActiveProfile();
 	pClient->SendSystemProperty(derlProtocol::SystemPropertyNames::defaultProfile,
 		profile ? profile->GetName().GetString() : "");
 	return 1;

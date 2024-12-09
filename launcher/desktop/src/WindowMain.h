@@ -130,6 +130,9 @@ public:
 	/** \brief Default data path. */
 	FXString GetDefaultDataPath() const;
 	
+	/** \brief Log file data path. */
+	FXString GetLogFilePath() const;
+	
 	/** \brief Save settings. */
 	void SaveSettings() const;
 	

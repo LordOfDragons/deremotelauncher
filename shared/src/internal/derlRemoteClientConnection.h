@@ -208,6 +208,8 @@ private:
 	
 	derlTaskSyncClient::Ref pGetSyncTask(const std::string &functionName,
 		derlTaskSyncClient::Status status);
+	derlTaskSyncClient::Ref pGetSyncTask(const std::string &functionName,
+		derlTaskSyncClient::Status status1, derlTaskSyncClient::Status status2);
 	void pCheckFinishedHashes(const derlTaskSyncClient::Ref &task);
 	void pCheckFinishedWrite(const derlTaskSyncClient::Ref &task);
 };

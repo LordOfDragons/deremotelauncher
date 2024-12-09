@@ -269,9 +269,10 @@ void Launcher::StopGame(){
 	case State::prepareFailed:
 		DETHROW_INFO(deeInvalidAction, "Launcher prepare failed");
 		
-	case State::ready:
+	case State::running:
 		break;
 		
+	case State::ready:
 	default:
 		return;
 	}
@@ -297,9 +298,10 @@ void Launcher::KillGame(){
 	case State::prepareFailed:
 		DETHROW_INFO(deeInvalidAction, "Launcher prepare failed");
 		
-	case State::ready:
+	case State::running:
 		break;
 		
+	case State::ready:
 	default:
 		return;
 	}

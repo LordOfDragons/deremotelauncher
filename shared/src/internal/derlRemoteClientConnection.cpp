@@ -412,7 +412,7 @@ void derlRemoteClientConnection::SendStopApplication(derlProtocol::StopApplicati
 	{
 	std::stringstream log;
 	log << "Stop application: " << (int)mode;
-	Log(denLogger::LogSeverity::info, "pSendStopApplication", log.str());
+	Log(denLogger::LogSeverity::info, "SendStopApplication", log.str());
 	}
 	
 	const std::lock_guard guard(derlGlobal::mutexNetwork);
@@ -676,7 +676,8 @@ void derlRemoteClientConnection::pProcessResponseFileBlockHashes(denMessageReade
 
 void derlRemoteClientConnection::pProcessResponseDeleteFile(denMessageReader &reader){
 	const derlTaskSyncClient::Ref taskSync(pGetSyncTask(
-		"pProcessResponseDeleteFile", derlTaskSyncClient::Status::processWriting));
+		"pProcessResponseDeleteFile", derlTaskSyncClient::Status::prepareTasksWriting,
+		derlTaskSyncClient::Status::processWriting));
 	if(!taskSync){
 		return;
 	}
@@ -963,6 +964,27 @@ const std::string &functionName, derlTaskSyncClient::Status status){
 		std::stringstream ss;
 		ss << "Received response but sync task is not in the right state: "
 			<< (int)task->GetStatus() << " instead of " << (int)status;
+		Log(denLogger::LogSeverity::warning, functionName, ss.str());
+		return nullptr;
+	}
+	
+	return task;
+}
+
+derlTaskSyncClient::Ref derlRemoteClientConnection::pGetSyncTask(const std::string &functionName,
+derlTaskSyncClient::Status status1, derlTaskSyncClient::Status status2){
+	const derlTaskSyncClient::Ref task(pClient->GetTaskSyncClient());
+	
+	if(!task){
+		Log(denLogger::LogSeverity::warning, functionName,
+			"Received response but no sync task is present");
+		return nullptr;
+	}
+	
+	if(task->GetStatus() != status1 && task->GetStatus() != status2){
+		std::stringstream ss;
+		ss << "Received response but sync task is not in the right state: "
+			<< (int)task->GetStatus() << " instead of " << (int)status1 << " or " << (int)status2;
 		Log(denLogger::LogSeverity::warning, functionName, ss.str());
 		return nullptr;
 	}

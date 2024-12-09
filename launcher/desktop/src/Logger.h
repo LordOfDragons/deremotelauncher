@@ -25,6 +25,8 @@
 #ifndef _LOGGER_H_
 #define _LOGGER_H_
 
+#include <fstream>
+
 #include <denetwork/denLogger.h>
 
 class WindowMain;
@@ -35,6 +37,7 @@ class WindowMain;
 class Logger : public denLogger{
 private:
 	WindowMain &pWindowMain;
+	std::fstream pLogFileStream;
 	
 	
 public:
@@ -42,6 +45,9 @@ public:
 	/*@{*/
 	/** \brief Create logger. */
 	Logger(WindowMain &windowMain);
+	
+	/** \brief Clean up logger. */
+	~Logger() noexcept override;
 	/*@}*/
 	
 	

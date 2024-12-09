@@ -34,9 +34,25 @@
 /////////////////
 
 Logger::Logger(WindowMain &windowMain) :
-pWindowMain(windowMain){
+pWindowMain(windowMain)
+{
+	try{
+		pLogFileStream.open(windowMain.GetLogFilePath().text(),
+			std::ios_base::in | std::ios_base::out | std::ios_base::trunc);
+		
+	}catch(...){
+		pLogFileStream.open(windowMain.GetLogFilePath().text(),
+			std::ios_base::in | std::ios_base::out);
+	}
 }
 
+Logger::~Logger(){
+	if(pLogFileStream.is_open()){
+		try{
+			pLogFileStream.close();
+		}catch(...){}
+	}
+}
 
 // Management
 ///////////////
@@ -75,5 +91,7 @@ void Logger::Log(LogSeverity severity, const std::string &message){
 	
 	ss << message;
 	
-	pWindowMain.AddLogs(ss.str());
+	const std::string output(ss.str());
+	pWindowMain.AddLogs(output);
+	pLogFileStream << output << std::endl;
 }

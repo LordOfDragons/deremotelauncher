@@ -107,6 +107,10 @@ private:
 	
 	std::mutex pMutex;
 	
+	bool pNotifyRunStatusChanged;
+	bool pNotifyConnectionEstablished;
+	bool pNotifyConnectionClosed;
+	
 	
 public:
 	/** \name Constructors and Destructors */
@@ -235,10 +239,16 @@ public:
 	
 	
 	
-	/** \brief Run status. */
+	/**
+	 * \brief Run status.
+	 * \note Locks derlGlobal::mutexNetwork.
+	 */
 	RunStatus GetRunStatus() const;
 	
-	/** \brief Set run status. */
+	/**
+	 * \brief Set run status.
+	 * \note Locks derlGlobal::mutexNetwork.
+	 */
 	void SetRunStatus(RunStatus status);
 	
 	/**
@@ -375,7 +385,10 @@ public:
 	/** \brief Connection established. */
 	virtual void OnConnectionEstablished();
 	
-	/** \brief Connection closed either by calling Disconnect() or by server. */
+	/**
+	 * \brief Connection closed either by calling Disconnect() or by server.
+	 * \note Called while derlGlobal::mutexNetwork is locked.
+	 */
 	virtual void OnConnectionClosed();
 	
 	/** \brief Begin synchronize. */
@@ -393,7 +406,6 @@ public:
 	/** \brief System property received from client. */
 	virtual void OnSystemProperty(const std::string &property, const std::string &value);
 	/*@}*/
-	
 	
 	
 private:

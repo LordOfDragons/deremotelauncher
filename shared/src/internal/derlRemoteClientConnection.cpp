@@ -61,7 +61,7 @@ void derlRemoteClientConnection::StateRun::RemoteValueChanged(denValue &value){
 	}
 	
 	if(&value == &*valueRunStatus){
-		client->OnRunStatusChanged();
+		client->pNotifyRunStatusChanged = true;
 	}
 }
 
@@ -110,7 +110,7 @@ void derlRemoteClientConnection::SetLogger(const denLogger::Ref &logger){
 
 void derlRemoteClientConnection::ConnectionClosed(){
 	if(pClient){
-		pClient->OnConnectionClosed();
+		pClient->pNotifyConnectionClosed = true;
 	}
 }
 
@@ -500,8 +500,7 @@ void derlRemoteClientConnection::pMessageReceivedConnect(denMessage &message){
 			pClient = client.get();
 			}
 			
-			pClient->OnConnectionEstablished();
-			pClient->pInternalStartTaskProcessors();
+			pClient->pNotifyConnectionEstablished = true;
 			return;
 		}
 	}

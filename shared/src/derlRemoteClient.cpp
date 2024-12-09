@@ -41,7 +41,10 @@ pServer(server),
 pConnection(connection),
 pSynchronizeStatus(SynchronizeStatus::pending),
 pStartTaskProcessorCount(1),
-pTaskProcessorsRunning(false){
+pTaskProcessorsRunning(false),
+pNotifyRunStatusChanged(false),
+pNotifyConnectionEstablished(false),
+pNotifyConnectionClosed(false){
 }
 
 derlRemoteClient::~derlRemoteClient(){
@@ -287,10 +290,26 @@ void derlRemoteClient::Update(float elapsed){
 	pConnection->Update(elapsed);
 	}
 	
+	if(pNotifyConnectionEstablished){
+		pNotifyConnectionEstablished = false;
+		OnConnectionEstablished();
+		pInternalStartTaskProcessors();
+	}
+	
+	if(pNotifyRunStatusChanged){
+		pNotifyRunStatusChanged = false;
+		OnRunStatusChanged();
+	}
+	
 	if(pTaskProcessorsRunning
 	&& pConnection->GetConnectionState() == denConnection::ConnectionState::disconnected){
 		StopTaskProcessors();
 		pTaskProcessorsRunning = false;
+	}
+	
+	if(pNotifyConnectionClosed){
+		pNotifyConnectionClosed = false;
+		OnConnectionClosed();
 	}
 }
 

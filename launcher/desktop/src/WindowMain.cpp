@@ -94,6 +94,7 @@ pMaxLogLineCount(100)
 	pLauncher = std::make_shared<Launcher>(*this, pLogger);
 	
 	getApp()->addTimeout(this, ID_TIMER_PULSE, PULSE_TIME);
+	UpdateUIStates();
 }
 
 WindowMain::~WindowMain(){
@@ -163,13 +164,18 @@ void WindowMain::SaveSettings() const{
 }
 
 void WindowMain::UpdateUIStates(){
-	if(pLauncher->GetState() != Launcher::State::ready){
+	switch(pLauncher->GetState()){
+	case Launcher::State::preparing:
+	case Launcher::State::prepareFailed:
 		pEditClientName->disable();
 		pEditDataPath->disable();
 		pEditHostAddress->disable();
 		pBtnConnect->disable();
 		pBtnDisconnect->disable();
 		return;
+		
+	default:
+		break;
 	}
 	
 	if(pClient->IsDisconnected()){
@@ -179,15 +185,15 @@ void WindowMain::UpdateUIStates(){
 		
 		pBtnConnect->enable();
 		pBtnDisconnect->disable();
-		
-	}else{
-		pEditClientName->disable();
-		pEditDataPath->disable();
-		pEditHostAddress->disable();
-		
-		pBtnConnect->disable();
-		pBtnDisconnect->enable();
+		return;
 	}
+	
+	pEditClientName->disable();
+	pEditDataPath->disable();
+	pEditHostAddress->disable();
+	
+	pBtnConnect->disable();
+	pBtnDisconnect->enable();
 }
 
 void WindowMain::RequestUpdateUIStates(){
@@ -389,27 +395,22 @@ void WindowMain::pCreatePanelConnect(FXComposite *container){
 	pLabHostAddress = new FXLabel(f2, "Host Address:", nullptr, LAYOUT_FILL_ROW | LAYOUT_FILL_Y);
 	pEditHostAddress = new FXTextField(f2, 20, &pTargetHostAddress, FXDataTarget::ID_VALUE,
 		TEXTFIELD_NORMAL | LAYOUT_FILL_ROW | LAYOUT_FILL_COLUMN | LAYOUT_FILL);
-	pEditHostAddress->disable();
 	
 	pLabClientName = new FXLabel(f2, "Client Name:", nullptr, LAYOUT_FILL_ROW | LAYOUT_FILL_Y);
 	pEditClientName = new FXTextField(f2, 20, &pTargetClientName, FXDataTarget::ID_VALUE,
 		TEXTFIELD_NORMAL | LAYOUT_FILL_ROW | LAYOUT_FILL_COLUMN | LAYOUT_FILL);
-	pEditClientName->disable();
 	
 	pLabDataPath = new FXLabel(f2, "Data Path:", nullptr, LAYOUT_FILL_ROW | LAYOUT_FILL_Y);
 	pEditDataPath = new FXTextField(f2, 20, &pTargetDataPath, FXDataTarget::ID_VALUE,
 		TEXTFIELD_NORMAL | LAYOUT_FILL_ROW | LAYOUT_FILL_COLUMN | LAYOUT_FILL);
-	pEditDataPath->disable();
 	
 	FXMatrix * const f3 = new FXMatrix(f, 1, MATRIX_BY_COLUMNS | LAYOUT_FILL_Y);
 	
 	pBtnConnect = new FXButton(f3, "Connect", nullptr, this, ID_CONNECT,
 		BUTTON_NORMAL | LAYOUT_FILL_COLUMN | LAYOUT_FILL_ROW | LAYOUT_FILL);
-	pBtnConnect->disable();
 	
 	pBtnDisconnect = new FXButton(f3, "Disconnect", nullptr, this, ID_DISCONNECT,
 		BUTTON_NORMAL | LAYOUT_FILL_COLUMN | LAYOUT_FILL_ROW | LAYOUT_FILL);
-	pBtnDisconnect->disable();
 }
 
 void WindowMain::pCreatePanelLogs(FXComposite *container){

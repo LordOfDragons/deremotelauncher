@@ -165,6 +165,12 @@ void Launcher::RunGame(const std::filesystem::path &dataPath, const derlRunParam
 	fileGameConfig->Resize((int)runParams.GetGameConfig().size());
 	runParams.GetGameConfig().copy(fileGameConfig->GetPointer(), runParams.GetGameConfig().size());
 	
+	{
+	std::stringstream ss;
+	ss << "RunGame: Game Config: " << runParams.GetGameConfig();
+	pLogger->Log(denLogger::LogSeverity::info, ss.str().c_str());
+	}
+
 	delGameXML gameXml(pLauncherLogger, "DERemoteLauncher");
 	gameXml.ReadFromFile(decMemoryFileReader::Ref::New(
 		new decMemoryFileReader(fileGameConfig)), game);
@@ -227,9 +233,10 @@ void Launcher::RunGame(const std::filesystem::path &dataPath, const derlRunParam
 			launchRunParams.SetWidth(profile->GetWidth());
 			launchRunParams.SetHeight(profile->GetHeight());
 			
-			if(game->GetWindowSize() != decPoint()){
-				launchRunParams.SetWidth(game->GetWindowSize().x);
-				launchRunParams.SetHeight(game->GetWindowSize().y);
+			const decPoint windowSize(game->GetDisplayScaledWindowSize());
+			if(windowSize != decPoint()){
+				launchRunParams.SetWidth(windowSize.x);
+				launchRunParams.SetHeight(windowSize.y);
 				launchRunParams.SetFullScreen(false);
 			}
 			

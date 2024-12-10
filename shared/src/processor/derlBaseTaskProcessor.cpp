@@ -100,13 +100,13 @@ void derlBaseTaskProcessor::ListDirectoryFiles(ListDirEntries &entries, const st
 	
 	std::filesystem::directory_iterator iter{pBaseDir / pathDir};
 	for (const std::filesystem::directory_entry &entry : iter){
-		const std::string filename(entry.path().filename().string());
+		const std::string filename(entry.path().filename().generic_string());
 		
 		if(entry.is_directory()){
-			entries.push_back({filename, (fspathDir / filename).string(), 0, true});
+			entries.push_back({filename, (fspathDir / filename).generic_string(), 0, true});
 			
 		}else if(entry.is_regular_file()){
-			entries.push_back({filename, (fspathDir / filename).string(), entry.file_size(), false});
+			entries.push_back({filename, (fspathDir / filename).generic_string(), entry.file_size(), false});
 		}
 	}
 }
@@ -289,11 +289,11 @@ uint64_t derlBaseTaskProcessor::GetFileSize(){
 		return size;
 		
 	}catch(const std::exception &e){
-		LogException("GetFileSize", e, pFilePath.string());
+		LogException("GetFileSize", e, pFilePath.generic_string());
 		throw;
 		
 	}catch(...){
-		Log(denLogger::LogSeverity::error, "GetFileSize", pFilePath.string());
+		Log(denLogger::LogSeverity::error, "GetFileSize", pFilePath.generic_string());
 		throw;
 	}
 }
@@ -313,11 +313,11 @@ void derlBaseTaskProcessor::ReadFile(void *data, uint64_t offset, uint64_t size)
 		}
 		
 	}catch(const std::exception &e){
-		LogException("ReadFile", e, pFilePath.string());
+		LogException("ReadFile", e, pFilePath.generic_string());
 		throw;
 		
 	}catch(...){
-		Log(denLogger::LogSeverity::error, "ReadFile", pFilePath.string());
+		Log(denLogger::LogSeverity::error, "ReadFile", pFilePath.generic_string());
 		throw;
 	}
 }

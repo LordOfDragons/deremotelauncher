@@ -417,11 +417,11 @@ void derlTaskProcessorLauncherClient::WriteFile(const void *data, uint64_t offse
 		}
 		
 	}catch(const std::exception &e){
-		LogException("WriteFile", e, pFilePath.string());
+		LogException("WriteFile", e, pFilePath.generic_string());
 		throw;
 		
 	}catch(...){
-		Log(denLogger::LogSeverity::error, "WriteFile", pFilePath.string());
+		Log(denLogger::LogSeverity::error, "WriteFile", pFilePath.generic_string());
 		throw;
 	}
 }

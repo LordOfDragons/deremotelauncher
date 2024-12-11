@@ -32,6 +32,7 @@
 #include <mutex>
 #include <memory>
 #include <stdexcept>
+#include <thread>
 #include <deremotelauncher/derlRunParameters.h>
 #include <denetwork/denLogger.h>
 #include "foxtoolkit.h"
@@ -72,6 +73,7 @@ private:
 	
 	std::shared_ptr<FXMessageChannel> pMessageChannel;
 	
+	std::thread::id pMainThreadId;
 	std::deque<std::string> pLogLines, pAddLogs;
 	std::stringstream pStreamLogs;
 	int pMaxLogLineCount;

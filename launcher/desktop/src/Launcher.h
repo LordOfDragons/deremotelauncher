@@ -78,7 +78,7 @@ private:
 	
 	
 	WindowMain &pWindowMain;
-	const denLogger::Ref pLogger;
+	const denLogger::Ref pTargetLogger;
 	deLogger::Ref pLauncherLogger;
 	
 	std::atomic<State> pState = State::preparing;

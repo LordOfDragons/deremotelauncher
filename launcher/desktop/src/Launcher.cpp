@@ -79,8 +79,8 @@ void Launcher::LauncherLogger::LogError(const char *source, const char *message)
 
 Launcher::Launcher(WindowMain &windowMain, const denLogger::Ref &logger) :
 pWindowMain(windowMain),
-pLogger(logger),
-pLauncherLogger(deLogger::Ref::New(new LauncherLogger(windowMain, *pLogger)))
+pTargetLogger(logger),
+pLauncherLogger(deLogger::Ref::New(new LauncherLogger(windowMain, *logger)))
 {
 	#ifdef OS_W32
 	delEngineInstanceThreaded::SetDefaultExecutableName("DERemoteLauncherRunner");
@@ -93,7 +93,7 @@ pLauncherLogger(deLogger::Ref::New(new LauncherLogger(windowMain, *pLogger)))
 	pThreadPrepareLauncher = std::make_shared<std::thread>([&](){
 		try{
 			Prepare();
-			pLogger->Log(denLogger::LogSeverity::info, "Launcher ready");
+			logger->Log(denLogger::LogSeverity::info, "Launcher ready");
 			pState = State::ready;
 			
 		}catch(const deException &e){
@@ -168,7 +168,7 @@ void Launcher::RunGame(const std::filesystem::path &dataPath, const derlRunParam
 	{
 	std::stringstream ss;
 	ss << "RunGame: Game Config: " << runParams.GetGameConfig();
-	pLogger->Log(denLogger::LogSeverity::info, ss.str().c_str());
+	pTargetLogger->Log(denLogger::LogSeverity::info, ss.str().c_str());
 	}
 
 	delGameXML gameXml(pLauncherLogger, "DERemoteLauncher");

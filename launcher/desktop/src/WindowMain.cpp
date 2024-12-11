@@ -84,6 +84,7 @@ pTargetHostAddress(pHostAddress),
 pTargetClientName(pClientName),
 pTargetDataPath(pDataPath),
 pMessageChannel(std::make_shared<FXMessageChannel>(&app)),
+pMainThreadId(std::this_thread::get_id()),
 pMaxLogLineCount(100)
 {
 	pCreateContent();
@@ -101,6 +102,9 @@ pMaxLogLineCount(100)
 
 WindowMain::~WindowMain(){
 	getApp()->removeTimeout(this, ID_TIMER_PULSE);
+
+	// prevent deletion order problem with FOX on windows
+	pEditLogs = nullptr;
 }
 
 // Management
@@ -217,12 +221,23 @@ void WindowMain::RequestUpdateUIStates(){
 }
 
 void WindowMain::AddLogs(const std::string &logs){
+	if(!pEditLogs){
+		return;
+	}
+
 	{
 	const std::lock_guard guard(pMutex);
 	pAddLogs.push_back(logs);
 	}
 	
-	pMessageChannel->message(this, FXSEL(SEL_COMMAND, ID_MSG_LOGS_ADDED));
+	if(std::this_thread::get_id() == pMainThreadId){
+		// using FXMessageChannel::message() from main thread can dead lock.
+		// call function directly
+		UpdateLogs();
+
+	}else{
+		pMessageChannel->message(this, FXSEL(SEL_COMMAND, ID_MSG_LOGS_ADDED));
+	}
 }
 
 void WindowMain::StartApp(const derlRunParameters &params){

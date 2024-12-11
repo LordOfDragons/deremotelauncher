@@ -36,7 +36,15 @@
 Logger::Logger(WindowMain &windowMain) :
 pWindowMain(windowMain)
 {
-	pLogFileStream.open(windowMain.GetLogFilePath().text(), std::ios_base::in | std::ios_base::out);
+	const FXString path(windowMain.GetLogFilePath());
+	if(std::filesystem::exists(path.text())){
+		// if file exists open and truncate
+		pLogFileStream.open(path.text(), std::ios::in | std::ios::out);
+		
+	}else{
+		// if file does not exist create it
+		pLogFileStream.open(path.text());
+	}
 }
 
 Logger::~Logger(){

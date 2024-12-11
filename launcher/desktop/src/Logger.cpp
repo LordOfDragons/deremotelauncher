@@ -25,6 +25,7 @@
 #include <sstream>
 #include <chrono>
 #include <iomanip>
+#include <cstring>
 
 #include "Logger.h"
 #include "WindowMain.h"
@@ -36,14 +37,22 @@
 Logger::Logger(WindowMain &windowMain) :
 pWindowMain(windowMain)
 {
-	const FXString path(windowMain.GetLogFilePath());
-	if(std::filesystem::exists(path.text())){
-		// if file exists open and truncate
-		pLogFileStream.open(path.text(), std::ios::in | std::ios::out);
-		
-	}else{
-		// if file does not exist create it
-		pLogFileStream.open(path.text());
+	const std::filesystem::path path(windowMain.GetLogFilePath().text());
+	
+	if(path.has_parent_path()){
+		std::filesystem::create_directories(path.parent_path());
+	}
+	
+	pLogFileStream.open(path, pLogFileStream.out);
+	if(pLogFileStream.fail()){
+#ifdef OS_W32
+		std::string buffer;
+		buffer.assign(256, 0);
+		strerror_s((char*)buffer.c_str(), sizeof(buffer), errno);
+		DETHROW_INFO(deeWriteFile, buffer.c_str());
+#else
+		DETHROW_INFO(deeWriteFile, std::strerror(errno));
+#endif
 	}
 }
 

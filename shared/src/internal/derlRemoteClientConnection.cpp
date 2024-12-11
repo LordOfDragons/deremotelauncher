@@ -392,7 +392,9 @@ void derlRemoteClientConnection::SendRequestDeleteFile(const derlTaskFileDelete 
 void derlRemoteClientConnection::SendStartApplication(const derlRunParameters &parameters){
 	{
 	std::stringstream log;
-	log << "Start application: ";
+	log << "Start application: profile='" << parameters.GetProfileName()
+		<< "' args='" << parameters.GetArguments()
+		<< "' config='" << parameters.GetGameConfig() << "'";
 	Log(denLogger::LogSeverity::info, "pSendStartApplication", log.str());
 	}
 	

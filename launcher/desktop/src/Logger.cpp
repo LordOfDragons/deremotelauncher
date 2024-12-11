@@ -36,14 +36,7 @@
 Logger::Logger(WindowMain &windowMain) :
 pWindowMain(windowMain)
 {
-	try{
-		pLogFileStream.open(windowMain.GetLogFilePath().text(),
-			std::ios_base::in | std::ios_base::out | std::ios_base::trunc);
-		
-	}catch(...){
-		pLogFileStream.open(windowMain.GetLogFilePath().text(),
-			std::ios_base::in | std::ios_base::out);
-	}
+	pLogFileStream.open(windowMain.GetLogFilePath().text(), std::ios_base::in | std::ios_base::out);
 }
 
 Logger::~Logger(){

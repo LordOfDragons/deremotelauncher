@@ -34,20 +34,18 @@ dragengineVersion = '1.24'
 srcdir = 'dragengine-{}-linux64'.format(dragengineVersion)
 srcdirDev = 'dragengine-dev-{}-linux64'.format(dragengineVersion)
 
-# libLinkVersion = 9999 if dragengineVersion == 'nightly' else dragengineVersion.split('.')[0]
+libLinkVersion = 9999 if dragengineVersion == 'nightly' else dragengineVersion.split('.')[0]
 libLinkNameDragengine = 'dragengine'
 libLinkNameDELauncher = 'delauncher'
 
 # download
 libFileNameDragengine = envLibrary.subst(
-	#'/usr/lib/${{SHLIBPREFIX}}{}${{SHLIBSUFFIX}}.{}'.format(
-	#	libLinkNameDragengine, libLinkVersion))
-	'/usr/lib/${{SHLIBPREFIX}}{}${{SHLIBSUFFIX}}'.format(libLinkNameDragengine))
+	'/usr/lib/${{SHLIBPREFIX}}{}${{SHLIBSUFFIX}}.{}'.format(
+		libLinkNameDragengine, libLinkVersion))
 
 libFileNameDELauncher = envLibrary.subst(
-	#'/usr/lib/${{SHLIBPREFIX}}{}${{SHLIBSUFFIX}}.{}'.format(
-	#	libLinkNameDELauncher, libLinkVersion))
-	'/usr/lib/${{SHLIBPREFIX}}{}${{SHLIBSUFFIX}}'.format(libLinkNameDELauncher))
+	'/usr/lib/${{SHLIBPREFIX}}{}${{SHLIBSUFFIX}}.{}'.format(
+		libLinkNameDELauncher, libLinkVersion))
 
 baseUrl = 'https://github.com/LordOfDragons/dragengine/releases/download'
 urlVersion = 'nightly' if dragengineVersion == 'nightly' else 'v{}'.format(dragengineVersion)

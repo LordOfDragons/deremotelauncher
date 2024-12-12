@@ -9,6 +9,7 @@ Build-Depends: debhelper-compat (= 12),
                libtool,
                libx11-dev,
                libxft-dev,
+               libxext-dev,
                libgl-dev,
                libdelauncher-dev,
                libdragengine-dev

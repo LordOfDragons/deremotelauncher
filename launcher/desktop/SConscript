@@ -104,6 +104,9 @@ globalEnv.targetManager.targets['denetwork'].applyBuild(envProgram)
 globalEnv.targetManager.targets['delauncher'].applyBuild(envProgram)
 globalEnv.targetManager.targets['dragengine'].applyBuild(envProgram)
 
+targetFox = globalEnv.targetManager.targets['fox']
+targetFox.applyBuild(envProgram)
+
 # build
 from glob_files import globFiles
 
@@ -112,7 +115,7 @@ globFiles(envProgram, 'src', '*.cpp', sources)
 
 program = envProgram.Program('deremotelauncher', sources)
 
-for l in globalEnv['RUNTIME_LIB_FOX']:
+for l in targetFox.runtimeLibs:
 	envProgram.Depends(program, envProgram.InstallAs(l.name, l))
 
 targetProgram.build.extend(program)
@@ -120,14 +123,14 @@ targetProgram.aliasBuild(envProgram, 'deremotelauncherdesktop_build')
 
 targetProgram.install.extend(envProgram.Install(pathBin, program))
 
-for l in globalEnv['RUNTIME_LIB_FOX']:
+for l in targetFox.runtimeLibs:
 	targetProgram.install.extend(envProgram.InstallAs(os.path.join(pathBinLib, l.name), l))
 
 targetProgram.aliasInstall(envProgram, 'deremotelauncherdesktop')
 
 targetProgram.archiveProgram(envProgram, pathBin, program)
 
-for l in globalEnv['RUNTIME_LIB_FOX']:
+for l in targetFox.runtimeLibs:
 	targetProgram.archiveFiles[os.path.normpath(os.path.join(pathBinLib, l.name))] = l
 
 # archive

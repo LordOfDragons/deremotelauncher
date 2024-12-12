@@ -66,6 +66,7 @@ def generate(env):
 				self.build = [target]
 			self.install = []
 			self.archiveFiles = {}
+			self.runtimeLibs = []
 			self.params = {'STATIC_LIBS': []}
 			self.addParameters(**args)
 		

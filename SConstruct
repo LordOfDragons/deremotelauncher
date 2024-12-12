@@ -61,6 +61,35 @@ params.Add(StringVariable('url_extern_artifacts',
 	'https://dragondreams.s3.eu-central-1.amazonaws.com/dragengine/extern'))
 params.Add(TernaryVariable('with_system_fox', 'Use System FOX Toolkit'))
 
+if globalEnv['TARGET_PLATFORM'] == 'macos':
+	params.Add(PathVariable('prefix', 'System path', '/usr', PathVariable.PathAccept))
+	params.Add(PathVariable('libdir', 'System libraries', '${prefix}/lib', PathVariable.PathAccept))
+	params.Add(PathVariable('includedir', 'System includes', '${prefix}/include', PathVariable.PathAccept))
+	params.Add(PathVariable('datadir', 'System shares', '${prefix}/share', PathVariable.PathAccept))
+	params.Add(PathVariable('sysconfdir', 'System configuration', '/etc', PathVariable.PathAccept))
+	params.Add(PathVariable('execdir', 'System binaries', '/Applications', PathVariable.PathAccept))
+	params.Add(PathVariable('sysvardir', 'System var', '${prefix}/var', PathVariable.PathAccept))
+	params.Add(PathVariable('cachedir', 'System cache', '${sysvardir}/lib', PathVariable.PathAccept))
+elif globalEnv['TARGET_PLATFORM'] == 'beos':
+	params.Add(PathVariable('prefix', 'System path', '/boot/system', PathVariable.PathAccept))
+	params.Add(PathVariable('libdir', 'System libraries', '${prefix}/lib', PathVariable.PathAccept))
+	params.Add(PathVariable('includedir', 'System includes', '${prefix}/develop/include', PathVariable.PathAccept))
+	params.Add(PathVariable('datadir', 'System shares', '${prefix}/data', PathVariable.PathAccept))
+	params.Add(PathVariable('sysconfdir', 'System configuration', '${prefix}/settings', PathVariable.PathAccept))
+	params.Add(PathVariable('execdir', 'System binaries', '${prefix}/bin', PathVariable.PathAccept))
+	params.Add(PathVariable('sysvardir', 'System var', '${prefix}/settings', PathVariable.PathAccept))
+	params.Add(PathVariable('cachedir', 'System cache', '${prefix}/cache', PathVariable.PathAccept))
+	params.Add(PathVariable('docdir', 'System documentation', '${prefix}/documentation', PathVariable.PathAccept))
+else:
+	params.Add(PathVariable('prefix', 'System path', '/usr', PathVariable.PathAccept))
+	params.Add(PathVariable('libdir', 'System libraries', '${prefix}/lib', PathVariable.PathAccept))
+	params.Add(PathVariable('includedir', 'System includes', '${prefix}/include', PathVariable.PathAccept))
+	params.Add(PathVariable('datadir', 'System shares', '${prefix}/share', PathVariable.PathAccept))
+	params.Add(PathVariable('sysconfdir', 'System configuration', '/etc', PathVariable.PathAccept))
+	params.Add(PathVariable('execdir', 'System binaries', '${prefix}/bin', PathVariable.PathAccept))
+	params.Add(PathVariable('sysvardir', 'System var', '/var', PathVariable.PathAccept))
+	params.Add(PathVariable('cachedir', 'System cache', '${sysvardir}/lib', PathVariable.PathAccept))
+
 params.Update(globalEnv)
 
 # build

@@ -92,8 +92,8 @@ platformName = 'unix'
 if envProgram['TARGET_PLATFORM'] == 'beos':
 	platformName = 'beos'
 
-baseDir = 'deremotelauncherdesktop-{}-x64-{}'.format(platformName, versionString)
-baseDirBin = os.path.join(baseDir, 'bin')
+pathBin = envProgram.subst('${execdir}')
+pathBinLib = envProgram.subst('${libdir}')
 
 targetProgram = globalEnv.targetManager.TargetProgram('DERemoteLauncher Desktop')
 globalEnv.targetManager.add('deremotelauncherdesktop', targetProgram)
@@ -118,25 +118,23 @@ for l in globalEnv['RUNTIME_LIB_FOX']:
 targetProgram.build.extend(program)
 targetProgram.aliasBuild(envProgram, 'deremotelauncherdesktop_build')
 
-targetProgram.install.extend(envProgram.Install(baseDirBin, program))
+targetProgram.install.extend(envProgram.Install(pathBin, program))
 
 for l in globalEnv['RUNTIME_LIB_FOX']:
-	targetProgram.install.extend(envProgram.InstallAs(os.path.join(baseDirBin, l.name), l))
+	targetProgram.install.extend(envProgram.InstallAs(os.path.join(pathBinLib, l.name), l))
 
 targetProgram.aliasInstall(envProgram, 'deremotelauncherdesktop')
 
-targetProgram.archiveProgram(envProgram, baseDirBin, program)
+targetProgram.archiveProgram(envProgram, pathBin, program)
 
 for l in globalEnv['RUNTIME_LIB_FOX']:
-	targetProgram.archiveFiles[os.path.normpath(os.path.join(baseDirBin, l.name))] = l
+	targetProgram.archiveFiles[os.path.normpath(os.path.join(pathBinLib, l.name))] = l
 
 # archive
 targetArchive = globalEnv.targetManager.TargetArchive('DERemoteLauncher Desktop Archive')
 globalEnv.targetManager.add('deremotelauncherdesktop_archive', targetArchive)
 
 archiveFiles = {}
-archiveFiles[os.path.join(baseDir, 'LICENSE')] = envProgram.File('#LICENSE')
-archiveFiles[os.path.join(baseDir, 'README.md')] = envProgram.File('#README.md')
 
 targetArchive.archiveFiles(envProgram,
 	'deremotelauncherdesktop-{}-x64-{}'.format(platformName, versionString),

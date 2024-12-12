@@ -46,7 +46,6 @@ libFileNameDragengine = envLibrary.subst(
 libFileNameDELauncher = envLibrary.subst(
 	'/usr/lib/${{SHLIBPREFIX}}{}${{SHLIBSUFFIX}}.{}'.format(
 		libLinkNameDELauncher, libLinkVersion))
-print(libFileNameDragengine, libFileNameDELauncher)
 
 baseUrl = 'https://github.com/LordOfDragons/dragengine/releases/download'
 urlVersion = 'nightly' if dragengineVersion == 'nightly' else 'v{}'.format(dragengineVersion)

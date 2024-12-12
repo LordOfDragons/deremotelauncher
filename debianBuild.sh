@@ -49,8 +49,7 @@ fetchExternals
 writeIncludeBinaries
 cleanScons
 
-rm -rf /sources/deremotelauncher_*.orig.tar.gz
-rm -rf /sources/deremotelauncher_*-ppa*
+rm -rf /sources/deremotelauncher_*
 
 if [ $buildPackage = true ]; then
   gbp buildpackage --git-debian-branch=debian --git-upstream-tree=debian \

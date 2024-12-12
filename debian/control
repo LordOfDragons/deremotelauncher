@@ -16,7 +16,7 @@ Homepage: https://dragondreams.ch
 Rules-Requires-Root: no
 
 Package: deremotelauncher
-Depends: libdelauncher1, libdragengine1, libgl1, libx11-6, ${misc:Depends}
+Depends: ${shlibs:Depends}, ${misc:Depends}
 Architecture: amd64
 Description: Drag[en]gine Remote Launcher
  Allows launching Drag[en]gine based games on another platform.

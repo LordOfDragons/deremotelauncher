@@ -70,6 +70,7 @@ if globalEnv['TARGET_PLATFORM'] == 'macos':
 	params.Add(PathVariable('execdir', 'System binaries', '/Applications', PathVariable.PathAccept))
 	params.Add(PathVariable('sysvardir', 'System var', '${prefix}/var', PathVariable.PathAccept))
 	params.Add(PathVariable('cachedir', 'System cache', '${sysvardir}/lib', PathVariable.PathAccept))
+	params.Add(PathVariable('optdir', 'Optional software', '/opt', PathVariable.PathAccept))
 elif globalEnv['TARGET_PLATFORM'] == 'beos':
 	params.Add(PathVariable('prefix', 'System path', '/boot/system', PathVariable.PathAccept))
 	params.Add(PathVariable('libdir', 'System libraries', '${prefix}/lib', PathVariable.PathAccept))
@@ -80,6 +81,7 @@ elif globalEnv['TARGET_PLATFORM'] == 'beos':
 	params.Add(PathVariable('sysvardir', 'System var', '${prefix}/settings', PathVariable.PathAccept))
 	params.Add(PathVariable('cachedir', 'System cache', '${prefix}/cache', PathVariable.PathAccept))
 	params.Add(PathVariable('docdir', 'System documentation', '${prefix}/documentation', PathVariable.PathAccept))
+	params.Add(PathVariable('optdir', 'Optional software', '/opt', PathVariable.PathAccept))
 else:
 	params.Add(PathVariable('prefix', 'System path', '/usr', PathVariable.PathAccept))
 	params.Add(PathVariable('libdir', 'System libraries', '${prefix}/lib', PathVariable.PathAccept))
@@ -89,6 +91,7 @@ else:
 	params.Add(PathVariable('execdir', 'System binaries', '${prefix}/bin', PathVariable.PathAccept))
 	params.Add(PathVariable('sysvardir', 'System var', '/var', PathVariable.PathAccept))
 	params.Add(PathVariable('cachedir', 'System cache', '${sysvardir}/lib', PathVariable.PathAccept))
+	params.Add(PathVariable('optdir', 'Optional software', '/opt', PathVariable.PathAccept))
 
 params.Update(globalEnv)
 

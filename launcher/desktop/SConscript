@@ -92,8 +92,11 @@ platformName = 'unix'
 if envProgram['TARGET_PLATFORM'] == 'beos':
 	platformName = 'beos'
 
-pathBin = envProgram.subst('${execdir}')
-pathBinLib = envProgram.subst('${libdir}')
+#pathBin = envProgram.subst('${execdir}')
+#pathBinLib = envProgram.subst('${libdir}')
+pathBin = envProgram.subst('${optdir}/deremotelauncher')
+pathBinLib = pathBin
+pathArchive = 'deremotelauncher-{}-x64-{}'.format(platformName, versionString)
 
 targetProgram = globalEnv.targetManager.TargetProgram('DERemoteLauncher Desktop')
 globalEnv.targetManager.add('deremotelauncherdesktop', targetProgram)
@@ -128,10 +131,10 @@ for l in targetFox.runtimeLibs:
 
 targetProgram.aliasInstall(envProgram, 'deremotelauncherdesktop')
 
-targetProgram.archiveProgram(envProgram, pathBin, program)
+targetProgram.archiveProgram(envProgram, pathArchive, program)
 
 for l in targetFox.runtimeLibs:
-	targetProgram.archiveFiles[os.path.normpath(os.path.join(pathBinLib, l.name))] = l
+	targetProgram.archiveFiles[os.path.normpath(os.path.join(pathArchive, l.name))] = l
 
 # archive
 targetArchive = globalEnv.targetManager.TargetArchive('DERemoteLauncher Desktop Archive')

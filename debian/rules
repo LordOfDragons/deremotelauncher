@@ -5,7 +5,7 @@ DEB_VERSION := $(shell dpkg-parsechangelog | egrep '^Version:' | cut -f 2 -d ' '
 DESTDIR := $(shell realpath debian/deremotelauncher)
 SANDBOX := --install-sandbox="$(DESTDIR)"
 
-SCONS_OPTIONS := --logstdout=off version="$(DEB_VERSION)"
+SCONS_OPTIONS := version="$(DEB_VERSION)"
 
 %:
 	dh $@

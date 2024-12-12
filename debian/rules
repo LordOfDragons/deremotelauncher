@@ -16,6 +16,8 @@ override_dh_auto_clean:
 	rm -f config.log
 	rm -rf .sconf_temp
 	rm -f .sconsign.dblite
+	rm -f lastConfig.py
+	rm -f shared/src/config.h
 
 override_dh_auto_configure:
 	

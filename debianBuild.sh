@@ -39,8 +39,6 @@ writeIncludeBinaries() {
 
 cleanScons() {
   find -type d -name "__pycache__" | xargs -- rm -rf
-  rm -f lastConfig.py
-  rm -f shared/src/config.h
   rm -f config.log
   rm -f build.log
   rm -rf .sconf_temp

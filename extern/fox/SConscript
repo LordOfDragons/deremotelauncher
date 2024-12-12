@@ -20,6 +20,8 @@ libFileName = envLibrary.subst('lib/${{SHLIBPREFIX}}{}${{SHLIBSUFFIX}}.{}'.forma
 staticFileName = envLibrary.subst('lib/${{LIBPREFIX}}{}${{LIBSUFFIX}}'.format(libLinkName))
 
 nodeArtifacts = envLibrary.DownloadArtifactHelper('{}.tar.bz2'.format(srcdir), 'fox', 'lib_fox_fetch')
+globalEnv.targetManager.add('lib_fox_fetch',
+	globalEnv.targetManager.Target('Fetch FOX-Toolkit', nodeArtifacts))
 
 if 'libfox_includes' in globalEnv and globalEnv['libfox_includes']:
 	globalEnv.Append(CPPPATH = [globalEnv['libfox_includes']])

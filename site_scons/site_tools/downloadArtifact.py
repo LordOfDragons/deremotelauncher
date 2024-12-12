@@ -32,7 +32,10 @@ def generate(env):
 				buildNodes.append(env.DownloadArtifact(node, fakeSource,
 					url="{}/{}".format(urlPath, x), baseUrl=baseUrl))
 		
-		env.Alias(alias, buildNodes)
+		if alias in env:
+			env[alias].extend(buildNodes)
+		else:
+			env.Alias(alias, buildNodes)
 		return nodes
 
 	env.Append(BUILDERS={'DownloadArtifact': Builder(action=Action(

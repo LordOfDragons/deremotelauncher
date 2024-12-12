@@ -19,6 +19,8 @@ baseUrl = 'https://github.com/LordOfDragons/denetwork/releases/download'
 
 nodeArtifacts = envLibrary.DownloadArtifactHelper(
 	'{}.tar.bz2'.format(srcdir), 'nightly', 'lib_denetwork_fetch', baseUrl=baseUrl)
+globalEnv.targetManager.add('lib_denetwork_fetch',
+	globalEnv.targetManager.Target('Fetch DENetwork Library', nodeArtifacts))
 
 cpppath = []
 if 'denetwork_includes' in envLibrary and envLibrary['denetwork_includes']:
@@ -31,10 +33,10 @@ if 'denetwork_libraries' in envLibrary and envLibrary['denetwork_libraries']:
 	envLibrary.Append(LIBPATH = linkpath)
 
 conf = envLibrary.Configure()
-hasLocalLib = conf.CheckLibWithHeader(libLinkName, 'denetwork/denServer.h', 'c++')
+hasSystemLib = conf.CheckLibWithHeader(libLinkName, 'denetwork/denServer.h', 'c++')
 conf.Finish()
 
-if hasLocalLib:
+if hasSystemLib:
 	targetLibrary = globalEnv.targetManager.TargetLibrary('DENetwork Library')
 	globalEnv.targetManager.add('denetwork', targetLibrary)
 	targetLibrary.addParametersBuildCPP(envLibrary, [libLinkName], cpppath, linkpath, linkStatic=True)

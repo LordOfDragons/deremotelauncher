@@ -347,8 +347,8 @@ def generate(env):
 			self.targets = {}
 			self.env = env
 		
-		def add(self, description, target):
-			self.targets[description] = target
+		def add(self, name, target):
+			self.targets[name] = target
 		
 		def createReport(self):
 			maxLenName = 1

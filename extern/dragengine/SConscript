@@ -40,11 +40,11 @@ libLinkNameDELauncher = 'delauncher'
 
 # download
 libFileNameDragengine = envLibrary.subst(
-	'/usr/lib/${{SHLIBPREFIX}}{}${{SHLIBSUFFIX}}.{}'.format(
+	'usr/lib/${{SHLIBPREFIX}}{}${{SHLIBSUFFIX}}.{}'.format(
 		libLinkNameDragengine, libLinkVersion))
 
 libFileNameDELauncher = envLibrary.subst(
-	'/usr/lib/${{SHLIBPREFIX}}{}${{SHLIBSUFFIX}}.{}'.format(
+	'usr/lib/${{SHLIBPREFIX}}{}${{SHLIBSUFFIX}}.{}'.format(
 		libLinkNameDELauncher, libLinkVersion))
 
 baseUrl = 'https://github.com/LordOfDragons/dragengine/releases/download'
@@ -82,7 +82,7 @@ if hasSystemLibs:
 def dragengineUnpack(target, source, env):
 	untarArchive(target[0].get_dir().up().up().abspath, source[0].abspath)
 
-targets = ['sdk/include/dummy']
+targets = ['dragengine-sdk/include/dummy']
 with open(envLibrary.File('header_file_list/dragengine').srcnode().abspath, 'r') as f:
 	targets.extend([x[:-1] for x in f.readlines()])
 with open(envLibrary.File('header_file_list/delauncher').srcnode().abspath, 'r') as f:
@@ -95,14 +95,14 @@ targets = [libFileNameDragengine, libFileNameDELauncher]
 libraries = envLibrary.Command(targets, nodeArtifacts,
 	envLibrary.Action(dragengineUnpack, 'Unpack Dragengine Libraries'))
 
-envLibrary.Clean(libraries, ['sdk', 'usr', srcdir, srcdirDev])
+envLibrary.Clean(libraries, ['dragengine-sdk', 'usr', srcdir, srcdirDev])
 
 targetLibrary = globalEnv.targetManager.TargetLibrary('Dragengine Library')
 globalEnv.targetManager.add('dragengine', targetLibrary)
 targetLibrary.build.append(libraries[0])
-targetLibrary.addParametersBuildCPP(envLibrary, [libraries[0]], 'sdk/include', 'usr/lib')
+targetLibrary.addParametersBuildCPP(envLibrary, [libraries[0]], 'dragengine-sdk/include', 'usr/lib')
 
 targetLibrary = globalEnv.targetManager.TargetLibrary('DELauncher Library')
 globalEnv.targetManager.add('delauncher', targetLibrary)
 targetLibrary.build.append(libraries[1])
-targetLibrary.addParametersBuildCPP(envLibrary, [libraries[1]], 'sdk/include', 'usr/lib')
+targetLibrary.addParametersBuildCPP(envLibrary, [libraries[1]], 'dragengine-sdk/include', 'usr/lib')

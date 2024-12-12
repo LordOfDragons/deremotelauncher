@@ -210,7 +210,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableUAC>false</EnableUAC>
       <IgnoreSpecificDefaultLibraries>LIBCMT;%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
-      <AdditionalDependencies>$(SolutionDir)extern\dragengine\dragengine-sdk\SDK\lib\delauncher.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>$(SolutionDir)extern\dragengine\dragengine-sdk\DragengineSDK\lib\delauncher.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
       <Command>powershell.exe -NoProfile -ExecutionPolicy Bypass -NonInteractive -File "$(ProjectDir)post_build.ps1" -OutputDir "$(SolutionDir)$(Platform)\$(Configuration)" -SolutionDir $(SolutionDir)</Command>
@@ -238,7 +238,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableUAC>false</EnableUAC>
       <IgnoreSpecificDefaultLibraries>LIBCMT;%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
-      <AdditionalDependencies>$(SolutionDir)extern\dragengine\dragengine-sdk\SDK\lib\delauncher.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>$(SolutionDir)extern\dragengine\dragengine-sdk\DragengineSDK\lib\delauncher.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
       <Command>powershell.exe -NoProfile -ExecutionPolicy Bypass -NonInteractive -File "$(ProjectDir)post_build.ps1" -OutputDir "$(SolutionDir)$(Platform)\$(Configuration)" -SolutionDir $(SolutionDir)</Command>
@@ -266,7 +266,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableUAC>false</EnableUAC>
       <IgnoreSpecificDefaultLibraries>LIBCMT;%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
-      <AdditionalDependencies>$(SolutionDir)extern\dragengine\dragengine-sdk\SDK\lib\delauncher.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>$(SolutionDir)extern\dragengine\dragengine-sdk\DragengineSDK\lib\delauncher.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
       <Command>powershell.exe -NoProfile -ExecutionPolicy Bypass -NonInteractive -File "$(ProjectDir)post_build.ps1" -OutputDir "$(SolutionDir)$(Platform)\$(Configuration)" -SolutionDir $(SolutionDir)</Command>

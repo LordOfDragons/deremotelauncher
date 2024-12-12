@@ -135,6 +135,8 @@ library = envLibrary.StaticLibrary(target='deremotelauncher', source=objects)
 targetLibrary.build.extend(library)
 targetLibrary.aliasBuild(envLibrary, 'deremotelaunchershared_build')
 
+pathArchive = 'deremotelauncher-{}-x64-{}-sdk'.format(platformName, versionString)
+
 targetLibrary.installCutDirs(envLibrary,
 	'deremotelauncher-{}/include/deremotelauncher'.format(versionString),
 	headers, 1)
@@ -145,12 +147,9 @@ targetLibrary.install.extend(envLibrary.Install(
 targetLibrary.aliasInstall(envLibrary, 'deremotelaunchershared')
 
 targetLibrary.archiveCutDirs(envLibrary,
-	'deremotelauncher-{}-x64-{}/include/deremotelauncher'.format(
-		platformName, versionString), headers, 1)
+	'{}/include/deremotelauncher'.format(pathArchive), headers, 1)
 
-targetLibrary.archiveLibrary(envLibrary,
-	'deremotelauncher-{}-x64-{}/lib'.format(
-		platformName, versionString), library)
+targetLibrary.archiveLibrary(envLibrary, '{}/lib'.format(pathArchive), library)
 
 targetLibrary.addParametersBuildCPP(envLibrary, library,
 	'deremotelauncher-{}/include'.format(versionString), linkStatic=True)
@@ -160,8 +159,8 @@ targetArchive = globalEnv.targetManager.TargetArchive('DERemoteLauncher Shared L
 globalEnv.targetManager.add('deremotelaunchershared_archive', targetArchive)
 
 archiveFiles = {}
-archiveFiles['deremotelauncher-{}-x64-{}/LICENSE'.format(platformName,  versionString)] = envLibrary.File('#LICENSE')
-archiveFiles['deremotelauncher-{}-x64-{}/README.md'.format(platformName, versionString)] = envLibrary.File('#README.md')
+archiveFiles['{}/LICENSE'.format(pathArchive)] = envLibrary.File('#LICENSE')
+archiveFiles['{}/README.md'.format(pathArchive)] = envLibrary.File('#README.md')
 
 targetArchive.archiveFiles(envLibrary, 'deremotelauncher-{}-x64-{}'.format(platformName, versionString),
 	{**targetLibrary.archiveFiles, **archiveFiles},

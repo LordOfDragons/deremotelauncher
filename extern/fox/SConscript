@@ -9,6 +9,16 @@ Import('globalEnv')
 
 envLibrary = globalEnv.Clone()
 
+cpppath = []
+if 'libfox_includes' in envLibrary and envLibrary['libfox_includes']:
+	cpppath = [envLibrary['libfox_includes']]
+	envLibrary.Append(CPPPATH = cpppath)
+
+linkpath = []
+if 'libfox_libraries' in envLibrary and envLibrary['libfox_libraries']:
+	linkpath = [envLibrary['libfox_libraries']]
+	envLibrary.Append(LIBPATH = linkpath)
+
 foxSrcVersion = '1.7.67'
 srcdir = 'fox-{}'.format(foxSrcVersion)
 
@@ -16,6 +26,7 @@ libFOXVersion = '1.7'
 libLinkVersion = '0'
 libLinkName = 'FOX-{}'.format(libFOXVersion)
 
+# download
 libFileName = envLibrary.subst('lib/${{SHLIBPREFIX}}{}${{SHLIBSUFFIX}}.{}'.format(libLinkName, libLinkVersion))
 staticFileName = envLibrary.subst('lib/${{LIBPREFIX}}{}${{LIBSUFFIX}}'.format(libLinkName))
 
@@ -23,26 +34,22 @@ nodeArtifacts = envLibrary.DownloadArtifactHelper('{}.tar.bz2'.format(srcdir), '
 globalEnv.targetManager.add('lib_fox_fetch',
 	globalEnv.targetManager.Target('Fetch FOX-Toolkit', nodeArtifacts))
 
-if 'libfox_includes' in globalEnv and globalEnv['libfox_includes']:
-	globalEnv.Append(CPPPATH = [globalEnv['libfox_includes']])
-
-if 'libfox_libraries' in globalEnv and globalEnv['libfox_libraries']:
-	globalEnv.Append(LIBPATH = [globalEnv['libfox_libraries']])
-
-hasSystemFOX = False
+# check for system lib
+hasSystemLib = False
 conf = envLibrary.Configure()
 if envLibrary['with_system_fox'] != TernaryVariableNo:
-	hasSystemFOX = conf.CheckLibWithHeader(libLinkName,
+	hasSystemLib = conf.CheckLibWithHeader(libLinkName,
 		'fox-{}/fx.h'.format(libFOXVersion), 'c++', 'fxgetticks();')
 conf.Finish()
 
-if not hasSystemFOX and envLibrary['with_system_fox'] == TernaryVariableYes:
+if not hasSystemLib and envLibrary['with_system_fox'] == TernaryVariableYes:
 	Exit('Requested to use system FOX-Toolkit but no usable FOX-Toolkit found.')
 
-globalEnv.Replace(RUNTIME_LIB_FOX=[])
+if hasSystemLib:
+	targetLibrary = globalEnv.targetManager.TargetLibrary('FOX-Toolkit')
+	globalEnv.targetManager.add('fox', targetLibrary)
+	targetLibrary.addParametersBuildCPP(envLibrary, [libLinkName], cpppath, linkpath)
 
-if hasSystemFOX:
-	globalEnv.Append(LIBS=[libLinkName])
 	Return()
 
 def foxBuild(target, source, env):
@@ -114,10 +121,9 @@ depends = globalEnv.Alias('lib_fox', library)
 
 envLibrary.Clean(library, ['bin', 'include', 'lib', srcdir])
 
-globalEnv.Append(CPPPATH = [envLibrary.Dir('include')])
-globalEnv.Append(LIBPATH = [envLibrary.Dir('lib')])
-
-globalEnv.Append(LIBS=[library[0]])
-globalEnv.Append(RUNTIME_LIB_FOX=[library[0]])
-
-globalEnv.Append(LINKFLAGS = ['-Wl,-R,"$$ORIGIN"'])
+targetLibrary = globalEnv.targetManager.TargetLibrary('FOX-Toolkit')
+globalEnv.targetManager.add('fox', targetLibrary)
+targetLibrary.build.append(library[0])
+targetLibrary.addParametersBuildCPP(envLibrary, [library[0]], 'include', 'lib')
+targetLibrary.addParameters(LINKFLAGS = ['-Wl,-R,"$$ORIGIN"'])
+targetLibrary.runtimeLibs.append(library[0])

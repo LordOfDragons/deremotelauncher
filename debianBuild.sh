@@ -32,6 +32,7 @@ git clean -dfx || exit 1
 fetchExternals() {
   echo "*** Fetch Externals ***"
   echo "***********************"
+  scons lib_fox_fetch lib_denetwork_fetch --debug=explain
   scons lib_fox_fetch lib_denetwork_fetch || exit 1
 }
 

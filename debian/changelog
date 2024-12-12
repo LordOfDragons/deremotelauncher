@@ -1,0 +1,5 @@
+deremotelauncher (1.0-ubuntu2~ubuntu20.10-ppa1) noble; urgency=medium
+
+  * Initial debianization.
+
+ -- Roland Plüss <roland@dragondreams.ch>  Thu, 12 Dec 2024 15:29:20 +0000

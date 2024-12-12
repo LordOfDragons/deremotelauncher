@@ -7,7 +7,7 @@
 Import-Module "$PSScriptRoot\..\..\shared.psm1"
 
 
-$ExpandedDir = "$ProjectDir\dragengine-sdk"
+$ExpandedDir = "$ProjectDir\DragengineSDK"
 if (Test-Path $ExpandedDir) {
     Remove-Item $ExpandedDir -Force -Recurse
 }
@@ -19,4 +19,4 @@ DownloadArtifactGithub -SourceDir $ProjectDir -FilenameArtifact "dragengine-sdk-
     -UrlPath "dragengine/releases/download/nightly"
 
 Expand-Archive -Path "$ProjectDir\dragengine-sdk-nightly-windows64.zip" `
-    -DestinationPath "$ProjectDir\dragengine-sdk"
+    -DestinationPath "$ProjectDir"

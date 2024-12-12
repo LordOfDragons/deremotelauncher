@@ -18,7 +18,7 @@ apt update -y -q \
   && apt-get -y -q install software-properties-common \
   && add-apt-repository -y -u ppa:rpluess/dragondreams \
   && apt-get -y -q upgrade \
-  && apt-get -y -q install libdelauncher-dev || exit 1
+  && apt-get -y -q install libdelauncher-dev libdragengine-dev || exit 1
 
 export SCONSFLAGS="-j 8"
 

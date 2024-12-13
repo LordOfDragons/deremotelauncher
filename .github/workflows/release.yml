@@ -1,0 +1,65 @@
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version'
+        required: true
+        type: string
+        default: 'X.Y{.Z}'
+
+jobs:
+  build_linux:
+    uses: ./.github/workflows/build_linux.yml
+    with:
+      releaseVersion: ${{ github.event.inputs.version }}
+      artifactArchive: archives-linux
+  
+  build_windows:
+    uses: ./.github/workflows/build_windows.yml
+    with:
+      releaseVersion: ${{ github.event.inputs.version }}
+      artifactArchive: archives-windows
+  
+  upload:
+    needs: [build_linux, build_windows]
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Get Linux Archives
+        uses: actions/download-artifact@v4.1.7
+        with:
+          name: archives-linux
+      
+      - name: Get Windows Archives
+        uses: actions/download-artifact@v4.1.7
+        with:
+          name: archives-windows
+      
+      - name: Get current date
+        id: date
+        run: echo "date=$(date +'%Y-%m-%d')" >> $GITHUB_OUTPUT
+      
+      - name: Upload Artifacts
+        uses: ncipollo/release-action@v1
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          allowUpdates: false
+          artifactErrorsFailBuild: true
+          draft: false
+          prerelease: false
+          commit: 'main'
+          tag: 'v${{ github.event.inputs.version }}'
+          name: 'Drag[en]gine Remote Launcher Release ${{ github.event.inputs.version }}'
+          body: |
+            Provides support to remote games for testing and development purpose on another host.
+            See https://developer.dragondreams.ch/wiki/doku.php/gamedev:remotelaunching (Wiki Page) for more information.
+            Supports these platforms:
+            - Linux: deremotelauncherdesktop-unix-x64-${{ github.event.inputs.version }}.tar.bz2
+            - Windows 10 or newer: DERemoteLauncherDesktop-${{ github.event.inputs.version }}.zip
+          artifacts: >
+            deremotelauncher-unix-x64-${{ github.event.inputs.version }}.tar.bz2,
+            deremotelauncherdesktop-unix-x64-${{ github.event.inputs.version }}.tar.bz2,
+            DERemoteLauncherSDK-${{ github.event.inputs.version }}.zip,
+            DERemoteLauncherDesktop-${{ github.event.inputs.version }}.zip

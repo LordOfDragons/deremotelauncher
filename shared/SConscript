@@ -135,7 +135,7 @@ library = envLibrary.StaticLibrary(target='deremotelauncher', source=objects)
 targetLibrary.build.extend(library)
 targetLibrary.aliasBuild(envLibrary, 'deremotelaunchershared_build')
 
-pathArchive = 'deremotelauncher-{}-x64-{}-sdk'.format(platformName, versionString)
+pathArchive = 'deremotelauncher-{}-x64-{}'.format(platformName, versionString)
 
 targetLibrary.installCutDirs(envLibrary,
 	'deremotelauncher-{}/include/deremotelauncher'.format(versionString),

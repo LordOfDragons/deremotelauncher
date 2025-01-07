@@ -196,8 +196,9 @@ void derlBaseTaskProcessor::TruncateFile(const std::string &path){
 			std::filesystem::create_directories(pFilePath.parent_path());
 		}
 		
-		pFileStream.open(pFilePath, pFileStream.binary | pFileStream.out | pFileStream.trunc);
-		if(pFileStream.fail()){
+		pFileStream = std::make_unique<std::fstream>();
+		pFileStream->open(pFilePath, std::ios_base::binary | std::ios_base::out | std::ios_base::trunc);
+		if(pFileStream->fail()){
 #ifdef OS_W32
 			std::string buffer;
 			buffer.assign(256, 0);
@@ -229,7 +230,7 @@ void derlBaseTaskProcessor::OpenFile(const std::string &path, bool write){
 			std::filesystem::create_directories(pFilePath.parent_path());
 		}
 		
-		std::ios_base::openmode openmode = pFileStream.binary;
+		std::ios_base::openmode openmode = std::ios_base::binary;
 		if(write){
 			// std streams are stupid as hell. if you use std::ios_base::app then the data is
 			// always appended and never overwritten which is not helping at all.
@@ -244,18 +245,19 @@ void derlBaseTaskProcessor::OpenFile(const std::string &path, bool write){
 			// just to add insult to injury... if the file does not exist std::ios_base::in
 			// causes the open to fail. why so damn complicated?!
 			if(std::filesystem::exists(pFilePath)){
-				openmode |= pFileStream.in | pFileStream.out;
+				openmode |= std::ios_base::in | std::ios_base::out;
 				
 			}else{
-				openmode |= pFileStream.out;
+				openmode |= std::ios_base::out;
 			}
 			
 		}else{
-			openmode |= pFileStream.in;
+			openmode |= std::ios_base::in;
 		}
 		
-		pFileStream.open(pFilePath, openmode);
-		if(pFileStream.fail()){
+		pFileStream = std::make_unique<std::fstream>();
+		pFileStream->open(pFilePath, openmode);
+		if(pFileStream->fail()){
 #ifdef OS_W32
 			std::string buffer;
 			buffer.assign(256, 0);
@@ -278,11 +280,10 @@ void derlBaseTaskProcessor::OpenFile(const std::string &path, bool write){
 
 uint64_t derlBaseTaskProcessor::GetFileSize(){
 	try{
-		pFileStream.seekg(0, pFileStream.end);
-		const uint64_t size = pFileStream.tellg();
-		
-		if(pFileStream.fail()){
-			pFileStream.clear();
+		pFileStream->seekg(0, pFileStream->end);
+		const uint64_t size = pFileStream->tellg();
+		if(pFileStream->fail()){
+			pFileStream->clear();
 			throw std::runtime_error("Failed getting file size");
 		}
 		
@@ -300,15 +301,15 @@ uint64_t derlBaseTaskProcessor::GetFileSize(){
 
 void derlBaseTaskProcessor::ReadFile(void *data, uint64_t offset, uint64_t size){
 	try{
-		pFileStream.seekg(offset, pFileStream.beg);
-		if(pFileStream.fail()){
-			pFileStream.clear();
+		pFileStream->seekg(offset, std::ios_base::beg);
+		if(pFileStream->fail()){
+			pFileStream->clear();
 			throw std::runtime_error("Failed seeking to offset");
 		}
 		
-		pFileStream.read((char*)data, size);
-		if(pFileStream.fail()){
-			pFileStream.clear();
+		pFileStream->read((char*)data, size);
+		if(pFileStream->fail()){
+			pFileStream->clear();
 			throw std::runtime_error("Failed reading from file");
 		}
 		
@@ -324,9 +325,7 @@ void derlBaseTaskProcessor::ReadFile(void *data, uint64_t offset, uint64_t size)
 
 void derlBaseTaskProcessor::CloseFile(){
 	pFilePath.clear();
-	
-	pFileStream.close();
-	pFileStream.clear();
+	pFileStream.reset();
 }
 
 void derlBaseTaskProcessor::SetLogClassName(const std::string &name){

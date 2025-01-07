@@ -54,7 +54,11 @@ public:
 protected:
 	std::atomic<bool> pExit;
 	std::filesystem::path pBaseDir, pFilePath;
-	std::fstream pFileStream;
+	
+	// pointer is used since on some systems (android for example) the fstream implementation
+	// is buggy causing strange bugs if the same fstream instance is correctly reused
+	std::unique_ptr<std::fstream> pFileStream;
+	
 	uint64_t pFileHashReadSize;
 	std::string pLogClassName;
 	denLogger::Ref pLogger;

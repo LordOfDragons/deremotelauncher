@@ -404,15 +404,15 @@ void derlTaskProcessorLauncherClient::DeleteFile(const derlTaskFileDelete &task)
 
 void derlTaskProcessorLauncherClient::WriteFile(const void *data, uint64_t offset, uint64_t size){
 	try{
-		pFileStream.seekp(offset, pFileStream.beg);
-		if(pFileStream.fail()){
-			pFileStream.clear();
+		pFileStream->seekp(offset, std::ios_base::beg);
+		if(pFileStream->fail()){
+			pFileStream->clear();
 			throw std::runtime_error("Failed seeking to offset");
 		}
 		
-		pFileStream.write((const char*)data, size);
-		if(pFileStream.fail()){
-			pFileStream.clear();
+		pFileStream->write((const char*)data, size);
+		if(pFileStream->fail()){
+			pFileStream->clear();
 			throw std::runtime_error("Failed writing to file");
 		}
 		

@@ -32,7 +32,6 @@
 
 #include "foxtoolkit.h"
 #include <deremotelauncher/derlLauncherClient.h>
-#include <dragengine/common/exceptions.h>
 
 class WindowMain;
 

@@ -100,7 +100,8 @@
 			"stdfloat": "cpp",
 			"typeindex": "cpp",
 			"valarray": "cpp",
-			"queue": "cpp"
+			"queue": "cpp",
+			"text_encoding": "cpp"
 		}
 	}
 }

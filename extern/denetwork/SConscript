@@ -9,7 +9,11 @@ Import('globalEnv')
 envLibrary = globalEnv.Clone()
 
 srcVersion = 'nightly'
-srcdir = 'denetworkcpp-unix-x64-{}'.format(srcVersion)
+if envLibrary['crosscompile'] == 'android':
+	sysarch = 'android-armv8'
+else:
+	sysarch = 'unix-x64'
+srcdir = 'denetworkcpp-{}-{}'.format(sysarch, srcVersion)
 
 libLinkName = 'denetwork'
 
@@ -47,7 +51,11 @@ def denetworkUnpack(target, source, env):
 
 targets = [libFileName]
 with open(envLibrary.File('header_file_list/denetwork').srcnode().abspath, 'r') as f:
-	targets.extend([x[:-1] for x in f.readlines()])
+		for x in f.readlines():
+			x = x[:-1]
+			x = x.replace('{version}', srcVersion)
+			x = x.replace('{sysarch}', sysarch)
+			targets.append(x)
 
 libraryHeaders = envLibrary.Command(targets, nodeArtifacts,
 	envLibrary.Action(denetworkUnpack, 'Unpack DENetwork'))[0:1]

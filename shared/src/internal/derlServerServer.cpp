@@ -33,7 +33,7 @@ derlServerServer::derlServerServer(derlServer &server) :
 pServer(server){
 }
 
-derlServerServer::~derlServerServer(){
+derlServerServer::~derlServerServer() noexcept{
 }
 
 // Management

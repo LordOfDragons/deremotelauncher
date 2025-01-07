@@ -49,7 +49,7 @@ pKeepAliveInterval(10.0f),
 pKeepAliveElapsed(0.0f){
 }
 
-derlRemoteClient::~derlRemoteClient(){
+derlRemoteClient::~derlRemoteClient() noexcept{
 	pConnection->SetClient(nullptr);
 }
 

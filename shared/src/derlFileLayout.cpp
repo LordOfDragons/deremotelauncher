@@ -33,7 +33,7 @@
 derlFileLayout::derlFileLayout(){
 }
 
-derlFileLayout::~derlFileLayout(){
+derlFileLayout::~derlFileLayout() noexcept{
 }
 
 // Management

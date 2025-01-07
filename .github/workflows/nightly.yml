@@ -18,9 +18,29 @@ jobs:
     with:
       releaseVersion: nightly
       artifactArchive: archives-windows
+  
+  build_android_armv8:
+    uses: ./.github/workflows/build_android.yml
+    with:
+      releaseVersion: nightly
+      artifactArchive: archives-android-armv8
+      androidArch: armv8
+      androidApiLevel: 26
+  
+  build_android_armv7:
+    uses: ./.github/workflows/build_android.yml
+    with:
+      releaseVersion: nightly
+      artifactArchive: archives-android-armv7
+      androidArch: armv7
+      androidApiLevel: 26
       
   upload:
-    needs: [build_linux, build_windows]
+    needs: [build_linux,
+      build_windows,
+      build_android_armv8,
+      build_android_armv7]
+    
     runs-on: ubuntu-latest
     
     steps:
@@ -35,6 +55,16 @@ jobs:
         uses: actions/download-artifact@v4.1.7
         with:
           name: archives-windows
+      
+      - name: Get Android ArmV8 Archives
+        uses: actions/download-artifact@v4.1.7
+        with:
+          name: archives-android-armv8
+      
+      - name: Get Android ArmV7 Archives
+        uses: actions/download-artifact@v4.1.7
+        with:
+          name: archives-android-armv7
       
       - name: Get current date
         id: date
@@ -64,6 +94,8 @@ jobs:
             Builds are potentially unstable. Use at own risk.
           artifacts: >
             deremotelauncher-unix-x64-nightly.tar.bz2,
+            deremotelauncher-android-armv8-nightly.tar.bz2,
+            deremotelauncher-android-armv7-nightly.tar.bz2,
             deremotelauncherdesktop-unix-x64-nightly.tar.bz2,
             DERemoteLauncherSDK-nightly.zip,
             DERemoteLauncherDesktop-nightly.zip

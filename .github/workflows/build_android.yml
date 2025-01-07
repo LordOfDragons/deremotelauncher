@@ -1,0 +1,54 @@
+name: Build Android
+
+on:
+  workflow_call:
+    inputs:
+      releaseVersion:
+        required: true
+        type: string
+      androidArch:
+        required: true
+        type: string
+      androidApiLevel:
+        required: true
+        type: string
+      artifactArchive:
+        required: true
+        type: string
+
+jobs:
+  build_android:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Install required packages
+        run: |
+          sudo apt -y install build-essential scons libxft-dev libgl-dev
+      
+      - name: Init custom.py
+        run: |
+          cp ${{ github.workspace }}/.github/workflows/custom_android.py custom.py
+          
+      - name: Build
+        run: |
+          scons -j 14 \
+            version=${{ inputs.releaseVersion }} \
+            android_ndkroot="$ANDROID_NDK_ROOT" \
+            android_arch=${{ inputs.androidArch }} \
+            android_apilevel=${{ inputs.androidApiLevel }} \
+            deremotelaunchershared_archive
+      
+      - name: Move Artifacts
+        run: |
+          mkdir artifacts
+          cp -a shared/build/deremotelauncher-android-${{ inputs.androidArch }}-${{ inputs.releaseVersion }}.tar.bz2 artifacts
+        
+      - name: Store Archives
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ inputs.artifactArchive }}
+          path: |
+            artifacts/deremotelauncher-android-${{ inputs.androidArch }}-${{ inputs.releaseVersion }}.tar.bz2
+          if-no-files-found: error

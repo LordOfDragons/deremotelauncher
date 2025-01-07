@@ -47,7 +47,7 @@ pHasBlocks(file.pHasBlocks),
 pBlockSize(file.pBlockSize){
 }
 
-derlFile::~derlFile(){
+derlFile::~derlFile() noexcept{
 }
 
 

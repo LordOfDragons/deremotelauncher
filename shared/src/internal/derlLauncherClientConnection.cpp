@@ -57,7 +57,7 @@ pPendingRequestLayout(false)
 	pStateRun->AddValue(pValueRunStatus);
 }
 
-derlLauncherClientConnection::~derlLauncherClientConnection(){
+derlLauncherClientConnection::~derlLauncherClientConnection() noexcept{
 }
 
 

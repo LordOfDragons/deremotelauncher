@@ -45,7 +45,7 @@ pKeepAliveInterval(10.0f),
 pKeepAliveElapsed(0.0f){
 }
 
-derlLauncherClient::~derlLauncherClient(){
+derlLauncherClient::~derlLauncherClient() noexcept{
 }
 
 

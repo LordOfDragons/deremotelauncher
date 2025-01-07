@@ -84,7 +84,7 @@ pCountInProgressBlocks(0)
 	SetLogger(server.GetLogger());
 }
 
-derlRemoteClientConnection::~derlRemoteClientConnection(){
+derlRemoteClientConnection::~derlRemoteClientConnection() noexcept{
 }
 
 
@@ -204,7 +204,7 @@ void derlRemoteClientConnection::SendNextWriteRequests(derlTaskSyncClient &taskS
 		return;
 	}
 	
-	for(const derlTaskFileWrite::Map::const_reference &eachWrite : tasksWrite){
+	for(derlTaskFileWrite::Map::const_reference &eachWrite : tasksWrite){
 		const derlTaskFileWrite::Ref &taskWrite = eachWrite.second;
 		
 		switch(taskWrite->GetStatus()){

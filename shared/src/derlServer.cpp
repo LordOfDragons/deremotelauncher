@@ -37,7 +37,7 @@ derlServer::derlServer() :
 pServer(std::make_unique<derlServerServer>(*this)){
 }
 
-derlServer::~derlServer(){
+derlServer::~derlServer() noexcept{
 }
 
 

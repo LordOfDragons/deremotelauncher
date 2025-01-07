@@ -115,10 +115,14 @@ envLibrary.Append(LINKFLAGS = envLibrary['SANITIZE_FLAGS'])
 globalEnv.targetManager.targets['denetwork'].applyBuild(envLibrary)
 
 # library
-platformName = 'unix'
+platformArch = 'x64'
+platformName = globalEnv['TARGET_PLATFORM']
 
-if envLibrary['TARGET_PLATFORM'] == 'beos':
-	platformName = 'beos'
+if globalEnv['crosscompile'] == 'android':
+	platformName = 'android'
+	platformArch = globalEnv['android_arch']
+elif platformName == 'linux':
+	platformName = 'unix'
 
 targetLibrary = globalEnv.targetManager.TargetLibrary('DERemoteLauncher Shared Library')
 globalEnv.targetManager.add('deremotelaunchershared', targetLibrary)
@@ -135,7 +139,7 @@ library = envLibrary.StaticLibrary(target='deremotelauncher', source=objects)
 targetLibrary.build.extend(library)
 targetLibrary.aliasBuild(envLibrary, 'deremotelaunchershared_build')
 
-pathArchive = 'deremotelauncher-{}-x64-{}'.format(platformName, versionString)
+pathArchive = 'deremotelauncher-{}-{}-{}'.format(platformName, platformArch, versionString)
 
 targetLibrary.installCutDirs(envLibrary,
 	'deremotelauncher-{}/include/deremotelauncher'.format(versionString),
@@ -162,7 +166,8 @@ archiveFiles = {}
 archiveFiles['{}/LICENSE'.format(pathArchive)] = envLibrary.File('#LICENSE')
 archiveFiles['{}/README.md'.format(pathArchive)] = envLibrary.File('#README.md')
 
-targetArchive.archiveFiles(envLibrary, 'deremotelauncher-{}-x64-{}'.format(platformName, versionString),
+targetArchive.archiveFiles(envLibrary, 'deremotelauncher-{}-{}-{}'.format(
+	platformName, platformArch, versionString),
 	{**targetLibrary.archiveFiles, **archiveFiles},
 	format=globalEnv.targetManager.TargetArchive.formatTarBz2)
 targetArchive.aliasArchive(envLibrary, 'deremotelaunchershared_archive')

@@ -25,7 +25,7 @@ jobs:
       
       - name: Install required packages
         run: |
-          sudo apt -y install build-essential scons libxft-dev libgl-dev
+          sudo apt -y install build-essential scons libxft-dev libgl-dev libxext-dev
       
       - name: Init custom.py
         run: |

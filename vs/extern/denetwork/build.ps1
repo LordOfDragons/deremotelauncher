@@ -12,7 +12,9 @@ if (Test-Path $ExpandedDir) {
     Remove-Item $ExpandedDir -Force -Recurse
 }
 
-DownloadArtifactGithub -SourceDir $ProjectDir -FilenameArtifact "DENetworkSDK-nightly.zip" `
-    -UrlPath "denetwork/releases/download/nightly"
+if (!(Test-Path "$ProjectDir\DENetworkSDK-nightly.zip")) {
+    DownloadArtifactGithub -SourceDir $ProjectDir -FilenameArtifact "DENetworkSDK-nightly.zip" `
+        -UrlPath "denetwork/releases/download/nightly"
+}
 
 Expand-Archive -Path "$ProjectDir\DENetworkSDK-nightly.zip" -DestinationPath "$ProjectDir"

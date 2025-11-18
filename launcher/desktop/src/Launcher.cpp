@@ -224,7 +224,7 @@ void Launcher::RunGame(const std::filesystem::path &dataPath, const derlRunParam
 			arguments << profile->GetRunArguments().GetString();
 			
 			if(!runParams.GetArguments().empty()){
-				arguments << runParams.GetArguments();
+				arguments << " " << runParams.GetArguments();
 			}
 			
 			launchRunParams.SetRunArguments(arguments.str().c_str());

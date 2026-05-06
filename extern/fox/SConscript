@@ -19,7 +19,7 @@ if 'libfox_libraries' in envLibrary and envLibrary['libfox_libraries']:
 	linkpath = [envLibrary['libfox_libraries']]
 	envLibrary.Append(LIBPATH = linkpath)
 
-foxSrcVersion = '1.7.67'
+foxSrcVersion = '1.7.85'
 srcdir = 'fox-{}'.format(foxSrcVersion)
 
 libFOXVersion = '1.7'
@@ -30,7 +30,7 @@ libLinkName = 'FOX-{}'.format(libFOXVersion)
 libFileName = envLibrary.subst('lib/${{SHLIBPREFIX}}{}${{SHLIBSUFFIX}}.{}'.format(libLinkName, libLinkVersion))
 staticFileName = envLibrary.subst('lib/${{LIBPREFIX}}{}${{LIBSUFFIX}}'.format(libLinkName))
 
-nodeArtifacts = envLibrary.DownloadArtifactHelper('{}.tar.bz2'.format(srcdir), 'fox', 'lib_fox_fetch')
+nodeArtifacts = envLibrary.DownloadArtifactHelper('{}.tar.xz'.format(srcdir), 'fox', 'lib_fox_fetch')
 globalEnv.targetManager.add('lib_fox_fetch',
 	globalEnv.targetManager.Target('Fetch FOX-Toolkit', nodeArtifacts))
 
@@ -68,7 +68,7 @@ def foxBuild(target, source, env):
 	script.append('autoreconf -fi || exit 1')
 	
 	for p in env['POST_PATCHES']:
-		script.append('patch -p1 <{} || exit 1'.format(p.srcnode().abspath))
+		script.append('sed -i -f "{}" aclocal.m4 configure'.format(p.srcnode().abspath))
 	
 	cmdline = ['./configure --prefix="{}"'.format(buildDir.abspath)]
 	

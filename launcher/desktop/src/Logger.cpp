@@ -30,6 +30,8 @@
 #include "Logger.h"
 #include "WindowMain.h"
 
+#include <dragengine/common/exceptions.h>
+
 
 // Constructors
 /////////////////

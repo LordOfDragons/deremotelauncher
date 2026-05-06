@@ -83,6 +83,8 @@ envProgram.Append(CPPFLAGS = envProgram['SANITIZE_FLAGS'])
 envProgram.Append(LINKFLAGS = envProgram['SANITIZE_FLAGS'])
 
 envProgram.Append(CPPFLAGS = ['-g', '-fno-omit-frame-pointer'])
+envProgram.Append(CXXFLAGS = ['-std=c++20'])
+envProgram.Append(CXXFLAGS = ['-Wno-deprecated-enum-enum-conversion'])
 
 if envProgram['with_client_debug']:
 	envProgram.Append(CPPFLAGS = ['-DENABLE_CLIENT_DEBUG'])

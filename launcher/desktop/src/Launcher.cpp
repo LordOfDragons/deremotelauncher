@@ -27,6 +27,7 @@
 
 #include <delauncher/game/delGameXML.h>
 #include <delauncher/game/delGameRunParams.h>
+#include <dragengine/common/exceptions.h>
 #include <dragengine/common/file/decMemoryFile.h>
 #include <dragengine/common/file/decMemoryFileReader.h>
 #include <delauncher/engine/delEngineInstanceThreaded.h>
@@ -80,7 +81,7 @@ void Launcher::LauncherLogger::LogError(const char *source, const char *message)
 Launcher::Launcher(WindowMain &windowMain, const denLogger::Ref &logger) :
 pWindowMain(windowMain),
 pTargetLogger(logger),
-pLauncherLogger(deLogger::Ref::New(new LauncherLogger(windowMain, *logger)))
+pLauncherLogger(deTObjectReference<LauncherLogger>::New(windowMain, *logger))
 {
 	#ifdef OS_W32
 	delEngineInstanceThreaded::SetDefaultExecutableName("DERemoteLauncherRunner");
@@ -161,7 +162,7 @@ void Launcher::RunGame(const std::filesystem::path &dataPath, const derlRunParam
 	const delGame::Ref game(delGame::Ref::New(CreateGame()));
 	
 	{
-	const decMemoryFile::Ref fileGameConfig(decMemoryFile::Ref::New(new decMemoryFile("game.degame")));
+	const decMemoryFile::Ref fileGameConfig(decMemoryFile::Ref::New("game.degame"));
 	fileGameConfig->Resize((int)runParams.GetGameConfig().size());
 	runParams.GetGameConfig().copy(fileGameConfig->GetPointer(), runParams.GetGameConfig().size());
 	
@@ -172,8 +173,7 @@ void Launcher::RunGame(const std::filesystem::path &dataPath, const derlRunParam
 	}
 
 	delGameXML gameXml(pLauncherLogger, "DERemoteLauncher");
-	gameXml.ReadFromFile(decMemoryFileReader::Ref::New(
-		new decMemoryFileReader(fileGameConfig)), game);
+	gameXml.ReadFromFile(decMemoryFileReader::Ref::New(fileGameConfig), game);
 	}
 	
 	game->SetGameDirectory(dataPath.string().c_str());
@@ -198,7 +198,7 @@ void Launcher::RunGame(const std::filesystem::path &dataPath, const derlRunParam
 		delGameProfile *profile = game->GetProfileToUse();
 		
 		if(!runParams.GetProfileName().empty()){
-			profile = GetGameManager().GetProfiles().GetNamed(runParams.GetProfileName().c_str());
+			profile = GetGameManager().GetProfiles().FindNamed(runParams.GetProfileName().c_str());
 			if(!profile){
 				std::stringstream ss;
 				ss << "No profile found named '" << runParams.GetProfileName() << "'";
@@ -249,7 +249,7 @@ void Launcher::RunGame(const std::filesystem::path &dataPath, const derlRunParam
 			pathGameLogs.AddUnixPath(pGame->GetLogFile());
 			
 			try{
-				pReaderGameLogs.TakeOver(GetVFS()->OpenFileForReading(pathGameLogs));
+				pReaderGameLogs = GetVFS()->OpenFileForReading(pathGameLogs);
 				std::stringstream ss;
 				ss << "Game log file opened for reading: " << pathGameLogs.GetPathUnix().GetString();
 				pLauncherLogger->LogInfo("RunGame", ss.str().c_str());

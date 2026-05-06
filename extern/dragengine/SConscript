@@ -29,7 +29,7 @@ if 'delauncher_libraries' in envLibrary and envLibrary['delauncher_libraries']:
 	linkpathDELauncher = [envLibrary['delauncher_libraries']]
 	envLibrary.Append(LIBPATH = linkpathDELauncher)
 
-dragengineVersion = 'nightly' #'1.24'
+dragengineVersion = '1.31' #'nightly'
 
 srcdir = 'dragengine-{}-linux64'.format(dragengineVersion)
 srcdirDev = 'dragengine-dev-{}-linux64'.format(dragengineVersion)

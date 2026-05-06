@@ -33,6 +33,7 @@
 
 #include <deremotelauncher/derlProtocol.h>
 
+#include <dragengine/common/exceptions.h>
 #ifdef OS_W32
 #include <dragengine/app/deOSWindows.h>
 #endif
@@ -388,7 +389,7 @@ long WindowMain::onMsgKillApp(FXObject*, FXSelector, void*){
 
 long WindowMain::onMsgSysPropProfileNames(FXObject*, FXSelector, void*){
 	std::stringstream names;
-	const delGameProfileList &profiles = pLauncher->GetGameManager().GetProfiles();
+	const delGameProfile::List &profiles = pLauncher->GetGameManager().GetProfiles();
 	const int count = profiles.GetCount();
 	int i;
 	for(i=0; i<count; i++){

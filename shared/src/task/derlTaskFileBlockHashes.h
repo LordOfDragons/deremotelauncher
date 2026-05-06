@@ -26,6 +26,7 @@
 #define _DERLTASKFILEBLOCKHASHES_H_
 
 #include <string>
+#include <stdint.h>
 
 #include "derlBaseTask.h"
 

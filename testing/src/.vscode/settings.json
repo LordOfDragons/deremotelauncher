@@ -6,7 +6,8 @@
 	"files.exclude": {
 		"build": true,
 		"client/build": true,
-		"server/build": true
+		"server/build": true,
+		"sdk": true
 	},
 	"files.watcherExclude": {
 		"**/.git/objects/**": true,

@@ -1,13 +1,20 @@
 {
 	"folders": [
 		{
-			"path": "shared/src"
+			"path": "shared/src",
+			"name": "Shared"
 		},
 		{
-			"path": "testing/src"
+			"path": "testing/src",
+			"name": "Testing"
 		},
 		{
-			"path": "launcher/desktop"
+			"path": "launcher/desktop",
+			"name": "Desktop Launcher"
+		},
+		{
+			"path": ".github",
+			"name": "GitHub"
 		}
 	],
 	"settings": {

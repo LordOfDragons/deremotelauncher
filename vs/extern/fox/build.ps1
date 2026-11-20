@@ -14,4 +14,8 @@ if (Test-Path $ExpandedDir) {
 
 DownloadArtifact -SourceDir $ProjectDir -FilenameArtifact "fox-1.7.81-vc64.zip" -UrlPath "fox"
 
-Expand-Archive -Path "$ProjectDir\fox-1.7.81-vc64.zip" -DestinationPath $ProjectDir
+$ArchiveFile = "$ProjectDir\fox-1.7.81-vc64.zip"
+
+# workaround for powershell bug under github
+Add-Type -AssemblyName System.IO.Compression.FileSystem
+[System.IO.Compression.ZipFile]::ExtractToDirectory($ArchiveFile, $ExpandedDir)

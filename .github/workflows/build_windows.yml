@@ -23,15 +23,17 @@ jobs:
           msbuild-architecture: x64
         
       - name: Build
+        shell: pwsh
         run: msbuild 'vs/deremotelauncher.sln' /p:configuration=Release /p:platform=x64
         
       - name: Archive
+        shell: pwsh
         run: |
           Compress-Archive -Path vs\x64\Release\DERemoteLauncherSDK `
             -DestinationPath DERemoteLauncherSDK-${{ inputs.releaseVersion }}.zip
           Compress-Archive -Path vs\x64\Release\DERemoteLauncherDesktop `
             -DestinationPath DERemoteLauncherDesktop-${{ inputs.releaseVersion }}.zip
-
+          
       - name: Store Archives
         uses: actions/upload-artifact@v4
         with:

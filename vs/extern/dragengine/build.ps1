@@ -6,17 +6,18 @@
 
 Import-Module "$PSScriptRoot\..\..\shared.psm1"
 
+$DragengineVersion = "1.34.3"
 
-$ExpandedDir = "$ProjectDir\DragengineSDK"
+$ExpandedDir = "$ProjectDir\build"
 if (Test-Path $ExpandedDir) {
     Remove-Item $ExpandedDir -Force -Recurse
 }
 
-DownloadArtifactGithub -SourceDir $ProjectDir -FilenameArtifact "dragengine-sdk-nightly-windows64.zip" `
-    -UrlPath "dragengine/releases/download/nightly"
+$ArchiveFile = "$ProjectDir\dragengine-sdk-$DragengineVersion-windows64.zip"
 
-DownloadArtifactGithub -SourceDir $ProjectDir -FilenameArtifact "dragengine-sdk-nightly-windows64.zip" `
-    -UrlPath "dragengine/releases/download/nightly"
+if (!(Test-Path $ArchiveFile)) {
+    DownloadArtifactGithub -SourceDir $ProjectDir -FilenameArtifact "dragengine-sdk-$DragengineVersion-windows64.zip" `
+        -UrlPath "dragengine/releases/download/v$DragengineVersion"
+}
 
-Expand-Archive -Path "$ProjectDir\dragengine-sdk-nightly-windows64.zip" `
-    -DestinationPath "$ProjectDir"
+Expand-Archive -Path $ArchiveFile -DestinationPath $ExpandedDir

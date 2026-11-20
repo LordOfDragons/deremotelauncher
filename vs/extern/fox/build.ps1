@@ -18,4 +18,4 @@ $ArchiveFile = "$ProjectDir\fox-1.7.81-vc64.zip"
 
 # workaround for powershell bug under github
 Add-Type -AssemblyName System.IO.Compression.FileSystem
-[System.IO.Compression.ZipFile]::ExtractToDirectory($ArchiveFile, $ExpandedDir)
+[System.IO.Compression.ZipFile]::ExtractToDirectory($ArchiveFile, $ProjectDir)

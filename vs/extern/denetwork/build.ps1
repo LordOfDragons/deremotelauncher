@@ -6,15 +6,18 @@
 
 Import-Module "$PSScriptRoot\..\..\shared.psm1"
 
+$DENetworkVersion = "1.2"
 
-$ExpandedDir = "$ProjectDir\DENetworkSDK"
+$ExpandedDir = "$ProjectDir\build"
 if (Test-Path $ExpandedDir) {
     Remove-Item $ExpandedDir -Force -Recurse
 }
 
-if (!(Test-Path "$ProjectDir\DENetworkSDK-nightly.zip")) {
-    DownloadArtifactGithub -SourceDir $ProjectDir -FilenameArtifact "DENetworkSDK-nightly.zip" `
-        -UrlPath "denetwork/releases/download/nightly"
+$ArchiveFile = "$ProjectDir\DENetworkSDK-$DENetworkVersion.zip"
+$BaseUrl = "https://github.com/LordOfDragons/denetwork/releases/download/v$DENetworkVersion"
+
+if (!(Test-Path $ArchiveFile)) {
+    Invoke-WebRequestWithRetry -Uri "$BaseUrl/DENetworkSDK-$DENetworkVersion.zip" -OutFile $ArchiveFile
 }
 
-Expand-Archive -Path "$ProjectDir\DENetworkSDK-nightly.zip" -DestinationPath "$ProjectDir"
+Expand-Archive -Path $ArchiveFile -DestinationPath $ExpandedDir

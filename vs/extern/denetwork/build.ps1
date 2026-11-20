@@ -14,10 +14,10 @@ if (Test-Path $ExpandedDir) {
 }
 
 $ArchiveFile = "$ProjectDir\DENetworkSDK-$DENetworkVersion.zip"
-$BaseUrl = "https://github.com/LordOfDragons/denetwork/releases/download/v$DENetworkVersion"
 
 if (!(Test-Path $ArchiveFile)) {
-    Invoke-WebRequestWithRetry -Uri "$BaseUrl/DENetworkSDK-$DENetworkVersion.zip" -OutFile $ArchiveFile
+    DownloadArtifactGithub -SourceDir $ProjectDir -FilenameArtifact "DENetworkSDK-$DENetworkVersion.zip" `
+        -UrlPath "denetwork/releases/download/v$DENetworkVersion"
 }
 
 Expand-Archive -Path $ArchiveFile -DestinationPath $ExpandedDir

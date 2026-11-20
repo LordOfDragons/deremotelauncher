@@ -20,4 +20,6 @@ if (!(Test-Path $ArchiveFile)) {
         -UrlPath "dragengine/releases/download/v$DragengineVersion"
 }
 
-Expand-Archive -Path $ArchiveFile -DestinationPath $ExpandedDir
+# workaround for powershell bug under github
+Add-Type -AssemblyName System.IO.Compression.FileSystem
+[System.IO.Compression.ZipFile]::ExtractToDirectory($ArchiveFile, $ExpandedDir)

@@ -91,7 +91,8 @@ jobs:
           for file in "${files[@]}"; do
             gpg2 --personal-digest-preferences SHA512 --armor --yes --detach-sign \
               --local-user A58A91BCA5C3B2C34CD57ACB8040F88D27F1D0AA \
-              --output "${file}.asc" $file
+              --output "${file}.asc" "$file"
+            sha256sum "$file" > "${file}.sha256sum"
           done
       
       - name: Upload Artifacts
@@ -119,3 +120,4 @@ jobs:
             DERemoteLauncherSDK-${{ github.event.inputs.version }}.zip
             DERemoteLauncherDesktop-${{ github.event.inputs.version }}.zip
             *.asc
+            *.sha256sum

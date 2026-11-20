@@ -81,11 +81,11 @@ jobs:
       - name: Sign Artifacts
         run: |
           files=(
-            deremotelauncher-unix-x64-${{ github.event.inputs.version }}.tar.bz2,
-            deremotelauncher-android-armv8-${{ github.event.inputs.version }}.tar.bz2,
-            deremotelauncher-android-armv7-${{ github.event.inputs.version }}.tar.bz2,
-            deremotelauncherdesktop-unix-x64-${{ github.event.inputs.version }}.tar.bz2,
-            DERemoteLauncherSDK-${{ github.event.inputs.version }}.zip,
+            deremotelauncher-unix-x64-${{ github.event.inputs.version }}.tar.bz2
+            deremotelauncher-android-armv8-${{ github.event.inputs.version }}.tar.bz2
+            deremotelauncher-android-armv7-${{ github.event.inputs.version }}.tar.bz2
+            deremotelauncherdesktop-unix-x64-${{ github.event.inputs.version }}.tar.bz2
+            DERemoteLauncherSDK-${{ github.event.inputs.version }}.zip
             DERemoteLauncherDesktop-${{ github.event.inputs.version }}.zip
             )
           for file in "${files[@]}"; do
@@ -111,11 +111,11 @@ jobs:
             Supports these platforms:
             - Linux: deremotelauncherdesktop-unix-x64-${{ github.event.inputs.version }}.tar.bz2
             - Windows 10 or newer: DERemoteLauncherDesktop-${{ github.event.inputs.version }}.zip
-          artifacts: >
-            deremotelauncher-unix-x64-${{ github.event.inputs.version }}.tar.bz2,
-            deremotelauncher-android-armv8-${{ github.event.inputs.version }}.tar.bz2,
-            deremotelauncher-android-armv7-${{ github.event.inputs.version }}.tar.bz2,
-            deremotelauncherdesktop-unix-x64-${{ github.event.inputs.version }}.tar.bz2,
-            DERemoteLauncherSDK-${{ github.event.inputs.version }}.zip,
-            DERemoteLauncherDesktop-${{ github.event.inputs.version }}.zip,
+          artifacts: |
+            deremotelauncher-unix-x64-${{ github.event.inputs.version }}.tar.bz2
+            deremotelauncher-android-armv8-${{ github.event.inputs.version }}.tar.bz2
+            deremotelauncher-android-armv7-${{ github.event.inputs.version }}.tar.bz2
+            deremotelauncherdesktop-unix-x64-${{ github.event.inputs.version }}.tar.bz2
+            DERemoteLauncherSDK-${{ github.event.inputs.version }}.zip
+            DERemoteLauncherDesktop-${{ github.event.inputs.version }}.zip
             *.asc

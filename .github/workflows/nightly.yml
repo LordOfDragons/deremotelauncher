@@ -84,11 +84,11 @@ jobs:
       - name: Sign Artifacts
         run: |
           files=(
-            deremotelauncher-unix-x64-nightly.tar.bz2,
-            deremotelauncher-android-armv8-nightly.tar.bz2,
-            deremotelauncher-android-armv7-nightly.tar.bz2,
-            deremotelauncherdesktop-unix-x64-nightly.tar.bz2,
-            DERemoteLauncherSDK-nightly.zip,
+            deremotelauncher-unix-x64-nightly.tar.bz2
+            deremotelauncher-android-armv8-nightly.tar.bz2
+            deremotelauncher-android-armv7-nightly.tar.bz2
+            deremotelauncherdesktop-unix-x64-nightly.tar.bz2
+            DERemoteLauncherSDK-nightly.zip
             DERemoteLauncherDesktop-nightly.zip
             )
           for file in "${files[@]}"; do
@@ -114,11 +114,11 @@ jobs:
             Created: ${{ steps.date.outputs.date }}
             
             Builds are potentially unstable. Use at own risk.
-          artifacts: >
-            deremotelauncher-unix-x64-nightly.tar.bz2,
-            deremotelauncher-android-armv8-nightly.tar.bz2,
-            deremotelauncher-android-armv7-nightly.tar.bz2,
-            deremotelauncherdesktop-unix-x64-nightly.tar.bz2,
-            DERemoteLauncherSDK-nightly.zip,
-            DERemoteLauncherDesktop-nightly.zip,
+          artifacts: |
+            deremotelauncher-unix-x64-nightly.tar.bz2
+            deremotelauncher-android-armv8-nightly.tar.bz2
+            deremotelauncher-android-armv7-nightly.tar.bz2
+            deremotelauncherdesktop-unix-x64-nightly.tar.bz2
+            DERemoteLauncherSDK-nightly.zip
+            DERemoteLauncherDesktop-nightly.zip
             *.asc
